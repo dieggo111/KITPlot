@@ -1,5 +1,6 @@
 #import numpy as np
 import ROOT
+import ConfigParser
 
 class KITPlot(object):
 
@@ -15,22 +16,26 @@ class KITPlot(object):
     
     __init = False
 
-    def __init__(self, plot=None, x=[], y=[]):
-        
-        print self.__init
+    def __init__(self, x=[], y=[], cfgFile=None):
 
+        # initialize style and color
+        
         if self.__init == False:
-            print "Initialize style and colors"
             self.__initStyle()
             self.__initColor()
         else:
-            print "style and colors already initialized"
+            pass
+
+        #self.__parser = ConfigParser.ConfigParser()
+        #self.__parser.read(cfgFile)
 
         #if plot == "TGraph":
         #    self.__graph = ROOT.TGraph(len(x), np.asarray(x),np.asarray(y))
         #else:
         #    pass
-            
+
+
+
 
     def __initStyle(self):
 
@@ -38,7 +43,7 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleX(0.5)
         ROOT.gStyle.SetTitleY(0.97)
         ROOT.gStyle.SetTitleH(0.05)
-        
+
         # Axis Options
         ROOT.gStyle.SetTitleSize(0.05,"X")
         ROOT.gStyle.SetTitleSize(0.05,"Y")
@@ -63,9 +68,9 @@ class KITPlot(object):
         ROOT.gStyle.SetPadGridX(True)
         ROOT.gStyle.SetPadGridY(True)
 
-        itPlot.__init = True
-
+        KITPlot.__init = True
         return True
+
 
     def __initColor(self):
 
@@ -108,9 +113,9 @@ class KITPlot(object):
         #self.__kitCyan.append(ROOT.TColor(1900, 35./255, 161./255, 224./255))
         self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
 
-        self.__init = True
-
+        KITPlot.__init = True
         return True
+
 
     def setAxisTitleSize(self, size):
 
@@ -119,6 +124,7 @@ class KITPlot(object):
         
         return True
 
+
     def setAxisTitleOffset(self, offset):
 
         ROOT.gStyle.SetTitleOffset(offset,"X")
@@ -126,17 +132,19 @@ class KITPlot(object):
 
         return True
 
+
     def Draw(self, argument):
         self.__graph.Draw(argument)
         
         return True
+
 
     def getGraph():
         return self._graph
 
 
     def getMarkerStyle(self):
-        markerSet = [5,4,2,3,20,21,22,23,24,25,26,]
+        markerSet = [5,4,2,3,20,21,22,23,24,25,26]
         for marker in markerSet:
             yield marker
 

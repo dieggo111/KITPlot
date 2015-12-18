@@ -18,9 +18,7 @@ class KITDataFile(object):
 
         self.__name = os.path.basename(fileName).split("-")[0]
 
-        print self.__name
-
-
+  
     def getDataSet(self, dataSet):
         if (str(dataSet) == "x") | (dataSet == 0) :
             return self.__x
