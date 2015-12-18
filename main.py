@@ -11,9 +11,9 @@ kPlot = KITPlot(file1.getX(), file1.getY())
 
 
 
-g1 = TGraph(len(file1.getX()),file1.getX(1),file1.getY(1))
-g2 = TGraph(len(file1.getX()),file1.getX(1),file1.getZ(1))
-g3 = TGraph(len(file2.getX()),file2.getX(1),file2.getY(1))
+g1 = TGraph(len(file1.getX()),file1.getX(True),file1.getY(True))
+g2 = TGraph(len(file1.getX()),file1.getX(True),file1.getZ(True))
+g3 = TGraph(len(file2.getX()),file2.getX(True),file2.getY(True))
 
 y2 = [x + y for x, y in zip(file1.getY(), file1.getZ())]
 g4 = TGraph(len(file1.getX()),file1.getX(1),np.asarray(y2))
