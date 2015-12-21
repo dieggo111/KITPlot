@@ -6,38 +6,41 @@ import ConfigParser
 class KITDataFile(object):
 
     __dbCnx = None
-    __dbCursor = None
+    __dbCrs = None
 
-    def __init__(self, fileName=None):
+    def __init__(self, input=None):
         
         self.__x = []
         self.__y = []
         self.__z = []
+        self.__temp = []
+        self.__humid = []
 
-        # Establish database connection
-
-        if KITDataFile.__dbCnx is None:
-            self.__init_db_connection()
-        else:
-            pass
-
-
-        # Open file
+        if input.isdigit():
+            print "Input: ProbeID"
+            self.__init_db_connection() # Establish database connection
+            self.__allo_db(input)
         
-        if fileName is not None:
-            with open(fileName, 'r') as file:
+        elif os.path.isfile(input):
+
+            print "Input: File"
+        
+            with open(input, 'r') as file:
                 for line in file:
                     splited = line.split();
                     self.__x.append(float(splited[0]))
                     self.__y.append(float(splited[1]))
                     self.__z.append(float(splited[2]))
-        else:
-            pass
-            
-        # Allocate sensor name
 
-        self.__name = os.path.basename(fileName).split("-")[0]
+            self.__name = os.path.basename(input).split("-")[0]
         
+        #elif self.__check_if_folder_pid(input):
+        #    print "Input: Folder"
+        #    self.__init_db_connection() # Establish database connection
+
+        else:
+           
+            raise OSError("Input could not be identified (Input: %s)" %(input))
 
 
     def __init_db_connection(self, filename='db.cfg', section='database'):
@@ -61,10 +64,47 @@ class KITDataFile(object):
             print "Connection failed"
             return False
 
-        KITDataFile.__dbCursor = KITDataFile.__dbCnx.cursor()
+        KITDataFile.__dbCrs = KITDataFile.__dbCnx.cursor()
+        
+       
+    def __check_if_folder_pid(self, fileName):
+        
+        with open(fileName) as file:
+            if len(file.readline().split()) == 1:
+                return True
+            else:
+                return False 
         
 
-    def __gez
+    def __allo_db(self, pid):
+
+        qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
+        KITDataFile.__dbCrs.execute(qryProbeData)
+        for (uid, pid, x, y, z, t, h) in KITDataFile.__dbCrs:
+            self.__x.append(x)
+            self.__y.append(y)
+            self.__z.append(z)
+            self.__temp.append(t)
+            self.__humid.append(h)
+            
+        name = None
+
+        qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
+        KITDataFile.__dbCrs.execute(qryProbe)
+        for (pid, sid, pX, pY, pZ, date, op, t, h, stat, f, com, flag, cernt, guard, aLCR, 
+             mLCR, n, start, stop, bias, vdep, fmode) in KITDataFile.__dbCrs:
+            self.__px = pX
+            self.__py = pY
+            self.__t0 = t
+            self.__h0 = h
+            name = sid
+            
+        qrySensorName = ("SELECT * FROM info WHERE id=%s" %(name))
+        KITDataFile.__dbCrs.execute(qrySensorName)
+        for (sid,name,project,man,cls,stype,spec,thick,width,length,strips,
+             pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
+            self.__name = name
+            
 
     def getDataSet(self, dataSet):
         if (str(dataSet) == "x") | (dataSet == 0) :
@@ -107,3 +147,18 @@ class KITDataFile(object):
     def getName(self):
         return self.__name
 
+
+    def getParaX(self):
+        return self.__px
+
+
+    def getParaY(self):
+        return self.__py
+
+
+    def getTemp(self):
+        return self.__t0
+
+
+    def getHumidity(self):
+        return self.__h0
