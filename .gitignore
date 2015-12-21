@@ -4,4 +4,6 @@
 *.pdf
 *~
 *#
+*.cfg
+main.py
 *.txt
