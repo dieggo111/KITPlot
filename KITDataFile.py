@@ -42,7 +42,6 @@ class KITDataFile(object):
            
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
-
     def __init_db_connection(self, filename='db.cfg', section='database'):
 
         cnxConf = ConfigParser.ConfigParser()
@@ -111,8 +110,6 @@ class KITDataFile(object):
             return self.__x
         elif (str(dataSet) == "y") | (dataSet == 1) :
             return self.__y
-        elif (str(dataSet) == "z") | (dataSet == 2) :
-            return self.__z
         else:
             return []
         
@@ -131,13 +128,6 @@ class KITDataFile(object):
             return np.asarray(self.__y)
         else:
             return self.__y
-    
-
-    def getZ(self, asarray=False):
-        if asarray:
-            return np.asarray(self.__z)
-        else:
-            return self.__z
 
 
     def getSize(self):
@@ -162,3 +152,13 @@ class KITDataFile(object):
 
     def getHumidity(self):
         return self.__h0
+
+
+    def getScaleX(self):
+	return min(__x), max(__x) 
+
+
+    def getScaleY(self):
+	return 0, 1.3*max(__y)
+
+
