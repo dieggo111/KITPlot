@@ -28,32 +28,25 @@ class KITPlot(object):
             pass
         
         self.__initGraphs(x,y)
-        #self.__initCanvas()
-
-
-	
+        self.Draw("AP")
+      
     def __initGraphs(self, x, y):
         
-        self.__graphs = []
-        self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
-        print self.__graphs
+        self.graphs = []
+        self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+            
         return True
-    
-    
-#    def __initCanvas(self):
+      
         
- #       c1 = ROOT.TCanvas("c1","c1",1280,768)
-  #      c1.cd()
-   #     return True
-   
-   # def __returnGraphs(self):
-   
-    #    return self.__graphs
-          
-   #def __initPlot(self):
+    def Draw(self, arg):
+
+        c1 = ROOT.TCanvas("c1","c1",1280,768)
+        c1.cd()
         
-   #     self.__graphs.Draw("AP")
-    #    return True
+        for graph in self.graphs:
+            graph.Draw(arg)
+        
+        return True
         
         
     def __initStyle(self):
@@ -67,7 +60,7 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleSize(0.05,"X")
         ROOT.gStyle.SetTitleSize(0.05,"Y")
         ROOT.gStyle.SetTitleOffset(1.3,"X")
-        ROOT.gStyle.SetTitleOffset(1.2,"Y")
+        ROOT.gStyle.SetTitleOffset(1.3,"Y")
         
         ROOT.gStyle.SetLabelSize(0.04,"X")
         ROOT.gStyle.SetLabelSize(0.04,"Y")
@@ -141,12 +134,6 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleOffset(offset,"X")
         ROOT.gStyle.SetTitleOffset(offset,"Y")
 
-        return True
-
-
-    def Draw(self, argument):
-        self.__graph.Draw(argument)
-        
         return True
 
 
