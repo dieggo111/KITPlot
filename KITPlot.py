@@ -17,6 +17,7 @@ class KITPlot(object):
     __kitCyan = []
 
     __init = False
+    AbsVal = True
 
     def __init__(self, input=None, cfgFile=None):
      
@@ -42,6 +43,7 @@ class KITPlot(object):
         elif input.isdigit():
             self.__file = []
             self.__file.append(KITDataFile.KITDataFile(input))
+
             self.__initGraph(np.absolute(self.__file[0].getX()),np.absolute(self.__file[0].getY()))
            
         elif isinstance(input, KITDataFile):
@@ -50,6 +52,7 @@ class KITPlot(object):
         self.Draw("AP")
         self.autoScaling()
         self.plotStyles("px", "py", "Title")
+        self.LegendParameters()
         self.setLegend()
         
     def __initGraph(self, x, y):
@@ -58,7 +61,7 @@ class KITPlot(object):
         self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
             
         return True
-      
+        
         
     def Draw(self, arg):
 
@@ -75,21 +78,24 @@ class KITPlot(object):
         self.graphs[0].GetXaxis().SetTitle(XTitle)
         self.graphs[0].GetYaxis().SetTitle(YTitle)
         self.graphs[0].SetTitle(Title)
-        self.graphs[0].GetXaxis().SetLimits(0,self.Scale[1])
+        self.graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
         self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
 
         return True
         
         
-    # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
     def autoScaling(self):
+        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
         #self.xmax = 0
         #self.xmin = 0
         #self.ymax = 0
         #self.ymin = 0
-
-        ListX=self.__file[0].getX()
-        ListY=self.__file[0].getY()
+        if self.AbsVal == True:
+            ListX=np.absolute(self.__file[0].getX())
+            ListY=np.absolute(self.__file[0].getY())
+        else:
+            ListX=self.__file[0].getX()
+            ListY=self.__file[0].getY()   
         self.Scale = []
         #for graph in graphs:
             #if max(line) > self.xmax:
@@ -100,13 +106,10 @@ class KITPlot(object):
            # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
-
         self.Scale.append(self.xmin)
         self.Scale.append(self.xmax)
         self.Scale.append(self.ymin)
         self.Scale.append(self.ymax)
-        
-        #print self.Scale
 
         return True
         
@@ -114,12 +117,21 @@ class KITPlot(object):
     def setLegend(self):
     
         self.c1.Update()
-        self.legend = ROOT.TLegend(0.7,0.7,0.95,0.95)
+        self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        #for i,graph in enumerate(graphs):
-         #   legend.AddEntry(graphs[i], Names[i], "p")
+        for i,graph in enumerate(self.graphs):
+            self.legend.AddEntry(self.graphs[i], self.__file[0].getName(), "p")
         self.legend.Draw()
+        
+        
+    def LegendParameters(self):
+        
+        para=0
+        if len(self.__file[0].getName())>para:
+            para=len(self.__file[0].getName())
+        self.LParaX = (1-1.3*para/100.)
+        self.LParaY = (1-12*len(self.graphs)/100.)
    
    
     def __initStyle(self):
