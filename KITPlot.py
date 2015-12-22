@@ -40,26 +40,18 @@ class KITPlot(object):
                         self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
 
         elif input.isdigit():
-            self.__file = KITDataFile.KITDataFile(input)
-            self.__initGraph(self.__file.getX(),self.__file.getY())
+            self.__file = []
+            self.__file.append(KITDataFile.KITDataFile(input))
+            self.__initGraph(np.absolute(self.__file[0].getX()),np.absolute(self.__file[0].getY()))
            
         elif isinstance(input, KITDataFile):
             self.__initGraph(input.getX(),input.getY())
       
-        #self.absValues(x, y)
         self.Draw("AP")
-        #self.autoScaling(x, y)
+        self.autoScaling()
         self.plotStyles("px", "py", "Title")
         self.setLegend()
         
-      
-    def absValues(self, x, y):
-        for i, point in enumerate(x):
-            x[i] = abs(point)
-        for i, point in enumerate(y):
-            y[i] = abs(point)
-            
-            
     def __initGraph(self, x, y):
         
         self.graphs = []
@@ -83,18 +75,21 @@ class KITPlot(object):
         self.graphs[0].GetXaxis().SetTitle(XTitle)
         self.graphs[0].GetYaxis().SetTitle(YTitle)
         self.graphs[0].SetTitle(Title)
-        #self.graphs[0].GetXaxis().SetLimits(0,self.Scale[1])
-        #self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-        
+        self.graphs[0].GetXaxis().SetLimits(0,self.Scale[1])
+        self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+
         return True
         
         
     # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
-    def autoScaling(self, ListX, ListY):
+    def autoScaling(self):
         #self.xmax = 0
         #self.xmin = 0
         #self.ymax = 0
         #self.ymin = 0
+
+        ListX=self.__file[0].getX()
+        ListY=self.__file[0].getY()
         self.Scale = []
         #for graph in graphs:
             #if max(line) > self.xmax:
@@ -105,11 +100,13 @@ class KITPlot(object):
            # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
+
         self.Scale.append(self.xmin)
         self.Scale.append(self.xmax)
         self.Scale.append(self.ymin)
         self.Scale.append(self.ymax)
         
+        #print self.Scale
 
         return True
         
