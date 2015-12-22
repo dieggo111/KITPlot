@@ -26,6 +26,7 @@ class KITPlot(object):
         else:
             pass
         
+
         if os.path.isdir(input):
             pass
 
@@ -45,8 +46,20 @@ class KITPlot(object):
         elif isinstance(input, KITDataFile):
             self.__initGraph(input.getX(),input.getY())
       
+        #self.absValues(x, y)
         self.Draw("AP")
-
+        #self.autoScaling(x, y)
+        self.plotStyles("px", "py", "Title")
+        self.setLegend()
+        
+      
+    def absValues(self, x, y):
+        for i, point in enumerate(x):
+            x[i] = abs(point)
+        for i, point in enumerate(y):
+            y[i] = abs(point)
+            
+            
     def __initGraph(self, x, y):
         
         self.graphs = []
@@ -55,6 +68,63 @@ class KITPlot(object):
         return True
       
         
+    def Draw(self, arg):
+
+        self.c1 = ROOT.TCanvas("c1","c1",1280,768)
+        self.c1.cd()
+        
+        for graph in self.graphs:
+            graph.Draw(arg)
+        
+        return True
+        
+    def plotStyles(self, XTitle, YTitle, Title):
+    
+        self.graphs[0].GetXaxis().SetTitle(XTitle)
+        self.graphs[0].GetYaxis().SetTitle(YTitle)
+        self.graphs[0].SetTitle(Title)
+        #self.graphs[0].GetXaxis().SetLimits(0,self.Scale[1])
+        #self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+        
+        return True
+        
+        
+    # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
+    def autoScaling(self, ListX, ListY):
+        #self.xmax = 0
+        #self.xmin = 0
+        #self.ymax = 0
+        #self.ymin = 0
+        self.Scale = []
+        #for graph in graphs:
+            #if max(line) > self.xmax:
+        self.xmax = max(ListX)
+           # if min(line) < self.xmin:
+        self.xmin = min(ListX)
+        self.ymax = max(ListY)
+           # if min(line) < self.xmin:
+        self.ymin = min(ListY)
+        
+        self.Scale.append(self.xmin)
+        self.Scale.append(self.xmax)
+        self.Scale.append(self.ymin)
+        self.Scale.append(self.ymax)
+        
+
+        return True
+        
+        
+    def setLegend(self):
+    
+        self.c1.Update()
+        self.legend = ROOT.TLegend(0.7,0.7,0.95,0.95)
+        self.legend.SetFillColor(0)
+        self.legend.SetTextSize(.02)
+        #for i,graph in enumerate(graphs):
+         #   legend.AddEntry(graphs[i], Names[i], "p")
+        self.legend.Draw()
+   
+   
     def __initStyle(self):
 
         # Title Options
@@ -75,9 +145,6 @@ class KITPlot(object):
         ROOT.gStyle.SetPadBottomMargin(0.15)
         ROOT.gStyle.SetPadLeftMargin(0.15)
         
-        # Legend Options
-        #ROOT.gStyle.SetLegendTextSize(0.035)
-        
         # Marker Options
         ROOT.gStyle.SetMarkerSize(1.5)
         ROOT.gStyle.SetMarkerStyle(22)
@@ -89,7 +156,32 @@ class KITPlot(object):
         KITPlot.__init = True
         return True
 
+    def setAxisTitleSize(self, size):
 
+        ROOT.gStyle.SetTitleSize(size,"X")
+        ROOT.gStyle.SetTitleSize(size,"Y")
+        
+        return True
+
+
+    def setAxisTitleOffset(self, offset):
+
+        ROOT.gStyle.SetTitleOffset(offset,"X")
+        ROOT.gStyle.SetTitleOffset(offset,"Y")
+
+        return True
+
+
+    def getGraph():
+        return self._graph
+
+
+    def getMarkerStyle(self):
+        markerSet = [5,4,2,3,20,21,22,23,24,25,26]
+        for marker in markerSet:
+		yield marker
+		
+		
     def __initColor(self):
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
@@ -126,52 +218,3 @@ class KITPlot(object):
         return True
 
 
-    def Draw(self, arg):
-
-        c1 = ROOT.TCanvas("c1","c1",1280,768)
-        c1.cd()
-        
-        for graph in self.graphs:
-            graph.Draw(arg)
-        
-        return True
-
-
-    def setAxisTitleSize(self, size):
-
-        ROOT.gStyle.SetTitleSize(size,"X")
-        ROOT.gStyle.SetTitleSize(size,"Y")
-        
-        return True
-
-
-    def setAxisTitleOffset(self, offset):
-
-        ROOT.gStyle.SetTitleOffset(offset,"X")
-        ROOT.gStyle.SetTitleOffset(offset,"Y")
-
-        return True
-
-
-    def getGraph():
-        return self._graph
-
-
-    def getMarkerStyle(self):
-        markerSet = [5,4,2,3,20,21,22,23,24,25,26]
-        for marker in markerSet:
-		yield marker
-
-
-  
-
-
- #def AutoScaling(self):
-
-
-
-
-
-
-
-    
