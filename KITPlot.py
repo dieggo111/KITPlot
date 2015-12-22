@@ -27,23 +27,27 @@ class KITPlot(object):
         else:
             pass
         
+        self.__file = []
 
         if os.path.isdir(input):
-            pass
+            for file in os.listdir(input):
+                if (os.path.splitext(filename)[1] == ".txt"):
+                    with open(file) as inputFile:
+                        self.__file.append(KITDataFile.KITDataFile(inputFile))
+                        self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
+                else:
+                    pass
 
         elif os.path.isfile(input):
-            self.__file = []
             with open(input) as inputFile:
                 for i, line in enumerate(inputFile):
                     entry = line.split()
-                    if entry.isdigit():
+                    if entry[0].isdigit():
                         self.__file.append(KITDataFile.KITDataFile(entry))
                         self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
 
         elif input.isdigit():
-            self.__file = []
             self.__file.append(KITDataFile.KITDataFile(input))
-
             self.__initGraph(np.absolute(self.__file[0].getX()),np.absolute(self.__file[0].getY()))
            
         elif isinstance(input, KITDataFile):
@@ -57,8 +61,8 @@ class KITPlot(object):
         
     def __initGraph(self, x, y):
         
-        self.graphs = []
-        self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+        self.__graphs = []
+        self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
             
         return True
         
@@ -68,18 +72,18 @@ class KITPlot(object):
         self.c1 = ROOT.TCanvas("c1","c1",1280,768)
         self.c1.cd()
         
-        for graph in self.graphs:
+        for graph in self.__graphs:
             graph.Draw(arg)
         
         return True
         
     def plotStyles(self, XTitle, YTitle, Title):
     
-        self.graphs[0].GetXaxis().SetTitle(XTitle)
-        self.graphs[0].GetYaxis().SetTitle(YTitle)
-        self.graphs[0].SetTitle(Title)
-        self.graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+        self.__graphs[0].GetXaxis().SetTitle(XTitle)
+        self.__graphs[0].GetYaxis().SetTitle(YTitle)
+        self.__graphs[0].SetTitle(Title)
+        self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+        self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
 
         return True
         
@@ -120,8 +124,8 @@ class KITPlot(object):
         self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        for i,graph in enumerate(self.graphs):
-            self.legend.AddEntry(self.graphs[i], self.__file[0].getName(), "p")
+        for i,graph in enumerate(self.__graphs):
+            self.legend.AddEntry(self.__graphs[i], self.__file[0].getName(), "p")
         self.legend.Draw()
         
         
@@ -131,7 +135,7 @@ class KITPlot(object):
         if len(self.__file[0].getName())>para:
             para=len(self.__file[0].getName())
         self.LParaX = (1-1.3*para/100.)
-        self.LParaY = (1-12*len(self.graphs)/100.)
+        self.LParaY = (1-12*len(self.__graphs)/100.)
    
    
     def __initStyle(self):
@@ -181,14 +185,21 @@ class KITPlot(object):
         return True
 
 
-    def getGraph():
-        return self._graph
-
+    def getGraph(graph=None):
+        
+        if len(self.__graphs) == 1:
+            return self.__graphs[0]
+        elif (len(self.__graphs) != 1) & (graph is None):
+            return self._graphs
+        elif (len(self.__graphs) != 1) & (graph.isdigit()):
+            return self.__graphs[graph]
+        else:
+            return False
 
     def getMarkerStyle(self):
         markerSet = [5,4,2,3,20,21,22,23,24,25,26]
         for marker in markerSet:
-		yield marker
+            yield marker
 		
 		
     def __initColor(self):
