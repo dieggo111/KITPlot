@@ -122,7 +122,7 @@ class KITDataFile(object):
             return self.__x
 
 
-    def getY(self, asarray=False):
+    def getY(self,  asarray=False):
         
         if asarray:
             return np.asarray(self.__y)

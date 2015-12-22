@@ -1,6 +1,8 @@
 import numpy as np
 import ROOT
+import os
 import ConfigParser
+import KITDataFile
 
 class KITPlot(object):
 
@@ -14,35 +16,43 @@ class KITPlot(object):
     __kitPurple = []
     __kitCyan = []
 
- 	
-    
     __init = False
 
-    def __init__(self, x=[], y=[], cfgFile=None):
+    def __init__(self, input=None, cfgFile=None):
      
         if self.__init == False:
             self.__initStyle()
             self.__initColor()
-    
         else:
             pass
         
-        self.AbsValues(x, y)
-        self.initGraphs(x, y)
-        self.Draw("AP")
-        self.AutoScaling(x, y)
-        self.PlotStyles("px", "py", "Title")
-        self.SetLegend()
-        
+
+        if os.path.isdir(input):
+            pass
+
+        elif os.path.isfile(input):
+            self.__file = []
+            with open(input) as inputFile:
+                for i, line in enumerate(inputFile):
+                    entry = line.split()
+                    if entry.isdigit():
+                        self.__file.append(KITDataFile.KITDataFile(entry))
+                        self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
+
+        elif input.isdigit():
+            self.__file = []
+            self.__file.append(KITDataFile.KITDataFile(input))
+            self.__initGraph(np.absolute(self.__file[0].getX()),np.absolute(self.__file[0].getY()))
+           
+        elif isinstance(input, KITDataFile):
+            self.__initGraph(input.getX(),input.getY())
       
-    def AbsValues(self, x, y):
-        for i, point in enumerate(x):
-            x[i] = abs(point)
-        for i, point in enumerate(y):
-            y[i] = abs(point)
-            
-            
-    def initGraphs(self, x, y):
+        self.Draw("AP")
+        self.autoScaling()
+        self.plotStyles("px", "py", "Title")
+        self.setLegend()
+        
+    def __initGraph(self, x, y):
         
         self.graphs = []
         self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
@@ -60,23 +70,26 @@ class KITPlot(object):
         
         return True
         
-    def PlotStyles(self, XTitle, YTitle, Title):
+    def plotStyles(self, XTitle, YTitle, Title):
     
         self.graphs[0].GetXaxis().SetTitle(XTitle)
         self.graphs[0].GetYaxis().SetTitle(YTitle)
         self.graphs[0].SetTitle(Title)
         self.graphs[0].GetXaxis().SetLimits(0,self.Scale[1])
         self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-        
+
         return True
         
         
     # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
-    def AutoScaling(self, ListX, ListY):
+    def autoScaling(self):
         #self.xmax = 0
         #self.xmin = 0
         #self.ymax = 0
         #self.ymin = 0
+
+        ListX=self.__file[0].getX()
+        ListY=self.__file[0].getY()
         self.Scale = []
         #for graph in graphs:
             #if max(line) > self.xmax:
@@ -87,15 +100,18 @@ class KITPlot(object):
            # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
+
         self.Scale.append(self.xmin)
         self.Scale.append(self.xmax)
         self.Scale.append(self.ymin)
         self.Scale.append(self.ymax)
         
+        #print self.Scale
+
         return True
         
         
-    def SetLegend(self):
+    def setLegend(self):
     
         self.c1.Update()
         self.legend = ROOT.TLegend(0.7,0.7,0.95,0.95)
@@ -162,9 +178,6 @@ class KITPlot(object):
         for marker in markerSet:
 		yield marker
 		
-	
-		
-		
 		
     def __initColor(self):
 
@@ -202,10 +215,3 @@ class KITPlot(object):
         return True
 
 
-
-
-
-
-
-
-    
