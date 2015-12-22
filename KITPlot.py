@@ -1,6 +1,8 @@
 import numpy as np
 import ROOT
+import os
 import ConfigParser
+import KITDataFile
 
 class KITPlot(object):
 
@@ -14,40 +16,44 @@ class KITPlot(object):
     __kitPurple = []
     __kitCyan = []
 
- 	
-    
     __init = False
 
-    def __init__(self, x=[], y=[], cfgFile=None):
+    def __init__(self, input=None, cfgFile=None):
      
         if self.__init == False:
             self.__initStyle()
             self.__initColor()
-    
         else:
             pass
         
-        self.__initGraphs(x,y)
-        self.Draw("AP")
+        if os.path.isdir(input):
+            pass
+
+        elif os.path.isfile(input):
+            self.__file = []
+            with open(input) as inputFile:
+                for i, line in enumerate(inputFile):
+                    entry = line.split()
+                    if entry.isdigit():
+                        self.__file.append(KITDataFile.KITDataFile(entry))
+                        self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
+
+        elif input.isdigit():
+            self.__file = KITDataFile.KITDataFile(input)
+            self.__initGraph(self.__file.getX(),self.__file.getY())
+           
+        elif isinstance(input, KITDataFile):
+            self.__initGraph(input.getX(),input.getY())
       
-    def __initGraphs(self, x, y):
+        self.Draw("AP")
+
+    def __initGraph(self, x, y):
         
         self.graphs = []
         self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
             
         return True
       
-        
-    def Draw(self, arg):
-
-        c1 = ROOT.TCanvas("c1","c1",1280,768)
-        c1.cd()
-        
-        for graph in self.graphs:
-            graph.Draw(arg)
-        
-        return True
-        
         
     def __initStyle(self):
 
@@ -119,6 +125,16 @@ class KITPlot(object):
         KITPlot.__init = True
         return True
 
+
+    def Draw(self, arg):
+
+        c1 = ROOT.TCanvas("c1","c1",1280,768)
+        c1.cd()
+        
+        for graph in self.graphs:
+            graph.Draw(arg)
+        
+        return True
 
 
     def setAxisTitleSize(self, size):
