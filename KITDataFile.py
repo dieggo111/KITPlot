@@ -127,7 +127,11 @@ class KITDataFile(object):
             return self.__y
         else:
             return []
-        
+
+
+    def getID(self):
+        return self.__pid
+
 
     def getX(self, asarray=False):
         
@@ -143,6 +147,14 @@ class KITDataFile(object):
             return np.asarray(self.__y)
         else:
             return self.__y
+    
+    def getZ(self, asarray=False):
+        
+        if asarray:
+            return np.asarray(self.__z)
+        else:
+            return self.__z
+    
 
 
     def getSize(self):
