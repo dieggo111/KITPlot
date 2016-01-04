@@ -1,6 +1,6 @@
 import numpy as np
 import ROOT
-import os
+import os, sys
 import ConfigParser
 import KITDataFile
 
@@ -65,7 +65,7 @@ class KITPlot(object):
             # Load multiple data files in a folder
             elif os.path.isdir(input):
                 for file in os.listdir(input):
-                    if (os.path.splitext(filename)[1] == ".txt"):
+                    if (os.path.splitext(file)[1] == ".txt"):
                         with open(file) as inputFile:
                             self.__file.append(KITDataFile.KITDataFile(inputFile))
                             self.addGraph(self.__file[i].getX(),self.__file[i].getY())
@@ -122,7 +122,10 @@ class KITPlot(object):
         self.markerSize = 1.5
         self.markerStyle = 22
         self.markerColor = 1100
-
+        
+        self.TopRight = True
+        self.TopLeft = False
+        
         
 ###################
 ### cfg methods ###
@@ -202,6 +205,54 @@ class KITPlot(object):
             cfgPrs.write(cfgFile)
 
         print ("Wrote %s" %(fileName))
+        
+
+#########################
+### Measurement Types ###
+#########################
+
+    def MeasurementType(self):
+    
+        self.MT = self.__file[0].getParaY()
+        if self.MT == "I_tot":
+            self.title = "Current Voltage characteristics" 
+            self.titleY = "Current (A)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "Pinhole":
+            self.title = "Pinhole leakage" 
+            self.titleY = "Current (A)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "I_leak_dc":
+            self.title = "Interstrip current leakage" 
+            self.titleY = "Current (A)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "C_tot":
+            self.title = "Capacitance Voltage characteristics" 
+            self.titleY = "Capacitance (F)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "C_int":
+            self.title = "Interstrip capacitance measurement" 
+            self.titleY = "Capacitance (F)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "CC":
+            self.title = "Coupling capacitance measurement" 
+            self.titleY = "Capacitance (F)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "R_int":
+            self.title = "Interstrip resistance measurement" 
+            self.titleY = "Resistance (#Omega)"
+            self.titleX = "Voltage (V)"
+        if self.MT == "R_poly":
+            self.title = "Strip resistance measurement" 
+            self.titleY = "Resistance (#Omega)"
+            self.titleX = "Voltage (V)"
+            
+        if len(self.__file) >= 2:
+            if self.__file[0].getParaY() != self.__file[1].getParaY():
+                sys.exit("Measurement types are not equal!")
+
+
+
 
 #####################
 ### Graph methods ###
@@ -260,7 +311,7 @@ class KITPlot(object):
         self.canvas.cd()
 
         self.__autoScaling()
-        self.__autoTitle()
+        self.MeasurementType()
         self.plotStyles(self.titleX, self.titleY, self.title)
 
         if self.logX:
@@ -308,9 +359,10 @@ class KITPlot(object):
 ### Automatizations ###
 #######################
 
-    def __autoScaling(self,perc=0.1):
+    def __autoScaling(self):
         # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
 
+        self.perc = 0.1
         ListX = [0]
         ListY = [0]
 
@@ -333,24 +385,15 @@ class KITPlot(object):
            # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
-        self.Scale.append(self.xmin*(1.-perc))
-        self.Scale.append(self.xmax*(1.+perc))
-        self.Scale.append(self.ymin*(1.-perc))
-        self.Scale.append(self.ymax*(1.+perc))
+        self.Scale.append(self.xmin*(1.-self.perc))
+        self.Scale.append(self.xmax*(1.+self.perc))
+        self.Scale.append(self.ymin*(1.-self.perc))
+        self.Scale.append(self.ymax*(1.+self.perc))
+        
+        if (self.Scale[2]/self.Scale[3])>1e-4:
+            self.logY = True
 
         return True
-
-
-    def __autoTitle(self):
-
-        if "I" in self.__file[0].getParaY():
-            self.title = "Current Voltage characteristics"
-            self.titleY = "Current / A"
-            self.titleX = "Voltage / V"
-        elif "C" in self.__file[0].getParaY():
-            self.title = "Capacitance Voltage characteristics"
-            self.titleY = "Capacitance / F"
-            self.titleX = "Voltage / V"
 
 
 ###################
@@ -385,8 +428,8 @@ class KITPlot(object):
 ######################
 
     def setLegend(self):
-    
-        self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
+        
+        self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
         
@@ -406,19 +449,48 @@ class KITPlot(object):
         self.legend.Draw()
         self.canvas.Update()
         
-    def LegendParameters(self):
+
         
-        para=0
+    def LegendParameters(self):
+        # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right or outside
+        
+        self.LegendParameters = []
+        para = 0
+        
         if len(self.__file[0].getName())>para:
             para=len(self.__file[0].getName())
-        self.LParaX = (1-1.3*para/100.)
-        self.LParaY = (1-12*len(self.__graphs)/100.)
+ 
+        Lxmin = 1-1.3*para/100.
+        Lymin = 1-12*len(self.__graphs)/100.
+        Lxmax = 0.95
+        Lymax = 0.95
+       
+        # Plot is 80% of canvas from (0.1,0.1) to (0.9,0.9). Check if last element of list is in the top right corner
+        if abs(self.__file[0].getY()[len(self.__file[0].getY())-1]/(self.ymax*1.1))*0.8 > Lymin:
+             Lxmin = 0.18
+             Lymin = 0.7
+             Lxmax = 2.2*para/100.
+             Lymax = 0.88
+             print int(len(self.__file[0].getY())*0.3)
+             
+             # Check if first elements are in the top left corner
+             if abs(self.__file[0].getY()[int(len(self.__file[0].getY())*0.3)]/(self.ymax*1.1))*0.8 > Lymin:
+                print "hello"
+
+        self.LegendParameters.append(Lxmin)
+        self.LegendParameters.append(Lymin)
+        self.LegendParameters.append(Lxmax)
+        self.LegendParameters.append(Lymax)
+        
+
+        
+       
 
 
 #####################
 ### Color methods ###
 #####################
-		
+
     def __initColor(self):
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
