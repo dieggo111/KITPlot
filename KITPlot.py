@@ -17,146 +17,221 @@ class KITPlot(object):
     __kitCyan = []
 
     __init = False
-    AbsVal = True
+    __color = 0
 
     def __init__(self, input=None, cfgFile=None):
-     
+
+        # init colors
         if self.__init == False:
-            self.__initStyle()
-            self.__initColor()
+            self.__initColor()            
         else:
             pass
+
+        # load cfg if present
+        if cfgFile is not None:
+            if os.path.isfile(cfgFile):
+                self.__initDefaultValues()
+                self.__initCfg(cfgFile)
+            else:
+                self.__initDefaultValues()
+                print "cfg not found! Use default values instead"
+        else:
+            self.__initDefaultValues()
+            print "Use default values"
+
+        self.__initStyle()
         
+        self.__file = []
+        self.__graphs = []
 
-        if os.path.isdir(input):
-            pass
 
-        elif os.path.isfile(input):
-            self.__file = []
-            with open(input) as inputFile:
-                for i, line in enumerate(inputFile):
-                    entry = line.split()
-                    if entry.isdigit():
-                        self.__file.append(KITDataFile.KITDataFile(entry))
-                        self.__initGraph(self.__file[i].getX(),self.__file[i].getY())
+        # Load KITDataFile
+        if isinstance(input, KITDataFile.KITDataFile):
+            self.__file.append(input)
+            self.addGraph(input.getX(),input.getY())
 
-        elif input.isdigit():
-            self.__file = []
+        # Load single PID
+        elif isinstance(input, int):
             self.__file.append(KITDataFile.KITDataFile(input))
+            self.addGraph(self.__file[0].getX(), self.__file[0].getY())
+          
+        elif isinstance(input, str):
 
-            self.__initGraph(np.absolute(self.__file[0].getX()),np.absolute(self.__file[0].getY()))
-           
-        elif isinstance(input, KITDataFile):
-            self.__initGraph(input.getX(),input.getY())
-      
-        self.Draw("AP")
-        self.autoScaling()
-        self.plotStyles("px", "py", "Title")
-        self.LegendParameters()
-        self.setLegend()
-        
-    def __initGraph(self, x, y):
-        
-        self.graphs = []
-        self.graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+            # Load single PID
+            if input.isdigit():
+                self.__file.append(KITDataFile.KITDataFile(input))
+                self.addGraph(self.__file[0].getX(), self.__file[0].getY())
             
-        return True
-        
-        
-    def Draw(self, arg):
+            # Load multiple data files in a folder
+            elif os.path.isdir(input):
+                for file in os.listdir(input):
+                    if (os.path.splitext(filename)[1] == ".txt"):
+                        with open(file) as inputFile:
+                            self.__file.append(KITDataFile.KITDataFile(inputFile))
+                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                    else:
+                        pass
 
-        self.c1 = ROOT.TCanvas("c1","c1",1280,768)
-        self.c1.cd()
-        
-        for graph in self.graphs:
-            graph.Draw(arg)
-        
-        return True
-        
-    def plotStyles(self, XTitle, YTitle, Title):
-    
-        self.graphs[0].GetXaxis().SetTitle(XTitle)
-        self.graphs[0].GetYaxis().SetTitle(YTitle)
-        self.graphs[0].SetTitle(Title)
-        self.graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        self.graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+            # Load file with multiple PIDs
+            elif os.path.isfile(input):
+                with open(input) as inputFile:
+                    for i, line in enumerate(inputFile):
+                        entry = line.split()
+                        if entry[0].isdigit():
+                            self.__file.append(KITDataFile.KITDataFile(entry[0]))
+                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
 
-        return True
+      
+
+        self.__writeCfg(cfgFile)
+
+######################
+### Default values ###
+######################
+     
+    def __initDefaultValues(self):
         
+        # Title options 
+        self.title = "Plot"
+        self.titleX0 = 0.5
+        self.titleY0 = 0.97
+        self.titleH = 0.05
+
+        # XAxis
+        self.titleX = "px"
+        self.titleSizeX = 0.05
+        self.titleOffsetX = 1.1
+        self.labelSizeX = 0.04
+        self.absX = True
+        self.logX = False
+
+        # YAxis
+        self.titleY = "py"
+        self.titleSizeY = 0.05
+        self.titleOffsetY = 1.1
+        self.labelSizeY = 0.04
+        self.absY = True
+        self.logY = False
+
+        # Legend
+        self.legendEntry = "name" # name / id
+
+        self.padBottomMargin = 0.15
+        self.padLeftMargin = 0.15
+
+        self.markerSize = 1.5
+        self.markerStyle = 22
+        self.markerColor = 1100
+
         
-    def autoScaling(self):
-        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
-        #self.xmax = 0
-        #self.xmin = 0
-        #self.ymax = 0
-        #self.ymin = 0
-        if self.AbsVal == True:
-            ListX=np.absolute(self.__file[0].getX())
-            ListY=np.absolute(self.__file[0].getY())
+###################
+### cfg methods ###
+###################
+
+
+    def __initCfg(self, fileName):
+        
+        cfgPrs = ConfigParser.ConfigParser()
+
+        cfgPrs.read(fileName)
+            
+        self.titleX0 = cfgPrs.getfloat('Title', 'x0')
+        self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
+        self.titleH = cfgPrs.getfloat('Title', 'height')
+
+        self.titleX = cfgPrs.get('XAxis', 'title')
+        self.titleSizeX = cfgPrs.getfloat('XAxis', 'titleSize')
+        self.titleOffsetX = cfgPrs.getfloat('XAxis', 'titleOffset')
+        self.labelSizeX = cfgPrs.getfloat('XAxis', 'labelsize')
+        self.absX = cfgPrs.getboolean('XAxis', 'absolute')
+        self.logX = cfgPrs.getboolean('XAxis', 'log')
+
+        self.titleY = cfgPrs.get('YAxis', 'title')
+        self.titleSizeY = cfgPrs.getfloat('YAxis', 'titleSize')
+        self.titleOffsetY = cfgPrs.getfloat('YAxis', 'titleOffset')
+        self.labelSizeY = cfgPrs.getfloat('YAxis', 'labelsize')
+        self.absY = cfgPrs.getboolean('YAxis', 'absolute')
+        self.logY = cfgPrs.getboolean('YAxis', 'log')
+
+        self.legendEntry = cfgPrs.get('Legend', 'entry')
+        
+
+    def __writeCfg(self, fileName):
+        
+        cfgPrs = ConfigParser.ConfigParser()
+
+        if not os.path.exists("cfg"):
+            os.makedirs("cfg")
+        
+        if fileName is None:
+            if self.__file[0].getID() is not None:
+                fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
+            else:
+                fileName = "cfg/plot.cfg"
         else:
-            ListX=self.__file[0].getX()
-            ListY=self.__file[0].getY()   
-        self.Scale = []
-        #for graph in graphs:
-            #if max(line) > self.xmax:
-        self.xmax = max(ListX)
-           # if min(line) < self.xmin:
-        self.xmin = min(ListX)
-        self.ymax = max(ListY)
-           # if min(line) < self.xmin:
-        self.ymin = min(ListY)
-        
-        self.Scale.append(self.xmin)
-        self.Scale.append(self.xmax)
-        self.Scale.append(self.ymin)
-        self.Scale.append(self.ymax)
+            pass
 
-        return True
-        
-        
-    def setLegend(self):
+        with open(fileName,'w') as cfgFile:
+            cfgPrs.add_section('Global')
+
+            cfgPrs.add_section('Title')
+            cfgPrs.set('Title', 'Title', self.title)
+            cfgPrs.set('Title', 'X0', self.titleX0)
+            cfgPrs.set('Title', 'Y0', self.titleY0)
+            cfgPrs.set('Title', 'Height', self.titleH)
+
+            cfgPrs.add_section('XAxis')
+            cfgPrs.set('XAxis', 'Title', self.titleX)
+            cfgPrs.set('XAxis', 'TitleOffset', self.titleOffsetX)
+            cfgPrs.set('XAxis', 'TitleSize', self.titleSizeX)
+            cfgPrs.set('XAxis', 'Labelsize', self.labelSizeX)
+            cfgPrs.set('XAxis', 'Absolute', self.absX)
+            cfgPrs.set('XAxis', 'Log', self.logX)
+
+            cfgPrs.add_section('YAxis')
+            cfgPrs.set('YAxis', 'Title', self.titleY)
+            cfgPrs.set('YAxis', 'TitleOffset', self.titleOffsetY)
+            cfgPrs.set('YAxis', 'TitleSize', self.titleSizeY)
+            cfgPrs.set('YAxis', 'Labelsize', self.labelSizeY)
+            cfgPrs.set('YAxis', 'Absolute', self.absY)
+            cfgPrs.set('YAxis', 'Log', self.logY)
+
+            cfgPrs.add_section('Legend')
+            cfgPrs.set('Legend', 'Entry', self.legendEntry)
+            
+            cfgPrs.write(cfgFile)
+
+        print ("Wrote %s" %(fileName))
+
+#####################
+### Graph methods ###
+#####################
+
     
-        self.c1.Update()
-        self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
-        self.legend.SetFillColor(0)
-        self.legend.SetTextSize(.02)
-        for i,graph in enumerate(self.graphs):
-            self.legend.AddEntry(self.graphs[i], self.__file[0].getName(), "p")
-        self.legend.Draw()
-        
-        
-    def LegendParameters(self):
-        
-        para=0
-        if len(self.__file[0].getName())>para:
-            para=len(self.__file[0].getName())
-        self.LParaX = (1-1.3*para/100.)
-        self.LParaY = (1-12*len(self.graphs)/100.)
-   
-   
     def __initStyle(self):
 
-        # Title Options
-        ROOT.gStyle.SetTitleX(0.5)
-        ROOT.gStyle.SetTitleY(0.97)
-        ROOT.gStyle.SetTitleH(0.05)
+        # Title options
+        ROOT.gStyle.SetTitleX(self.titleX0)
+        ROOT.gStyle.SetTitleY(self.titleY0)
+        ROOT.gStyle.SetTitleH(self.titleH)
 
         # Axis Options
-        ROOT.gStyle.SetTitleSize(0.05,"X")
-        ROOT.gStyle.SetTitleSize(0.05,"Y")
-        ROOT.gStyle.SetTitleOffset(1.3,"X")
-        ROOT.gStyle.SetTitleOffset(1.3,"Y")
+        ROOT.gStyle.SetTitleSize(self.titleSizeX,"X")
+        ROOT.gStyle.SetTitleSize(self.titleSizeY,"Y")
+        ROOT.gStyle.SetTitleOffset(self.titleOffsetX,"X")
+        ROOT.gStyle.SetTitleOffset(self.titleOffsetY,"Y")
         
-        ROOT.gStyle.SetLabelSize(0.04,"X")
-        ROOT.gStyle.SetLabelSize(0.04,"Y")
+        ROOT.gStyle.SetLabelSize(self.labelSizeX,"X")
+        ROOT.gStyle.SetLabelSize(self.labelSizeY,"Y")
         
         # Canvas Options
-        ROOT.gStyle.SetPadBottomMargin(0.15)
-        ROOT.gStyle.SetPadLeftMargin(0.15)
+        ROOT.gStyle.SetPadBottomMargin(self.padBottomMargin)
+        ROOT.gStyle.SetPadLeftMargin(self.padLeftMargin)
         
         # Marker Options
-        ROOT.gStyle.SetMarkerSize(1.5)
-        ROOT.gStyle.SetMarkerStyle(22)
+        ROOT.gStyle.SetMarkerSize(self.markerSize)
+        ROOT.gStyle.SetMarkerStyle(self.markerStyle)
+        ROOT.gStyle.SetMarkerColor(self.markerColor)
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
@@ -164,6 +239,123 @@ class KITPlot(object):
 
         KITPlot.__init = True
         return True
+
+
+    def addGraph(self, x, y):
+        
+        if self.absX:
+            x = np.absolute(x)
+            
+        if self.absY:
+            y = np.absolute(y)
+        
+        self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+
+        return True
+            
+                        
+    def Draw(self, arg="AP"):
+
+        self.canvas = ROOT.TCanvas("c1","c1",1280,768)
+        self.canvas.cd()
+
+        self.__autoScaling()
+        self.__autoTitle()
+        self.plotStyles(self.titleX, self.titleY, self.title)
+
+        if self.logX:
+            self.canvas.SetLogx()
+        if self.logY:
+            self.canvas.SetLogy()
+
+        for n,graph in enumerate(self.__graphs):
+            if n==0:
+                graph.Draw(arg)
+            else:
+                graph.Draw(arg.replace("A","") + "SAME")
+        
+        self.LegendParameters()
+        self.setLegend()
+
+        self.canvas.Update()
+
+        return True
+
+    def update(self):
+        
+        try:
+            self.canvas.Update()
+        except:
+            pass
+        
+
+    def plotStyles(self, XTitle, YTitle, Title):
+    
+        self.__graphs[0].GetXaxis().SetTitle(XTitle)
+        self.__graphs[0].GetYaxis().SetTitle(YTitle)
+        self.__graphs[0].SetTitle(Title)
+        self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+        self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+
+
+        for graph in self.__graphs:
+            graph.SetMarkerColor(self.getColor())
+
+        return True
+        
+
+#######################
+### Automatizations ###
+#######################
+
+    def __autoScaling(self,perc=0.1):
+        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
+
+        ListX = [0]
+        ListY = [0]
+
+        for file in self.__file:
+            ListX += file.getX()
+            ListY += file.getY()
+
+        if self.absX:
+            ListX = np.absolute(ListX)
+            
+        if self.absY:
+            ListY = np.absolute(ListY)
+        
+        self.Scale = []
+
+        self.xmax = max(ListX)
+           # if min(line) < self.xmin:
+        self.xmin = min(ListX)
+        self.ymax = max(ListY)
+           # if min(line) < self.xmin:
+        self.ymin = min(ListY)
+        
+        self.Scale.append(self.xmin*(1.-perc))
+        self.Scale.append(self.xmax*(1.+perc))
+        self.Scale.append(self.ymin*(1.-perc))
+        self.Scale.append(self.ymax*(1.+perc))
+
+        return True
+
+
+    def __autoTitle(self):
+
+        if "I" in self.__file[0].getParaY():
+            self.title = "Current Voltage characteristics"
+            self.titleY = "Current / A"
+            self.titleX = "Voltage / V"
+        elif "C" in self.__file[0].getParaY():
+            self.title = "Capacitance Voltage characteristics"
+            self.titleY = "Capacitance / F"
+            self.titleX = "Voltage / V"
+
+
+###################
+### Set methods ###
+###################
 
     def setAxisTitleSize(self, size):
 
@@ -181,15 +373,51 @@ class KITPlot(object):
         return True
 
 
-    def getGraph():
-        return self._graph
-
-
+    #TODO doesnt work (see getColor)
     def getMarkerStyle(self):
         markerSet = [5,4,2,3,20,21,22,23,24,25,26]
         for marker in markerSet:
-		yield marker
-		
+            yield int(marker)
+
+
+######################
+### Legend methods ###
+######################
+
+    def setLegend(self):
+    
+        self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
+        self.legend.SetFillColor(0)
+        self.legend.SetTextSize(.02)
+        
+        for i,graph in enumerate(self.__graphs):
+
+            try:
+                if self.legendEntry == "name":
+                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+                elif self.legendEntry == "id":
+                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
+                else:
+                    print "Legend entry type not found. Use 'name' instead"
+                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+            except:
+                pass
+
+        self.legend.Draw()
+        self.canvas.Update()
+        
+    def LegendParameters(self):
+        
+        para=0
+        if len(self.__file[0].getName())>para:
+            para=len(self.__file[0].getName())
+        self.LParaX = (1-1.3*para/100.)
+        self.LParaY = (1-12*len(self.__graphs)/100.)
+
+
+#####################
+### Color methods ###
+#####################
 		
     def __initColor(self):
 
@@ -226,4 +454,34 @@ class KITPlot(object):
         KITPlot.__init = True
         return True
 
+    def getColor(self,clr=0):
+        colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
+        KITPlot.__color += 1
+        KITPlot.__color %= 9
+        print KITPlot.__color
+        return colorSet[KITPlot.__color-1]
 
+    def setColor(self):
+        for graph in self.__graphs:
+            graph.SetMarkerColor(self.getColor())
+        return True
+
+
+
+###################
+### Get methods ###
+###################
+
+    def getGraph(self, graph=None):
+        
+        if len(self.__graphs) == 1:
+            return self.__graphs[0]
+        elif (len(self.__graphs) != 1) & (graph is None):
+            return self._graphs
+        elif (len(self.__graphs) != 1) & (graph.isdigit()):
+            return self.__graphs[graph]
+        else:
+            return False
+
+    def getCanvas(self):
+        return self.canvas

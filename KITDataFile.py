@@ -1,4 +1,4 @@
-import os
+import os,sys
 import numpy as np
 import mysql.connector
 import ConfigParser
@@ -16,8 +16,14 @@ class KITDataFile(object):
         self.__temp = []
         self.__humid = []
 
-        if input.isdigit():
+        if isinstance(input, int):
+            self.__pid = input
+            self.__init_db_connection() # Establish database connection
+            self.__allo_db(input)
+        
+        elif input.isdigit():
             print "Input: ProbeID"
+            self.__pid = input
             self.__init_db_connection() # Establish database connection
             self.__allo_db(input)
         
@@ -39,33 +45,47 @@ class KITDataFile(object):
         #    self.__init_db_connection() # Establish database connection
 
         else:
-           
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
     def __init_db_connection(self, filename='db.cfg', section='database'):
 
-        cnxConf = ConfigParser.ConfigParser()
-        cnxConf.read(filename)
+        if not os.path.isfile(filename):            
+            self.__createCfg()        
+            sys.exit("Please add database parameters to 'db.cfg' ")
 
-        db_config = {}
-        
-        if cnxConf.has_section(section):
-            for item in cnxConf.items(section):
-                db_config[item[0]] = item[1]
         else:
-            raise Exception('{0} not found in the {1} file'.format(section, filename))
+        
+            cnxConf = ConfigParser.ConfigParser()
+            cnxConf.read(filename)
+            
+            db_config = {}
+        
+            if cnxConf.has_section(section):
+                for item in cnxConf.items(section):
+                    db_config[item[0]] = item[1]
+            else:
+                raise Exception('{0} not found in the {1} file'.format(section, filename))
  
-        KITDataFile.__dbCnx = mysql.connector.MySQLConnection(**db_config)
+            KITDataFile.__dbCnx = mysql.connector.MySQLConnection(**db_config)
         
-        if KITDataFile.__dbCnx.is_connected():
-            print "Connection established"
-        else:
-            print "Connection failed"
-            return False
-
-        KITDataFile.__dbCrs = KITDataFile.__dbCnx.cursor()
+            if KITDataFile.__dbCnx.is_connected():
+                print "Connection established"
+            else:
+                sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
+                
+            KITDataFile.__dbCrs = KITDataFile.__dbCnx.cursor()
         
        
+    def __createCfg(self):
+        
+        with open('db.cfg','w') as cfg:
+            cfg.write("[database]\n")
+            cfg.write("hostname=\n")
+            cfg.write("database=\n")
+            cfg.write("user=\n")
+            cfg.write("passwd=")
+
+
     def __check_if_folder_pid(self, fileName):
         
         with open(fileName) as file:
@@ -112,7 +132,11 @@ class KITDataFile(object):
             return self.__y
         else:
             return []
-        
+
+
+    def getID(self):
+        return self.__pid
+
 
     def getX(self, asarray=False):
         
@@ -128,6 +152,14 @@ class KITDataFile(object):
             return np.asarray(self.__y)
         else:
             return self.__y
+    
+    def getZ(self, asarray=False):
+        
+        if asarray:
+            return np.asarray(self.__z)
+        else:
+            return self.__z
+    
 
 
     def getSize(self):
