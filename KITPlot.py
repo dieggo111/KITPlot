@@ -21,7 +21,7 @@ class KITPlot(object):
 
     def __init__(self, input=None, cfgFile=None):
 
-        # init colors and default values
+        # init colors
         if self.__init == False:
             self.__initColor()            
         else:
@@ -50,32 +50,39 @@ class KITPlot(object):
             self.__file.append(input)
             self.addGraph(input.getX(),input.getY())
 
-        # Load multiple data files in a folder
-        elif os.path.isdir(input):
-            for file in os.listdir(input):
-                if (os.path.splitext(filename)[1] == ".txt"):
-                    with open(file) as inputFile:
-                        self.__file.append(KITDataFile.KITDataFile(inputFile))
-                        self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-                else:
-                    pass
-
-        # Load file with multiple PIDs
-        elif os.path.isfile(input):
-            with open(input) as inputFile:
-                for i, line in enumerate(inputFile):
-                    entry = line.split()
-                    if entry[0].isdigit():
-                        self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                        self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-
         # Load single PID
-        elif input.isdigit():
+        elif isinstance(input, int):
             self.__file.append(KITDataFile.KITDataFile(input))
             self.addGraph(self.__file[0].getX(), self.__file[0].getY())
+          
+        elif isinstance(input, str):
 
-           
-        # TODO: Should not be part of the init method
+            # Load single PID
+            if input.isdigit():
+                self.__file.append(KITDataFile.KITDataFile(input))
+                self.addGraph(self.__file[0].getX(), self.__file[0].getY())
+            
+            # Load multiple data files in a folder
+            elif os.path.isdir(input):
+                for file in os.listdir(input):
+                    if (os.path.splitext(filename)[1] == ".txt"):
+                        with open(file) as inputFile:
+                            self.__file.append(KITDataFile.KITDataFile(inputFile))
+                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                    else:
+                        pass
+
+            # Load file with multiple PIDs
+            elif os.path.isfile(input):
+                with open(input) as inputFile:
+                    for i, line in enumerate(inputFile):
+                        entry = line.split()
+                        if entry[0].isdigit():
+                            self.__file.append(KITDataFile.KITDataFile(entry[0]))
+                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+
+      
+
         self.__writeCfg(cfgFile)
 
 ######################
@@ -152,12 +159,15 @@ class KITPlot(object):
     def __writeCfg(self, fileName):
         
         cfgPrs = ConfigParser.ConfigParser()
+
+        if not os.path.exists("cfg"):
+            os.makedirs("cfg")
         
         if fileName is None:
             if self.__file[0].getID() is not None:
-                fileName = ("%s.cfg" %(self.__file[0].getID()))
+                fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
             else:
-                fileName = "plot.cfg"
+                fileName = "cfg/plot.cfg"
         else:
             pass
 
@@ -246,17 +256,17 @@ class KITPlot(object):
                         
     def Draw(self, arg="AP"):
 
-        self.c1 = ROOT.TCanvas("c1","c1",1280,768)
-        self.c1.cd()
+        self.canvas = ROOT.TCanvas("c1","c1",1280,768)
+        self.canvas.cd()
 
         self.__autoScaling()
         self.__autoTitle()
         self.plotStyles(self.titleX, self.titleY, self.title)
 
         if self.logX:
-            self.c1.SetLogx()
+            self.canvas.SetLogx()
         if self.logY:
-            self.c1.SetLogy()
+            self.canvas.SetLogy()
 
         for n,graph in enumerate(self.__graphs):
             if n==0:
@@ -267,10 +277,18 @@ class KITPlot(object):
         self.LegendParameters()
         self.setLegend()
 
-        self.c1.Update()
+        self.canvas.Update()
 
         return True
+
+    def update(self):
         
+        try:
+            self.canvas.Update()
+        except:
+            pass
+        
+
     def plotStyles(self, XTitle, YTitle, Title):
     
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
@@ -368,7 +386,6 @@ class KITPlot(object):
 
     def setLegend(self):
     
-        self.c1.Update()
         self.legend = ROOT.TLegend(self.LParaX,self.LParaY,0.95,0.95)
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
@@ -387,6 +404,7 @@ class KITPlot(object):
                 pass
 
         self.legend.Draw()
+        self.canvas.Update()
         
     def LegendParameters(self):
         
@@ -454,7 +472,7 @@ class KITPlot(object):
 ### Get methods ###
 ###################
 
-    def getGraph(graph=None):
+    def getGraph(self, graph=None):
         
         if len(self.__graphs) == 1:
             return self.__graphs[0]
@@ -465,3 +483,5 @@ class KITPlot(object):
         else:
             return False
 
+    def getCanvas(self):
+        return self.canvas

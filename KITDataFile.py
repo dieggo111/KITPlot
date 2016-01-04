@@ -16,7 +16,12 @@ class KITDataFile(object):
         self.__temp = []
         self.__humid = []
 
-        if input.isdigit():
+        if isinstance(input, int):
+            self.__pid = input
+            self.__init_db_connection() # Establish database connection
+            self.__allo_db(input)
+        
+        elif input.isdigit():
             print "Input: ProbeID"
             self.__pid = input
             self.__init_db_connection() # Establish database connection
