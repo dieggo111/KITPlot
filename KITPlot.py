@@ -356,7 +356,7 @@ class KITPlot(object):
             graph.SetMarkerStyle(self.getMarkerStyle(i))
 
         return True
-        
+
 
 #######################
 ### Automatizations ###
@@ -426,8 +426,6 @@ class KITPlot(object):
             sys.exit("Overflow. Reduce number of graphs!")
         
         return markerSet[self.counter]
-        #for marker in markerSet:
-            #yield int(marker)
 
 
 ######################
@@ -470,64 +468,59 @@ class KITPlot(object):
         
         # Top right corner is the default/starting position for the legend box.
         self.TopRight = True
-        self.TopLeft = self.BottomRight = False
+        self.TopLeft = self.BottomRight = True
         Lxmax = 0.98
         Lymax = 0.93
         Lxmin = Lxmax-para/100.
         Lymin = Lymax-len(self.__graphs)*0.03
         print Lxmin
         print Lymin
+
         
-        # Check if last element of graph is in the top right corner. 
+        # Check if elements are in the top right corner. 
         for i in range(len(self.__file)):
             for j in range(len(self.__file[i].getX())):
+                #print self.__file[i].getX()[j]
                 #print (abs(self.__file[i].getX()[j]),self.xmax*(1.+self.perc))
                 if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin:
-                    print (self.__file[i].getName(), abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))))
+                    #print (self.__file[i].getName(), abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))))
                     if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
                         #print (self.__file[i].getName(), abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))))
-                        Lxmin = 0.18
-                        Lymax = 0.88
-                        Lymin = Lymax-len(self.__graphs)*0.03
-                        Lxmax = 2.2*para/100.
                         #print ("TR", self.__file[i].getName())
                         self.TopRight = False
-            
-        # Check if first elements are in the top left corner.
-         
-        for i, graph in enumerate(self.__file):
-            for j, points in enumerate(self.__file[i].getX()):
+        
+        if self.TopRight == False:
+            Lxmin = 0.18
+            Lymax = 0.88
+            Lymin = Lymax-len(self.__graphs)*0.03
+            Lxmax = 2.2*para/100.
+        
+        # Check if elements are in the top left corner.
+        for i in range(len(self.__file)):
+            for j in range(len(self.__file[i].getX())):
                 if Lxmin-0.1 < abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax:
                     if self.TopRight == False and abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.1:
-                        Lxmax = 0.89
-                        Lymin = 0.18
-                        Lxmin = Lxmax-para/100.
-                        Lymax = Lymin+len(self.__graphs)*0.03
                         self.TopLeft = False
                 
+        if self.TopLeft == False:
+            Lxmax = 0.89
+            Lymin = 0.18
+            Lxmin = Lxmax-para/100.
+            Lymax = Lymin+len(self.__graphs)*0.03
+        
         # If the plot is too crowded, create more space on the right.
-        for i, graph in enumerate(self.__file):
-             for j, points in enumerate(self.__file[i].getX()):
+        for i in range(len(self.__file)):
+            for j in range(len(self.__file[i].getX())):
                 if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
                     if self.TopLeft == False and self.TopRight == False and abs(self.__file[i].getY()[len(self.__file[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax:
-                        Lxmax = 0.98
-                        Lymax = 0.93
-                        Lxmin = Lxmax-para/100.
-                        Lymin = Lymax-len(self.__graphs)*0.03
-            
-        # Force certain positions via cfg
-        #if self.TopRight == False and self.TopLeft == True:
-        #    Lxmin = 0.18
-       #     Lymax = 0.88
-       #     Lymin = Lymax-len(self.__graphs)*0.03
-       #     Lxmax = 2.2*para/100.
-                
-     #   if self.TopRight == False and self.TopLeft == False and self.BottomRight == True:
-      #      Lxmax = 0.89
-      #      Lymin = 0.18
-      #      Lxmin = Lxmax-para/100.
-     #       Lymax = Lymin+len(self.__graphs)*0.03
-        
+                        self.BottomRight = False
+
+        if self.BottomRight == False:
+            Lxmax = 0.98
+            Lymax = 0.93
+            Lxmin = Lxmax-para/100.
+            Lymin = Lymax-len(self.__graphs)*0.03
+            print "Couldn't find sufficient space!"
 
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)
