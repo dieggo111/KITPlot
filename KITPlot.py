@@ -375,10 +375,14 @@ class KITPlot(object):
 
         if self.absX:
             ListX = np.absolute(ListX)
-            
         if self.absY:
             ListY = np.absolute(ListY)
         
+        # Find points that are 10000% off
+        #for point in ListY:
+        #    if point > 100*sum(ListY)/float(len(ListY)) and point =! 0:
+        #        ListY.remove(point)
+            
         self.Scale = []
 
         self.xmax = max(ListX)
@@ -434,15 +438,18 @@ class KITPlot(object):
 
     def setLegend(self):
         
+        self.GroupPlot = True
+
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        
+        self.arrangeLegend()
+
         for i,graph in enumerate(self.__graphs):
 
             try:
-                if self.legendEntry == "name":
-                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+                if self.legendEntry == "name" and self.GroupPlot == True:
+                    self.legend.AddEntry(self.__graphs[i], self.NameList[i], "p")
                 elif self.legendEntry == "id":
                     self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
                 else:
@@ -453,6 +460,39 @@ class KITPlot(object):
 
         self.legend.Draw()
         self.canvas.Update()
+        
+    def arrangeLegend(self):
+        
+        TempList = []
+        self.NameList = []
+        
+        for i, Name in enumerate(self.__file):
+            TempList.append(self.__file[i].getName())
+            
+        TempList.sort()
+        #for i, Name in enumerate(TempList):
+         #   if i == 0:
+          #      self.NameList.append(Name)
+           # else if TempList[i-1] == TempList[i]:
+            #    pass
+            #else if TempList[i] != TempList[i+1]:
+                    
+        for Name in TempList:
+            self.NameList.append(Name)
+            
+    def setGroupPlot(self):
+        
+        self.Check = []
+        
+        #for i, Name in enumerate(self.NameList):
+         #   if i==0:
+          #      e1=Name[:5]
+           #     check.append(e1
+            #if i>0:
+             #   e2=Name[:5]
+              #  if e1 != e2:
+               #     Check.append(e2)
+                #    e1=e2
         
 
         
