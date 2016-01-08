@@ -123,6 +123,7 @@ class KITDataFile(object):
         for (sid,name,project,man,cls,stype,spec,thick,width,length,strips,
              pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
             self.__name = name
+            self.__Fp = Fp
             
 
     def getDataSet(self, dataSet):
@@ -187,10 +188,13 @@ class KITDataFile(object):
 
 
     def getScaleX(self):
-	return min(__x), max(__x) 
+        return min(__x), max(__x) 
 
 
     def getScaleY(self):
-	return 0, 1.3*max(__y)
+        return 0, 1.3*max(__y)
+    
+    def getFluenceP(self):
+        return self.__Fp
 
 

@@ -127,6 +127,11 @@ class KITPlot(object):
         self.TopLeft = False
         self.BottomRight = False
         
+        # Graph groups
+        self.GraphGroup = True
+        self.FluenzGroup = True
+        self.NameGroup = True
+        
         
 ###################
 ### cfg methods ###
@@ -354,7 +359,23 @@ class KITPlot(object):
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
             graph.SetMarkerStyle(self.getMarkerStyle(i))
-
+        
+        
+        if self.GraphGroup == True:
+            j = 0
+            self.setGroup()
+            if self.NameGroup == True:
+                for i, Name in enumerate(self.GroupList):
+                    if i == 0:
+                        self.__graphs[i].SetMarkerStyle(self.markerSet[j])
+                    if i>0 and self.GroupList[i-1][:5] == self.GroupList[i][:5]:
+                        self.__graphs[i].SetMarkerStyle(self.markerSet[j])
+                    if i>0 and self.GroupList[i-1][:5] != self.GroupList[i][:5]:
+                        self.__graphs[i].SetMarkerStyle(self.markerSet[j+1])
+                        j += 1
+                        
+        self.getShade()        
+        print self.shadeSet
         return True
 
 
@@ -423,13 +444,35 @@ class KITPlot(object):
 
     def getMarkerStyle(self, index):
         
-        markerSet = [22,21,20,26,25,24]
+        self.markerSet = [22,21,20,26,25,24]
         if index%9 == 0 and index > 0:
             self.counter += 1
         if index == 40:
             sys.exit("Overflow. Reduce number of graphs!")
         
-        return markerSet[self.counter]
+        return self.markerSet[self.counter]
+        
+        
+        for i, Name in enumerate(self.GroupList):
+            if i==0:
+                check1=Name[:5]
+                self.CheckList.append(check1)
+            if i>0:
+                check2=Name[:5]
+                if check1 != check2:
+                    self.CheckList.append(check2)
+                    check1=check2
+                    
+    def setGroup(self):
+        
+        self.GroupList = []
+        if self.GraphGroup == True:
+            if self.NameGroup == True:
+                for i, Name in enumerate(self.__file):
+                    self.GroupList.append(self.__file[i].getName())
+            elif self.FluenzGroup == True:
+                for i, Fluence in enumerate(self.__file):
+                    self.GroupList.append(self.__file[i].getFluenceP())
 
 
 ######################
@@ -437,8 +480,6 @@ class KITPlot(object):
 ######################
 
     def setLegend(self):
-        
-        self.GroupPlot = True
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
@@ -448,7 +489,7 @@ class KITPlot(object):
         for i,graph in enumerate(self.__graphs):
 
             try:
-                if self.legendEntry == "name" and self.GroupPlot == True:
+                if self.legendEntry == "name":
                     self.legend.AddEntry(self.__graphs[i], self.NameList[i], "p")
                 elif self.legendEntry == "id":
                     self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
@@ -470,29 +511,10 @@ class KITPlot(object):
             TempList.append(self.__file[i].getName())
             
         TempList.sort()
-        #for i, Name in enumerate(TempList):
-         #   if i == 0:
-          #      self.NameList.append(Name)
-           # else if TempList[i-1] == TempList[i]:
-            #    pass
-            #else if TempList[i] != TempList[i+1]:
                     
         for Name in TempList:
             self.NameList.append(Name)
             
-    def setGroupPlot(self):
-        
-        self.Check = []
-        
-        #for i, Name in enumerate(self.NameList):
-         #   if i==0:
-          #      e1=Name[:5]
-           #     check.append(e1
-            #if i>0:
-             #   e2=Name[:5]
-              #  if e1 != e2:
-               #     Check.append(e2)
-                #    e1=e2
         
 
         
@@ -513,8 +535,6 @@ class KITPlot(object):
         Lymax = 0.93
         Lxmin = Lxmax-para/100.
         Lymin = Lymax-len(self.__graphs)*0.03
-        print Lxmin
-        print Lymin
 
         
         # Check if elements are in the top right corner. 
@@ -612,17 +632,29 @@ class KITPlot(object):
         return True
 
     def getColor(self,clr=0):
-        colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
         KITPlot.__color += 1
         KITPlot.__color %= 9
         #print KITPlot.__color
-        return colorSet[KITPlot.__color-1]
+        return self.colorSet[KITPlot.__color-1]
 
     def setColor(self):
         for graph in self.__graphs:
             graph.SetMarkerColor(self.getColor())
         return True
 
+    def getShade(self):
+        i = 0
+        self.shadeSet = []
+        print self.colorSet
+        print len(self.colorSet)
+        #if i<range(self.colorSet):
+        #    for j in range(4):
+        #        self.shadeSet.append(self.colorSet[i]+j)
+        #    i +=1
+        #else:
+        #    print self.shadeSet
+        #git     return True
 
 
 ###################
@@ -642,3 +674,6 @@ class KITPlot(object):
 
     def getCanvas(self):
         return self.canvas
+        
+        
+
