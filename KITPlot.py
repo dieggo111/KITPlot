@@ -125,6 +125,7 @@ class KITPlot(object):
         
         self.TopRight = True
         self.TopLeft = False
+        self.BottomRight = False
         
         
 ###################
@@ -354,7 +355,7 @@ class KITPlot(object):
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
         
-        self.LegendParameters()
+        self.setLegendParameters()
         self.setLegend()
 
         self.canvas.Update()
@@ -377,12 +378,14 @@ class KITPlot(object):
         self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
         self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
 
-
-        for graph in self.__graphs:
+        self.counter = 0
+        
+        for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
+            graph.SetMarkerStyle(self.getMarkerStyle(i))
 
         return True
-        
+
 
 #######################
 ### Automatizations ###
@@ -391,7 +394,7 @@ class KITPlot(object):
     def __autoScaling(self):
         # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
 
-        self.perc = 0.1
+        self.perc = 0.05
         ListX = [0]
         ListY = [0]
 
@@ -419,7 +422,7 @@ class KITPlot(object):
         self.Scale.append(self.ymin*(1.-self.perc))
         self.Scale.append(self.ymax*(1.+self.perc))
         
-        if (self.Scale[2]/self.Scale[3])>1e-4:
+        if (self.Scale[2]/self.Scale[3]) > 1e-4:
             self.logY = True
 
         return True
@@ -436,7 +439,6 @@ class KITPlot(object):
         
         return True
 
-
     def setAxisTitleOffset(self, offset):
 
         ROOT.gStyle.SetTitleOffset(offset,"X")
@@ -444,12 +446,15 @@ class KITPlot(object):
 
         return True
 
-
-    #TODO doesnt work (see getColor)
-    def getMarkerStyle(self):
-        markerSet = [5,4,2,3,20,21,22,23,24,25,26]
-        for marker in markerSet:
-            yield int(marker)
+    def getMarkerStyle(self, index):
+        
+        markerSet = [22,21,20,26,25,24]
+        if index%9 == 0 and index > 0:
+            self.counter += 1
+        if index == 40:
+            sys.exit("Overflow. Reduce number of graphs!")
+        
+        return markerSet[self.counter]
 
 
 ######################
@@ -480,31 +485,71 @@ class KITPlot(object):
         
 
         
-    def LegendParameters(self):
+    def setLegendParameters(self):
         # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right or outside
+        # Plot is arround 80% of canvas from (0.1,0.15) to (0.9,0.9). 
         
         self.LegendParameters = []
         para = 0
         
-        if len(self.__file[0].getName())>para:
+        if len(self.__file[0].getName()) > para:
             para=len(self.__file[0].getName())
- 
-        Lxmin = 1-1.3*para/100.
-        Lymin = 1-12*len(self.__graphs)/100.
-        Lxmax = 0.95
-        Lymax = 0.95
-       
-        # Plot is 80% of canvas from (0.1,0.1) to (0.9,0.9). Check if last element of list is in the top right corner
-        if abs(self.__file[0].getY()[len(self.__file[0].getY())-1]/(self.ymax*1.1))*0.8 > Lymin:
-             Lxmin = 0.18
-             Lymin = 0.7
-             Lxmax = 2.2*para/100.
-             Lymax = 0.88
-             print int(len(self.__file[0].getY())*0.3)
-             
-             # Check if first elements are in the top left corner
-             if abs(self.__file[0].getY()[int(len(self.__file[0].getY())*0.3)]/(self.ymax*1.1))*0.8 > Lymin:
-                print "hello"
+        
+        # Top right corner is the default/starting position for the legend box.
+        self.TopRight = True
+        self.TopLeft = self.BottomRight = True
+        Lxmax = 0.98
+        Lymax = 0.93
+        Lxmin = Lxmax-para/100.
+        Lymin = Lymax-len(self.__graphs)*0.03
+        print Lxmin
+        print Lymin
+
+        
+        # Check if elements are in the top right corner. 
+        for i in range(len(self.__file)):
+            for j in range(len(self.__file[i].getX())):
+                #print self.__file[i].getX()[j]
+                #print (abs(self.__file[i].getX()[j]),self.xmax*(1.+self.perc))
+                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin:
+                    #print (self.__file[i].getName(), abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))))
+                    if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
+                        #print (self.__file[i].getName(), abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))))
+                        #print ("TR", self.__file[i].getName())
+                        self.TopRight = False
+        
+        if self.TopRight == False:
+            Lxmin = 0.18
+            Lymax = 0.88
+            Lymin = Lymax-len(self.__graphs)*0.03
+            Lxmax = 2.2*para/100.
+        
+        # Check if elements are in the top left corner.
+        for i in range(len(self.__file)):
+            for j in range(len(self.__file[i].getX())):
+                if Lxmin-0.1 < abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax:
+                    if self.TopRight == False and abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.1:
+                        self.TopLeft = False
+                
+        if self.TopLeft == False:
+            Lxmax = 0.89
+            Lymin = 0.18
+            Lxmin = Lxmax-para/100.
+            Lymax = Lymin+len(self.__graphs)*0.03
+        
+        # If the plot is too crowded, create more space on the right.
+        for i in range(len(self.__file)):
+            for j in range(len(self.__file[i].getX())):
+                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
+                    if self.TopLeft == False and self.TopRight == False and abs(self.__file[i].getY()[len(self.__file[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax:
+                        self.BottomRight = False
+
+        if self.BottomRight == False:
+            Lxmax = 0.98
+            Lymax = 0.93
+            Lxmin = Lxmax-para/100.
+            Lymin = Lymax-len(self.__graphs)*0.03
+            print "Couldn't find sufficient space!"
 
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)
@@ -559,7 +604,7 @@ class KITPlot(object):
         colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
         KITPlot.__color += 1
         KITPlot.__color %= 9
-        print KITPlot.__color
+        #print KITPlot.__color
         return colorSet[KITPlot.__color-1]
 
     def setColor(self):
