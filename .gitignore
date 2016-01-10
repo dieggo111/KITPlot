@@ -6,4 +6,5 @@
 *#
 *.cfg
 main.py
+resistivity.py
 *.txt
