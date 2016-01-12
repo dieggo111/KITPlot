@@ -74,16 +74,21 @@ class KITPlot(object):
 
             # Load file with multiple PIDs
             elif os.path.isfile(input):
-                with open(input) as inputFile:
-                    for i, line in enumerate(inputFile):
-                        entry = line.split()
-                        if entry[0].isdigit():
-                            self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-
+                if self.__checkPID(input) == True:
+                    with open(input) as inputFile:
+                        for i, line in enumerate(inputFile):
+                            entry = line.split()
+                            if entry[0].isdigit():
+                                self.__file.append(KITDataFile.KITDataFile(entry[0]))
+                                self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                else:
+                    self.__file.append(KITDataFile.KITDataFile(input))
+                    self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
       
 
         self.__writeCfg(cfgFile)
+
+        
 
 ######################
 ### Default values ###
@@ -208,9 +213,9 @@ class KITPlot(object):
         print ("Wrote %s" %(fileName))
         
 
-#########################
-### Measurement Types ###
-#########################
+##############
+### Checks ###
+##############
 
     def MeasurementType(self):
     
@@ -251,6 +256,16 @@ class KITPlot(object):
         if len(self.__file) >= 2:
             if self.__file[0].getParaY() != self.__file[1].getParaY():
                 sys.exit("Measurement types are not equal!")
+
+
+    def __checkPID(self, input):
+        
+        if os.path.isfile(input):
+            with open(input) as inputFile:
+                if len(inputFile.readline().split()) == 1:
+                    return True
+                else:
+                    return False
 
 
 
