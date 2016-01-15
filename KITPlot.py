@@ -74,16 +74,21 @@ class KITPlot(object):
 
             # Load file with multiple PIDs
             elif os.path.isfile(input):
-                with open(input) as inputFile:
-                    for i, line in enumerate(inputFile):
-                        entry = line.split()
-                        if entry[0].isdigit():
-                            self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-
+                if self.__checkPID(input) == True:
+                    with open(input) as inputFile:
+                        for i, line in enumerate(inputFile):
+                            entry = line.split()
+                            if entry[0].isdigit():
+                                self.__file.append(KITDataFile.KITDataFile(entry[0]))
+                                self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                else:
+                    self.__file.append(KITDataFile.KITDataFile(input))
+                    self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
       
 
         self.__writeCfg(cfgFile)
+
+        
 
 ######################
 ### Default values ###
@@ -213,9 +218,9 @@ class KITPlot(object):
         print ("Wrote %s" %(fileName))
         
 
-#########################
-### Measurement Types ###
-#########################
+##############
+### Checks ###
+##############
 
     def MeasurementType(self):
     
@@ -258,6 +263,16 @@ class KITPlot(object):
                 sys.exit("Measurement types are not equal!")
 
 
+    def __checkPID(self, input):
+        
+        if os.path.isfile(input):
+            with open(input) as inputFile:
+                if len(inputFile.readline().split()) == 1:
+                    return True
+                else:
+                    return False
+
+
 
 
 #####################
@@ -298,14 +313,43 @@ class KITPlot(object):
         return True
 
 
-    def addGraph(self, x, y):
+    def addGraph(self, *args):
         
-        if self.absX:
-            x = np.absolute(x)
+        # args: x, y or KITDataFile
+
+        if isinstance(args[0], KITDataFile.KITDataFile):
+            self.__file.append(args[0])
             
-        if self.absY:
-            y = np.absolute(y)
-        
+            if self.absX:
+                x = np.absolute(args[0].getX())
+            else:
+                x = args[0].getX()
+            
+            if self.absY:
+                if str(args[1]) == "y":
+                    y = np.absolute(args[0].getY())
+                elif str(args[1]) == "z":
+                    y = np.absolute(args[0].getZ())
+            else:
+                if args[1] == "y":
+                    y = args[0].getY()
+                elif args[1] == "z":
+                    y = args[0].getZ()
+                
+        elif len(args) == 2 and not isinstance(args[0], KITDataFile.KITDataFile):
+            
+            if self.absX:
+                x = np.absolute(args[0])
+            else:
+                x = args[0]
+            
+            if self.absY:
+                y = np.absolute(args[1])
+            else:
+                y = args[1]
+        else:
+            sys.exit("Cant add graph")
+            
         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
 
         return True

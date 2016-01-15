@@ -15,7 +15,13 @@ class KITDataFile(object):
         self.__z = []
         self.__temp = []
         self.__humid = []
-
+        self.__name = None
+        self.__pid = None        
+        self.__px = None
+        self.__py = None
+        self.__t0 = None
+        self.__h0 = None
+        
         if isinstance(input, int):
             self.__pid = input
             self.__init_db_connection() # Establish database connection
@@ -36,7 +42,9 @@ class KITDataFile(object):
                     splited = line.split();
                     self.__x.append(float(splited[0]))
                     self.__y.append(float(splited[1]))
-                    self.__z.append(float(splited[2]))
+
+                    if len(splited) > 2:
+                        self.__z.append(float(splited[2]))
 
             self.__name = os.path.basename(input).split("-")[0]
         
@@ -110,6 +118,7 @@ class KITDataFile(object):
 
         qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
         KITDataFile.__dbCrs.execute(qryProbe)
+
         for (pid, sid, pX, pY, pZ, date, op, t, h, stat, f, com, flag, cernt, guard, aLCR, 
              mLCR, n, start, stop, bias, vdep, fmode) in KITDataFile.__dbCrs:
             self.__px = pX
