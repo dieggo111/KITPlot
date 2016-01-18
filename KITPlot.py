@@ -18,12 +18,13 @@ class KITPlot(object):
 
     __init = False
     __color = 0
-
+    
     def __init__(self, input=None, cfgFile=None):
 
         # init colors
         if self.__init == False:
-            self.__initColor()            
+            self.__initColor()
+            self.markerSet = [22,21,20,26,25,24]            
         else:
             pass
 
@@ -134,7 +135,7 @@ class KITPlot(object):
         
         # Graph groups
         self.GraphGroup = True
-        self.FluenzGroup = True
+        self.FluenzGroup = False
         self.NameGroup = True
         
         
@@ -318,6 +319,7 @@ class KITPlot(object):
         # args: x, y or KITDataFile
 
         if isinstance(args[0], KITDataFile.KITDataFile):
+
             self.__file.append(args[0])
             
             if self.absX:
@@ -349,7 +351,7 @@ class KITPlot(object):
                 y = args[1]
         else:
             sys.exit("Cant add graph")
-            
+        
         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
 
         return True
@@ -400,26 +402,24 @@ class KITPlot(object):
 
         self.counter = 0
         
+        
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
-            graph.SetMarkerStyle(self.getMarkerStyle(i))
-        
-        
+            if self.GraphGroup == False:
+                graph.SetMarkerStyle(self.getMarkerStyle(i))
+
         if self.GraphGroup == True:
-            j = 0
             self.setGroup()
             if self.NameGroup == True:
-                for i, Name in enumerate(self.GroupList):
-                    if i == 0:
-                        self.__graphs[i].SetMarkerStyle(self.markerSet[j])
-                    if i>0 and self.GroupList[i-1][:5] == self.GroupList[i][:5]:
-                        self.__graphs[i].SetMarkerStyle(self.markerSet[j])
-                    if i>0 and self.GroupList[i-1][:5] != self.GroupList[i][:5]:
-                        self.__graphs[i].SetMarkerStyle(self.markerSet[j+1])
-                        j += 1
-                        
-        self.getShade()        
-        print self.shadeSet
+                print self.GroupList
+                for i, Name in enumerate(self.__file):
+                    for j, Element in enumerate(self.GroupList):
+                        if Name.getName()[:5] == Element:
+                            self.__graphs[i].SetMarkerStyle(21+j)
+                            print j
+                
+        
+        
         return True
 
 
@@ -486,9 +486,11 @@ class KITPlot(object):
 
         return True
 
+
+    
     def getMarkerStyle(self, index):
         
-        self.markerSet = [22,21,20,26,25,24]
+        
         if index%9 == 0 and index > 0:
             self.counter += 1
         if index == 40:
@@ -496,28 +498,26 @@ class KITPlot(object):
         
         return self.markerSet[self.counter]
         
-        
-        for i, Name in enumerate(self.GroupList):
-            if i==0:
-                check1=Name[:5]
-                self.CheckList.append(check1)
-            if i>0:
-                check2=Name[:5]
-                if check1 != check2:
-                    self.CheckList.append(check2)
-                    check1=check2
                     
     def setGroup(self):
-        
+    
         self.GroupList = []
+        TempList = []
+        for i, Element in enumerate(self.__file):
+            TempList.append(self.__file[i].getName()[:5])
+        print TempList
         if self.GraphGroup == True:
             if self.NameGroup == True:
-                for i, Name in enumerate(self.__file):
-                    self.GroupList.append(self.__file[i].getName())
-            elif self.FluenzGroup == True:
-                for i, Fluence in enumerate(self.__file):
-                    self.GroupList.append(self.__file[i].getFluenceP())
+                for i, TempName in enumerate(TempList):
+                    if TempName not in self.GroupList:
+                        self.GroupList.append(TempList[i])
 
+                    
+            #elif self.FluenzGroup == True:
+            #    for i, Fluence in enumerate(self.__file):
+            #        self.GroupList.append(self.__file[i].getFluenceP())
+
+        return True
 
 ######################
 ### Legend methods ###
@@ -558,7 +558,8 @@ class KITPlot(object):
                     
         for Name in TempList:
             self.NameList.append(Name)
-            
+        
+        return True
         
 
         
