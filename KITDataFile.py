@@ -21,24 +21,24 @@ class KITDataFile(object):
         self.__py = None
         self.__t0 = None
         self.__h0 = None
-        
+
         if isinstance(input, int):
             self.__pid = input
             self.__init_db_connection() # Establish database connection
             self.__allo_db(input)
         
-        elif input.isdigit():
+        elif isinstance(input, str) and input.isdigit():
             print "Input: ProbeID"
             self.__pid = input
             self.__init_db_connection() # Establish database connection
             self.__allo_db(input)
-        
-        elif os.path.isfile(input):
 
-            print "Input: File"
+        elif isinstance(input, str) and os.path.isfile(input):
+
+            print "Input: File: " + input
         
-            with open(input, 'r') as file:
-                for line in file:
+            with open(input, 'r') as inputFile:
+                for line in inputFile:
                     splited = line.split();
                     self.__x.append(float(splited[0]))
                     self.__y.append(float(splited[1]))
@@ -46,8 +46,10 @@ class KITDataFile(object):
                     if len(splited) > 2:
                         self.__z.append(float(splited[2]))
 
-            self.__name = os.path.basename(input).split("-")[0]
+                self.__name = os.path.basename(input).split("-")[0]
         
+        #  elif isinstance(input, file): 
+
         #elif self.__check_if_folder_pid(input):
         #    print "Input: Folder"
         #    self.__init_db_connection() # Establish database connection

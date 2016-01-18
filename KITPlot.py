@@ -64,11 +64,17 @@ class KITPlot(object):
             
             # Load multiple data files in a folder
             elif os.path.isdir(input):
-                for file in os.listdir(input):
-                    if (os.path.splitext(file)[1] == ".txt"):
-                        with open(file) as inputFile:
-                            self.__file.append(KITDataFile.KITDataFile(inputFile))
-                            self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                for inputFile in os.listdir(input):
+                    if (os.path.splitext(inputFile)[1] == ".txt"):
+                        self.__file.append(KITDataFile.KITDataFile(input + inputFile))
+                        self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
+#
+# If you open the file the data type changes from str to file 
+#
+#                        with open(input + file) as inputFile:
+#                            self.__file.append(KITDataFile.KITDataFile(inputFile))
+#                            self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
+                        
                     else:
                         pass
 
