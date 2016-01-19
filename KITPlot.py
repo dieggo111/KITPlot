@@ -24,7 +24,7 @@ class KITPlot(object):
         # init colors
         if self.__init == False:
             self.__initColor()
-            self.markerSet = [22,21,20,26,25,24]            
+            self.markerSet = [22,21,20,26,25,24]
         else:
             pass
 
@@ -87,7 +87,9 @@ class KITPlot(object):
                             entry = line.split()
                             if entry[0].isdigit():
                                 self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                                self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                    for i, File in enumerate(self.__file):
+                        self.arrangeFileList()
+                        self.addGraph(self.__file[i].getX(),self.__file[i].getY())
                 else:
                     self.__file.append(KITDataFile.KITDataFile(input))
                     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
@@ -417,17 +419,39 @@ class KITPlot(object):
         if self.GraphGroup == True:
             self.setGroup()
             if self.NameGroup == True:
-                print self.GroupList
                 for i, Name in enumerate(self.__file):
                     for j, Element in enumerate(self.GroupList):
                         if Name.getName()[:5] == Element:
-                            self.__graphs[i].SetMarkerStyle(21+j)
-                            print j
-                
-        
+                            self.__graphs[i].SetMarkerStyle(self.markerSet[0+j])
         
         return True
+        
+    def arrangeFileList(self):
 
+        TempList1 = []
+        TempList2 = []
+        IndexList = []
+        for i, temp in enumerate(self.__file):
+            TempList1.append(temp.getName()[:5])
+        for i, temp in enumerate(TempList1):
+            if temp not in TempList2:
+                TempList2.append(temp)
+                
+        for i, temp1 in enumerate(TempList1):
+            for j, temp2 in enumerate(TempList2):
+                if temp1 == temp2:
+                    IndexList.append(j)
+        
+        TempList1[:] = []
+        max_index = 0
+        for Index in IndexList:
+            if Index > max_index:
+                max_index = Index
+        for Index in range(max_index+1):
+            for i, File in enumerate(self.__file):
+                if Index == IndexList[i]:
+                    TempList1.append(File)
+        self.__file = TempList1
 
 #######################
 ### Automatizations ###
@@ -511,17 +535,15 @@ class KITPlot(object):
         TempList = []
         for i, Element in enumerate(self.__file):
             TempList.append(self.__file[i].getName()[:5])
-        print TempList
         if self.GraphGroup == True:
             if self.NameGroup == True:
                 for i, TempName in enumerate(TempList):
                     if TempName not in self.GroupList:
                         self.GroupList.append(TempList[i])
 
-                    
-            #elif self.FluenzGroup == True:
-            #    for i, Fluence in enumerate(self.__file):
-            #        self.GroupList.append(self.__file[i].getFluenceP())
+            elif self.FluenzGroup == True:
+                for i, File in enumerate(self.__file):
+                    print File.getFluenceP()
 
         return True
 
@@ -534,13 +556,13 @@ class KITPlot(object):
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        self.arrangeLegend()
+        #self.arrangeLegend()
 
         for i,graph in enumerate(self.__graphs):
 
             try:
                 if self.legendEntry == "name":
-                    self.legend.AddEntry(self.__graphs[i], self.NameList[i], "p")
+                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
                 elif self.legendEntry == "id":
                     self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
                 else:
@@ -551,21 +573,18 @@ class KITPlot(object):
 
         self.legend.Draw()
         self.canvas.Update()
+
+    # interferes with arrangeFileList
+    #def arrangeLegend(self):
         
-    def arrangeLegend(self):
-        
-        TempList = []
-        self.NameList = []
-        
-        for i, Name in enumerate(self.__file):
-            TempList.append(self.__file[i].getName())
-            
-        TempList.sort()
-                    
-        for Name in TempList:
-            self.NameList.append(Name)
-        
-        return True
+    #    TempList = []
+    #    self.NameList = []
+    #    for i, Name in enumerate(self.__file):
+    #        TempList.append(self.__file[i].getName())
+    #    TempList.sort()
+    #    for Name in TempList:
+    #        self.NameList.append(Name)
+    #    return True
         
 
         
@@ -680,18 +699,20 @@ class KITPlot(object):
         self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
 
         KITPlot.__init = True
+        
         return True
 
     def getColor(self,clr=0):
         self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
         KITPlot.__color += 1
         KITPlot.__color %= 9
-        #print KITPlot.__color
+
         return self.colorSet[KITPlot.__color-1]
 
     def setColor(self):
         for graph in self.__graphs:
             graph.SetMarkerColor(self.getColor())
+            
         return True
 
     def getShade(self):
