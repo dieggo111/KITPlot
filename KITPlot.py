@@ -21,7 +21,7 @@ class KITPlot(object):
     
     def __init__(self, input=None, cfgFile=None):
 
-        # init colors
+        # init colors and markers
         if self.__init == False:
             self.__initColor()
             self.markerSet = [22,21,20,26,25,24]
@@ -65,6 +65,7 @@ class KITPlot(object):
             
             # Load multiple data files in a folder
             elif os.path.isdir(input):
+                print input
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
@@ -118,6 +119,7 @@ class KITPlot(object):
         self.labelSizeX = 0.04
         self.absX = True
         self.logX = False
+        self.rangeX = "auto"
 
         # YAxis
         self.titleY = "py"
@@ -126,7 +128,9 @@ class KITPlot(object):
         self.labelSizeY = 0.04
         self.absY = True
         self.logY = False
-
+        #self.rangeY = "0:20e-12"
+        self.rangeY = "auto"
+        
         # Legend
         self.legendEntry = "name" # name / id
 
@@ -168,6 +172,7 @@ class KITPlot(object):
         self.labelSizeX = cfgPrs.getfloat('XAxis', 'labelsize')
         self.absX = cfgPrs.getboolean('XAxis', 'absolute')
         self.logX = cfgPrs.getboolean('XAxis', 'log')
+        self.rangeX = cfgPrs.getfloat("XAxis", "x-range")
 
         self.titleY = cfgPrs.get('YAxis', 'title')
         self.titleSizeY = cfgPrs.getfloat('YAxis', 'titleSize')
@@ -175,6 +180,7 @@ class KITPlot(object):
         self.labelSizeY = cfgPrs.getfloat('YAxis', 'labelsize')
         self.absY = cfgPrs.getboolean('YAxis', 'absolute')
         self.logY = cfgPrs.getboolean('YAxis', 'log')
+        self.rangeY = cfgPrs.getfloat("YAxis", "y-range")
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         
@@ -210,6 +216,7 @@ class KITPlot(object):
             cfgPrs.set('XAxis', 'Labelsize', self.labelSizeX)
             cfgPrs.set('XAxis', 'Absolute', self.absX)
             cfgPrs.set('XAxis', 'Log', self.logX)
+            cfgPrs.set('XAxis', 'x-Range', self.rangeX)
 
             cfgPrs.add_section('YAxis')
             cfgPrs.set('YAxis', 'Title', self.titleY)
@@ -218,6 +225,7 @@ class KITPlot(object):
             cfgPrs.set('YAxis', 'Labelsize', self.labelSizeY)
             cfgPrs.set('YAxis', 'Absolute', self.absY)
             cfgPrs.set('YAxis', 'Log', self.logY)
+            cfgPrs.set('YAxis', 'y-range', self.rangeY)
 
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
@@ -405,12 +413,19 @@ class KITPlot(object):
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
-        self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-
+        
+        if self.rangeX == "auto":
+            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+        if self.rangeX != "auto":
+            RangeListX = self.rangeX.split(":")
+            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
+        if self.rangeY == "auto":
+            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+        if self.rangeY != "auto":
+            RangeListY = self.rangeY.split(":")
+            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
+        
         self.counter = 0
-        
-        
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
             if self.GraphGroup == False:
@@ -475,8 +490,8 @@ class KITPlot(object):
         
         # Find points that are 10000% off
         #for point in ListY:
-        #    if point > 100*sum(ListY)/float(len(ListY)) and point =! 0:
-        #        ListY.remove(point)
+        #    if point > 100*sum(ListY)/float(len(ListY)) and point != 0:
+        #        point = 0
             
         self.Scale = []
 
