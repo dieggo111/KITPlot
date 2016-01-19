@@ -27,7 +27,15 @@ class KITPlot(object):
             self.markerSet = [22,21,20,26,25,24]
         else:
             pass
-
+        
+        # check if cfgFile exists 
+        self.cfg_exists = False
+        for File in os.listdir(os.getcwd()):
+            if File == "cfg":
+                if os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] == ".cfg":
+                    self.cfg_exists = True
+        print self.cfg_exists
+                
         # load cfg if present
         if cfgFile is not None:
             if os.path.isfile(cfgFile):
