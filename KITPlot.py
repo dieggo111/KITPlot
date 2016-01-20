@@ -19,8 +19,10 @@ class KITPlot(object):
     __init = False
     __color = 0
     
-    def __init__(self, input=None, cfgFile=None):
-
+    def __init__(self, input=None):
+        
+        self.cfgFile=None
+        
         # init colors and markers
         if self.__init == False:
             self.__initColor()
@@ -28,29 +30,31 @@ class KITPlot(object):
         else:
             pass
         
-        # check if cfgFile exists 
-        self.cfg_exists = self.__check_cfg()
+        # check if cfgFile exists and if path is correct
+        self.cfg_exists = self.__check_cfg(None)
         
-        print self.cfg_exists
-        
+        if len(sys.argv) > 2:
+            self.cfg_path = sys.argv[2]
+            self.cfg_exists = self.__check_cfg(self.cfg_path)
+            if self.cfg_exists == False:
+                print "No .cfg found! Need valid path! Use default values instead!"
+
         # load cfg if present
-        if cfgFile is not None:
-            if os.path.isfile(cfgFile):
+        if self.cfgFile is not None:
+            if os.path.isfile(self.cfgFile):
                 self.__initDefaultValues()
-                self.__initCfg(cfgFile)
-            else:
-                self.__initDefaultValues()
-                print "cfg not found! Use default values instead"
+                self.__initCfg(self.cfgFile)
+                print "Found cfg"
         else:
             self.__initDefaultValues()
             print "Use default values"
 
         self.__initStyle()
-        
         self.__file = []
         self.__graphs = []
 
-
+        #self.cfgFile=None
+        
         # Load KITDataFile
         if isinstance(input, KITDataFile.KITDataFile):
             self.__file.append(input)
@@ -99,9 +103,10 @@ class KITPlot(object):
                 else:
                     self.__file.append(KITDataFile.KITDataFile(input))
                     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
-      
-
-        self.__writeCfg(cfgFile)
+        
+        # create cfg file if it doesnt exist
+        if self.cfg_exists == False:
+            self.__writeCfg(self.cfgFile)
 
         
 
@@ -133,23 +138,21 @@ class KITPlot(object):
         self.labelSizeY = 0.04
         self.absY = True
         self.logY = False
-        #self.rangeY = "0:20e-12"
         self.rangeY = "auto"
         
         # Legend
         self.legendEntry = "name" # name / id
-
-        self.padBottomMargin = 0.15
-        self.padLeftMargin = 0.15
-
-        self.markerSize = 1.5
-        self.markerStyle = 22
-        self.markerColor = 1100
-        
         self.TopRight = True
         self.TopLeft = False
         self.BottomRight = False
         
+        # Misc
+        self.padBottomMargin = 0.15
+        self.padLeftMargin = 0.15
+        self.markerSize = 1.5
+        #self.markerStyle = 22
+        self.markerColor = 1100
+
         # Graph groups
         self.GraphGroup = True
         self.FluenzGroup = False
@@ -177,7 +180,7 @@ class KITPlot(object):
         self.labelSizeX = cfgPrs.getfloat('XAxis', 'labelsize')
         self.absX = cfgPrs.getboolean('XAxis', 'absolute')
         self.logX = cfgPrs.getboolean('XAxis', 'log')
-        self.rangeX = cfgPrs.getfloat("XAxis", "x-range")
+        self.rangeX = cfgPrs.get('XAxis', 'xrange')
 
         self.titleY = cfgPrs.get('YAxis', 'title')
         self.titleSizeY = cfgPrs.getfloat('YAxis', 'titleSize')
@@ -185,10 +188,22 @@ class KITPlot(object):
         self.labelSizeY = cfgPrs.getfloat('YAxis', 'labelsize')
         self.absY = cfgPrs.getboolean('YAxis', 'absolute')
         self.logY = cfgPrs.getboolean('YAxis', 'log')
-        self.rangeY = cfgPrs.getfloat("YAxis", "y-range")
+        self.rangeY = cfgPrs.get('YAxis', 'yrange')
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
-        
+        self.TopRight = cfgPrs.getboolean('Legend', 'top right position')
+        self.TopLeft = cfgPrs.getboolean('Legend', 'top left position')
+        self.BottomRight = cfgPrs.getboolean('Legend', 'bottom right position')
+
+        self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
+        self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
+        self.markerSize = cfgPrs.getfloat('Misc', 'marker size')
+        self.markerStyle = cfgPrs.getint('Misc', 'marker style')
+        self.markerColor = cfgPrs.getint('Misc', 'marker color')
+
+        self.GraphGroup = cfgPrs.getboolean('More plot options', 'graph group')
+        self.FluenzGroup = cfgPrs.getboolean('More plot options', 'fluenz group')
+        self.NameGroup = cfgPrs.getboolean('More plot options', 'name group')
 
     def __writeCfg(self, fileName):
         
@@ -198,14 +213,14 @@ class KITPlot(object):
             os.makedirs("cfg")
         
         if fileName is None:
-            if self.__file[0].getID() is not None:
-                fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
-            else:
-                fileName = "cfg/plot.cfg"
+            #if self.__file[0].getID() is not None:
+                #fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
+            #else:
+            fileName = "cfg/plot.cfg"
         else:
             pass
 
-        with open(fileName,'w') as cfgFile:
+        with open(fileName,'w') as self.cfgFile:
             cfgPrs.add_section('Global')
 
             cfgPrs.add_section('Title')
@@ -221,7 +236,7 @@ class KITPlot(object):
             cfgPrs.set('XAxis', 'Labelsize', self.labelSizeX)
             cfgPrs.set('XAxis', 'Absolute', self.absX)
             cfgPrs.set('XAxis', 'Log', self.logX)
-            cfgPrs.set('XAxis', 'x-Range', self.rangeX)
+            cfgPrs.set('XAxis', 'xRange', self.rangeX)
 
             cfgPrs.add_section('YAxis')
             cfgPrs.set('YAxis', 'Title', self.titleY)
@@ -230,12 +245,27 @@ class KITPlot(object):
             cfgPrs.set('YAxis', 'Labelsize', self.labelSizeY)
             cfgPrs.set('YAxis', 'Absolute', self.absY)
             cfgPrs.set('YAxis', 'Log', self.logY)
-            cfgPrs.set('YAxis', 'y-range', self.rangeY)
+            cfgPrs.set('YAxis', 'yrange', self.rangeY)
 
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
+            cfgPrs.set('Legend', 'top right position', self.TopRight)
+            cfgPrs.set('Legend', 'top left position', self.TopLeft)
+            cfgPrs.set('Legend', 'bottom right position', self.BottomRight)
+       
+            cfgPrs.add_section('Misc')
+            cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
+            cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
+            cfgPrs.set('Misc', 'marker size', self.markerSize)
+            cfgPrs.set('Misc', 'marker style', self.markerStyle)
+            cfgPrs.set('Misc', 'marker color', self.markerColor)
             
-            cfgPrs.write(cfgFile)
+            cfgPrs.add_section('More plot options')
+            cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
+            cfgPrs.set('More plot options', 'fluenz group', self.FluenzGroup)
+            cfgPrs.set('More plot options', 'name group', self.NameGroup)
+
+            cfgPrs.write(self.cfgFile)
 
         print ("Wrote %s" %(fileName))
         
@@ -294,14 +324,25 @@ class KITPlot(object):
                 else:
                     return False
                     
-    def __check_cfg(self):
-    
-        for File in os.listdir(os.getcwd()):
-            if File == "cfg":
-                if os.listdir(os.getcwd() + "/cfg") != [] and os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] == ".cfg":
+    def __check_cfg(self, arg):
+        
+        if arg == None:
+            file_path = os.getcwd() + "/cfg"
+            if os.path.exists(file_path) == False:
+                return False
+            else:
+                if os.listdir(file_path) != [] and os.path.splitext(os.listdir(file_path)[0])[1] == ".cfg":
+                    self.cfgFile = "cfg/plot.cfg"
                     return True
-                if os.listdir(os.getcwd() + "/cfg") == [] or os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] != ".cfg":
+                if os.listdir(file_path) == [] or os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
                     return False
+            
+        if arg != None:
+            if os.path.exists(arg) == False:
+                return False
+            else:
+                self.cfgFile = arg
+                return True
 
 
 
