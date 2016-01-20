@@ -37,23 +37,20 @@ class KITPlot(object):
             self.cfg_path = sys.argv[2]
             self.cfg_exists = self.__check_cfg(self.cfg_path)
             if self.cfg_exists == False:
-                print "No .cfg found! Need valid path! Use default values instead!"
+                print "No .cfg found! Need valid path!"
 
         # load cfg if present
         if self.cfgFile is not None:
             if os.path.isfile(self.cfgFile):
-                self.__initDefaultValues()
                 self.__initCfg(self.cfgFile)
-                print "Found cfg"
+                print "Found cfg!"
         else:
             self.__initDefaultValues()
-            print "Use default values"
+            print "Use default values!"
 
         self.__initStyle()
         self.__file = []
         self.__graphs = []
-
-        #self.cfgFile=None
         
         # Load KITDataFile
         if isinstance(input, KITDataFile.KITDataFile):
@@ -150,10 +147,10 @@ class KITPlot(object):
         self.padBottomMargin = 0.15
         self.padLeftMargin = 0.15
         self.markerSize = 1.5
-        #self.markerStyle = 22
+        self.markerStyle = 22
         self.markerColor = 1100
 
-        # Graph groups
+        # More plot options
         self.GraphGroup = True
         self.FluenzGroup = False
         self.NameGroup = True
@@ -471,14 +468,17 @@ class KITPlot(object):
         
         if self.rangeX == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        if self.rangeX != "auto":
-            RangeListX = self.rangeX.split(":")
-            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
         if self.rangeY == "auto":
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-        if self.rangeY != "auto":
+        if self.rangeX != "auto" and ":" in self.rangeX:
+            RangeListX = self.rangeX.split(":")
+            self.__graphs[0].GetXaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
+        if self.rangeY != "auto" and ":" in self.rangeY:
             RangeListY = self.rangeY.split(":")
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
+        #if not ":" in self.rangeX
+            #print "Invalid axis range! Try 'auto' or 'float:float'!"
+            
         
         self.counter = 0
         for i, graph in enumerate(self.__graphs):
