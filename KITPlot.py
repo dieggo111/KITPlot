@@ -29,13 +29,10 @@ class KITPlot(object):
             pass
         
         # check if cfgFile exists 
-        self.cfg_exists = False
-        for File in os.listdir(os.getcwd()):
-            if File == "cfg":
-                if os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] == ".cfg":
-                    self.cfg_exists = True
+        self.cfg_exists = self.__check_cfg()
+        
         print self.cfg_exists
-                
+        
         # load cfg if present
         if cfgFile is not None:
             if os.path.isfile(cfgFile):
@@ -295,6 +292,15 @@ class KITPlot(object):
                 if len(inputFile.readline().split()) == 1:
                     return True
                 else:
+                    return False
+                    
+    def __check_cfg(self):
+    
+        for File in os.listdir(os.getcwd()):
+            if File == "cfg":
+                if os.listdir(os.getcwd() + "/cfg") != [] and os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] == ".cfg":
+                    return True
+                if os.listdir(os.getcwd() + "/cfg") == [] or os.path.splitext(os.listdir(os.getcwd() + "/cfg")[0])[1] != ".cfg":
                     return False
 
 
