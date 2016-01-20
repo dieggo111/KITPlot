@@ -114,7 +114,7 @@ class KITPlot(object):
     def __initDefaultValues(self):
         
         # Title options 
-        self.title = "Plot"
+        self.title = "auto"
         self.titleX0 = 0.5
         self.titleY0 = 0.97
         self.titleH = 0.05
@@ -167,6 +167,7 @@ class KITPlot(object):
 
         cfgPrs.read(fileName)
             
+        self.title = cfgPrs.get('Title', 'title')
         self.titleX0 = cfgPrs.getfloat('Title', 'x0')
         self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
         self.titleH = cfgPrs.getfloat('Title', 'height')
@@ -275,37 +276,37 @@ class KITPlot(object):
     
         self.MT = self.__file[0].getParaY()
         if self.MT == "I_tot":
-            self.title = "Current Voltage characteristics" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Current Voltage characteristics" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "Pinhole":
-            self.title = "Pinhole leakage" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Pinhole leakage" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "I_leak_dc":
-            self.title = "Interstrip current leakage" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip current leakage" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "C_tot":
-            self.title = "Capacitance Voltage characteristics" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Capacitance Voltage characteristics" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "C_int":
-            self.title = "Interstrip capacitance measurement" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip capacitance measurement" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "CC":
-            self.title = "Coupling capacitance measurement" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Coupling capacitance measurement" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "R_int":
-            self.title = "Interstrip resistance measurement" 
-            self.titleY = "Resistance (#Omega)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip resistance measurement" 
+            self.autotitleY = "Resistance (#Omega)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "R_poly":
-            self.title = "Strip resistance measurement" 
-            self.titleY = "Resistance (#Omega)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Strip resistance measurement" 
+            self.autotitleY = "Resistance (#Omega)"
+            self.autotitleX = "Voltage (V)"
             
         if len(self.__file) >= 2:
             if self.__file[0].getParaY() != self.__file[1].getParaY():
@@ -432,6 +433,7 @@ class KITPlot(object):
 
         self.__autoScaling()
         self.MeasurementType()
+            
         self.plotStyles(self.titleX, self.titleY, self.title)
 
         if self.logX:
@@ -461,10 +463,16 @@ class KITPlot(object):
         
 
     def plotStyles(self, XTitle, YTitle, Title):
-    
+        
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
+        if self.titleX == "auto":
+            self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
+        if self.titleY == "auto":
+            self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
+        if self.title == "auto":
+            self.__graphs[0].SetTitle(self.autotitle)
         
         if self.rangeX == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
@@ -476,9 +484,9 @@ class KITPlot(object):
         if self.rangeY != "auto" and ":" in self.rangeY:
             RangeListY = self.rangeY.split(":")
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
-        #if not ":" in self.rangeX
-            #print "Invalid axis range! Try 'auto' or 'float:float'!"
-            
+        if self.rangeX != "auto" or self.rangeY != "auto":
+            if not ":" in self.rangeX or ":" in self.rangeY: 
+                sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
         
         self.counter = 0
         for i, graph in enumerate(self.__graphs):
