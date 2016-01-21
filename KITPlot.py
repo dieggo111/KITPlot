@@ -22,6 +22,7 @@ class KITPlot(object):
     def __init__(self, input=None):
         
         self.cfgFile=None
+        self.fileInput = False
         
         # init colors and markers
         if self.__init == False:
@@ -30,9 +31,10 @@ class KITPlot(object):
         else:
             pass
         
-        # check if cfgFile exists and if path is correct
+        # check if cfgFile exists
         self.cfg_exists = self.__check_cfg(None)
         
+        # if cfg path is given, check if correct and write into self.cfgFile
         if len(sys.argv) > 2:
             self.cfg_path = sys.argv[2]
             self.cfg_exists = self.__check_cfg(self.cfg_path)
@@ -72,6 +74,7 @@ class KITPlot(object):
             # Load multiple data files in a folder
             elif os.path.isdir(input):
                 print input
+                self.fileInput = True
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
@@ -308,10 +311,14 @@ class KITPlot(object):
             self.autotitleY = "Resistance (#Omega)"
             self.autotitleX = "Voltage (V)"
             
-        if len(self.__file) >= 2:
+        if len(self.__file) >= 2 and self.fileInput == False:
             if self.__file[0].getParaY() != self.__file[1].getParaY():
                 sys.exit("Measurement types are not equal!")
-
+        
+        if self.fileInput == True:
+            self.autotitle = "Title" 
+            self.autotitleY = "Y Value"
+            self.autotitleX = "X Value"
 
     def __checkPID(self, input):
         
@@ -322,6 +329,14 @@ class KITPlot(object):
                 else:
                     return False
                     
+    #def __checkFiles(self, arg):
+                
+    #    if os.path.isdir(input):
+    #        return True
+    #    else:
+    #        return False
+                
+    
     def __check_cfg(self, arg):
         
         if arg == None:
@@ -330,7 +345,7 @@ class KITPlot(object):
                 return False
             else:
                 if os.listdir(file_path) != [] and os.path.splitext(os.listdir(file_path)[0])[1] == ".cfg":
-                    self.cfgFile = "cfg/plot.cfg"
+                    self.cfgFile = "cfg/" + os.listdir(file_path)[0]
                     return True
                 if os.listdir(file_path) == [] or os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
                     return False
