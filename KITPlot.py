@@ -473,7 +473,12 @@ class KITPlot(object):
         self.setLegend()
 
         self.canvas.Update()
-
+        
+        if self.cfg_exists == True:
+            self.canvas.SaveAs(self.cfgFile.split(".")[0].split("/")[1] + ".png")
+        else:
+            self.canvas.SaveAs("plot.png")
+            
         return True
 
     def update(self):
@@ -488,6 +493,8 @@ class KITPlot(object):
         
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
+        
+        
         self.__graphs[0].SetTitle(Title)
         if self.titleX == "auto":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
@@ -510,12 +517,14 @@ class KITPlot(object):
             if not ":" in self.rangeX or ":" in self.rangeY: 
                 sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
         
+        
         self.counter = 0
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
             if self.GraphGroup == False:
                 graph.SetMarkerStyle(self.getMarkerStyle(i))
 
+        
         if self.GraphGroup == True:
             self.setGroup()
             if self.NameGroup == True:
@@ -541,7 +550,7 @@ class KITPlot(object):
             for j, temp2 in enumerate(TempList2):
                 if temp1 == temp2:
                     IndexList.append(j)
-        
+
         TempList1[:] = []
         max_index = 0
         for Index in IndexList:
@@ -572,14 +581,8 @@ class KITPlot(object):
             ListX = np.absolute(ListX)
         if self.absY:
             ListY = np.absolute(ListY)
-        
-        # Find points that are 10000% off
-        #for point in ListY:
-        #    if point > 100*sum(ListY)/float(len(ListY)) and point != 0:
-        #        point = 0
-            
-        self.Scale = []
 
+        self.Scale = []
         self.xmax = max(ListX)
         self.xmin = min(ListX)
         self.ymax = max(ListY)
@@ -618,7 +621,6 @@ class KITPlot(object):
     
     def getMarkerStyle(self, index):
         
-        
         if index%9 == 0 and index > 0:
             self.counter += 1
         if index == 40:
@@ -654,7 +656,6 @@ class KITPlot(object):
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        #self.arrangeLegend()
 
         for i,graph in enumerate(self.__graphs):
 
@@ -671,19 +672,6 @@ class KITPlot(object):
 
         self.legend.Draw()
         self.canvas.Update()
-
-    # interferes with arrangeFileList
-    #def arrangeLegend(self):
-        
-    #    TempList = []
-    #    self.NameList = []
-    #    for i, Name in enumerate(self.__file):
-    #        TempList.append(self.__file[i].getName())
-    #    TempList.sort()
-    #    for Name in TempList:
-    #        self.NameList.append(Name)
-    #    return True
-        
 
         
     def setLegendParameters(self):
