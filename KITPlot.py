@@ -19,37 +19,36 @@ class KITPlot(object):
     __init = False
     __color = 0
     
-    def __init__(self, input=None):
+    def __init__(self, input=None, cfgFile=None):
         
-        self.cfgFile=None
         self.fileInput = False
-        
+        self.cfgFile = cfgFile
+                    
         # init colors and markers
         if self.__init == False:
             self.__initColor()
             self.markerSet = [22,21,20,26,25,24]
         else:
             pass
+
         
-        # check if cfgFile exists
-        self.cfg_exists = self.__check_cfg(None)
-        
-        # if cfg path is given, check if correct and write into self.cfgFile
-        if len(sys.argv) > 2:
-            self.cfg_path = sys.argv[2]
-            self.cfg_exists = self.__check_cfg(self.cfg_path)
+        # if cfg path is given, check if correct
+        if cfgFile is not None:
+            self.cfg_exists = self.__check_cfg_input(self.cfgFile)
             if self.cfg_exists == False:
-                print "No .cfg found! Need valid path!"
+                self.cfgFile = None
+                print "No cfg found! Need valid path!"
 
         # load cfg if present
         if self.cfgFile is not None:
-            if os.path.isfile(self.cfgFile):
-                self.__initCfg(self.cfgFile)
-                print "Found cfg!"
+            self.__initCfg(self.cfgFile)
+            print "Found cfg!"
+        # if no cfg is given, check if cfg folder/file exists
         else:
+            self.cfg_exists = self.__check_cfg()
             self.__initDefaultValues()
             print "Use default values!"
-
+        print self.cfg_exists
         self.__initStyle()
         self.__file = []
         self.__graphs = []
@@ -106,7 +105,7 @@ class KITPlot(object):
         
         # create cfg file if it doesnt exist
         if self.cfg_exists == False:
-            self.__writeCfg(self.cfgFile)
+            self.__writeCfg()
 
         
 
@@ -206,20 +205,15 @@ class KITPlot(object):
         self.FluenzGroup = cfgPrs.getboolean('More plot options', 'fluenz group')
         self.NameGroup = cfgPrs.getboolean('More plot options', 'name group')
 
-    def __writeCfg(self, fileName):
+    def __writeCfg(self):
         
         cfgPrs = ConfigParser.ConfigParser()
 
         if not os.path.exists("cfg"):
             os.makedirs("cfg")
-        
-        if fileName is None:
-            #if self.__file[0].getID() is not None:
-                #fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
-            #else:
-            fileName = "cfg/plot.cfg"
-        else:
-            pass
+
+        fileName = "cfg/plot.cfg"
+
 
         with open(fileName,'w') as self.cfgFile:
             cfgPrs.add_section('Global')
@@ -337,25 +331,38 @@ class KITPlot(object):
     #        return False
                 
     
-    def __check_cfg(self, arg):
+    def __check_cfg(self):
         
-        if arg == None:
-            file_path = os.getcwd() + "/cfg"
-            if os.path.exists(file_path) == False:
+        file_path = os.getcwd() + "/cfg"
+        if os.path.exists(file_path) == False:
+            return False
+        else:
+            if os.listdir(file_path) == []:
                 return False
-            else:
-                if os.listdir(file_path) != [] and os.path.splitext(os.listdir(file_path)[0])[1] == ".cfg":
-                    self.cfgFile = "cfg/" + os.listdir(file_path)[0]
+            if os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
+                return False
+            for cfg in os.listdir(file_path):
+                if cfg == "plot.cfg":
                     return True
-                if os.listdir(file_path) == [] or os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
-                    return False
-            
-        if arg != None:
-            if os.path.exists(arg) == False:
-                return False
             else:
-                self.cfgFile = arg
-                return True
+                return False
+                
+                
+                #if os.listdir(file_path) != []:
+                 #   for cfg in os.listdir(file_path):
+                  #      if cfg == "plot.cfg":
+                   #         self.cfgFile = "cfg/plot.cfg"
+                    #        return True
+                    #if self.cfgFile == None:
+                     #   return False
+
+                
+    def __check_cfg_input(self, arg):
+
+        if os.path.exists(arg) == False:
+            return False
+        else:
+            return True
 
 
 
@@ -574,10 +581,8 @@ class KITPlot(object):
         self.Scale = []
 
         self.xmax = max(ListX)
-           # if min(line) < self.xmin:
         self.xmin = min(ListX)
         self.ymax = max(ListY)
-           # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
         self.Scale.append(self.xmin*(1.-self.perc))
