@@ -18,33 +18,41 @@ class KITPlot(object):
 
     __init = False
     __color = 0
-
+    
     def __init__(self, input=None, cfgFile=None):
-
-        # init colors
+        
+        self.fileInput = False
+        self.cfgFile = cfgFile
+                    
+        # init colors and markers
         if self.__init == False:
-            self.__initColor()            
+            self.__initColor()
+            self.markerSet = [22,21,20,26,25,24]
         else:
             pass
 
-        # load cfg if present
-        if cfgFile is not None:
-            if os.path.isfile(cfgFile):
-                self.__initDefaultValues()
-                self.__initCfg(cfgFile)
-            else:
-                self.__initDefaultValues()
-                print "cfg not found! Use default values instead"
-        else:
-            self.__initDefaultValues()
-            print "Use default values"
-
-        self.__initStyle()
         
+        # if cfg path is given, check if correct
+        if cfgFile is not None:
+            self.cfg_exists = self.__check_cfg_input(self.cfgFile)
+            if self.cfg_exists == False:
+                self.cfgFile = None
+                print "No cfg found! Need valid path!"
+
+        # load cfg if present
+        if self.cfgFile is not None:
+            self.__initCfg(self.cfgFile)
+            print "Found cfg!"
+        # if no cfg is given, check if cfg folder/file exists
+        else:
+            self.cfg_exists = self.__check_cfg()
+            self.__initDefaultValues()
+            print "Use default values!"
+        print self.cfg_exists
+        self.__initStyle()
         self.__file = []
         self.__graphs = []
-
-
+        
         # Load KITDataFile
         if isinstance(input, KITDataFile.KITDataFile):
             self.__file.append(input)
@@ -64,6 +72,8 @@ class KITPlot(object):
             
             # Load multiple data files in a folder
             elif os.path.isdir(input):
+                print input
+                self.fileInput = True
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
@@ -86,13 +96,16 @@ class KITPlot(object):
                             entry = line.split()
                             if entry[0].isdigit():
                                 self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                                self.addGraph(self.__file[i].getX(),self.__file[i].getY())
+                    for i, File in enumerate(self.__file):
+                        self.arrangeFileList()
+                        self.addGraph(self.__file[i].getX(),self.__file[i].getY())
                 else:
                     self.__file.append(KITDataFile.KITDataFile(input))
                     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
-      
-
-        self.__writeCfg(cfgFile)
+        
+        # create cfg file if it doesnt exist
+        if self.cfg_exists == False:
+            self.__writeCfg()
 
         
 
@@ -103,7 +116,7 @@ class KITPlot(object):
     def __initDefaultValues(self):
         
         # Title options 
-        self.title = "Plot"
+        self.title = "auto"
         self.titleX0 = 0.5
         self.titleY0 = 0.97
         self.titleH = 0.05
@@ -115,6 +128,7 @@ class KITPlot(object):
         self.labelSizeX = 0.04
         self.absX = True
         self.logX = False
+        self.rangeX = "auto"
 
         # YAxis
         self.titleY = "py"
@@ -123,20 +137,25 @@ class KITPlot(object):
         self.labelSizeY = 0.04
         self.absY = True
         self.logY = False
-
+        self.rangeY = "auto"
+        
         # Legend
         self.legendEntry = "name" # name / id
-
-        self.padBottomMargin = 0.15
-        self.padLeftMargin = 0.15
-
-        self.markerSize = 1.5
-        self.markerStyle = 22
-        self.markerColor = 1100
-        
         self.TopRight = True
         self.TopLeft = False
         self.BottomRight = False
+        
+        # Misc
+        self.padBottomMargin = 0.15
+        self.padLeftMargin = 0.15
+        self.markerSize = 1.5
+        self.markerStyle = 22
+        self.markerColor = 1100
+
+        # More plot options
+        self.GraphGroup = True
+        self.FluenzGroup = False
+        self.NameGroup = True
         
         
 ###################
@@ -150,6 +169,7 @@ class KITPlot(object):
 
         cfgPrs.read(fileName)
             
+        self.title = cfgPrs.get('Title', 'title')
         self.titleX0 = cfgPrs.getfloat('Title', 'x0')
         self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
         self.titleH = cfgPrs.getfloat('Title', 'height')
@@ -160,6 +180,7 @@ class KITPlot(object):
         self.labelSizeX = cfgPrs.getfloat('XAxis', 'labelsize')
         self.absX = cfgPrs.getboolean('XAxis', 'absolute')
         self.logX = cfgPrs.getboolean('XAxis', 'log')
+        self.rangeX = cfgPrs.get('XAxis', 'xrange')
 
         self.titleY = cfgPrs.get('YAxis', 'title')
         self.titleSizeY = cfgPrs.getfloat('YAxis', 'titleSize')
@@ -167,26 +188,34 @@ class KITPlot(object):
         self.labelSizeY = cfgPrs.getfloat('YAxis', 'labelsize')
         self.absY = cfgPrs.getboolean('YAxis', 'absolute')
         self.logY = cfgPrs.getboolean('YAxis', 'log')
+        self.rangeY = cfgPrs.get('YAxis', 'yrange')
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
-        
+        self.TopRight = cfgPrs.getboolean('Legend', 'top right position')
+        self.TopLeft = cfgPrs.getboolean('Legend', 'top left position')
+        self.BottomRight = cfgPrs.getboolean('Legend', 'bottom right position')
 
-    def __writeCfg(self, fileName):
+        self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
+        self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
+        self.markerSize = cfgPrs.getfloat('Misc', 'marker size')
+        self.markerStyle = cfgPrs.getint('Misc', 'marker style')
+        self.markerColor = cfgPrs.getint('Misc', 'marker color')
+
+        self.GraphGroup = cfgPrs.getboolean('More plot options', 'graph group')
+        self.FluenzGroup = cfgPrs.getboolean('More plot options', 'fluenz group')
+        self.NameGroup = cfgPrs.getboolean('More plot options', 'name group')
+
+    def __writeCfg(self):
         
         cfgPrs = ConfigParser.ConfigParser()
 
         if not os.path.exists("cfg"):
             os.makedirs("cfg")
-        
-        if fileName is None:
-            if self.__file[0].getID() is not None:
-                fileName = ("cfg/%s.cfg" %(self.__file[0].getID()))
-            else:
-                fileName = "cfg/plot.cfg"
-        else:
-            pass
 
-        with open(fileName,'w') as cfgFile:
+        fileName = "cfg/plot.cfg"
+
+
+        with open(fileName,'w') as self.cfgFile:
             cfgPrs.add_section('Global')
 
             cfgPrs.add_section('Title')
@@ -202,6 +231,7 @@ class KITPlot(object):
             cfgPrs.set('XAxis', 'Labelsize', self.labelSizeX)
             cfgPrs.set('XAxis', 'Absolute', self.absX)
             cfgPrs.set('XAxis', 'Log', self.logX)
+            cfgPrs.set('XAxis', 'xRange', self.rangeX)
 
             cfgPrs.add_section('YAxis')
             cfgPrs.set('YAxis', 'Title', self.titleY)
@@ -210,11 +240,27 @@ class KITPlot(object):
             cfgPrs.set('YAxis', 'Labelsize', self.labelSizeY)
             cfgPrs.set('YAxis', 'Absolute', self.absY)
             cfgPrs.set('YAxis', 'Log', self.logY)
+            cfgPrs.set('YAxis', 'yrange', self.rangeY)
 
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
+            cfgPrs.set('Legend', 'top right position', self.TopRight)
+            cfgPrs.set('Legend', 'top left position', self.TopLeft)
+            cfgPrs.set('Legend', 'bottom right position', self.BottomRight)
+       
+            cfgPrs.add_section('Misc')
+            cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
+            cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
+            cfgPrs.set('Misc', 'marker size', self.markerSize)
+            cfgPrs.set('Misc', 'marker style', self.markerStyle)
+            cfgPrs.set('Misc', 'marker color', self.markerColor)
             
-            cfgPrs.write(cfgFile)
+            cfgPrs.add_section('More plot options')
+            cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
+            cfgPrs.set('More plot options', 'fluenz group', self.FluenzGroup)
+            cfgPrs.set('More plot options', 'name group', self.NameGroup)
+
+            cfgPrs.write(self.cfgFile)
 
         print ("Wrote %s" %(fileName))
         
@@ -227,42 +273,46 @@ class KITPlot(object):
     
         self.MT = self.__file[0].getParaY()
         if self.MT == "I_tot":
-            self.title = "Current Voltage characteristics" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Current Voltage characteristics" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "Pinhole":
-            self.title = "Pinhole leakage" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Pinhole leakage" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "I_leak_dc":
-            self.title = "Interstrip current leakage" 
-            self.titleY = "Current (A)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip current leakage" 
+            self.autotitleY = "Current (A)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "C_tot":
-            self.title = "Capacitance Voltage characteristics" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Capacitance Voltage characteristics" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "C_int":
-            self.title = "Interstrip capacitance measurement" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip capacitance measurement" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "CC":
-            self.title = "Coupling capacitance measurement" 
-            self.titleY = "Capacitance (F)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Coupling capacitance measurement" 
+            self.autotitleY = "Capacitance (F)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "R_int":
-            self.title = "Interstrip resistance measurement" 
-            self.titleY = "Resistance (#Omega)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Interstrip resistance measurement" 
+            self.autotitleY = "Resistance (#Omega)"
+            self.autotitleX = "Voltage (V)"
         if self.MT == "R_poly":
-            self.title = "Strip resistance measurement" 
-            self.titleY = "Resistance (#Omega)"
-            self.titleX = "Voltage (V)"
+            self.autotitle = "Strip resistance measurement" 
+            self.autotitleY = "Resistance (#Omega)"
+            self.autotitleX = "Voltage (V)"
             
-        if len(self.__file) >= 2:
+        if len(self.__file) >= 2 and self.fileInput == False:
             if self.__file[0].getParaY() != self.__file[1].getParaY():
                 sys.exit("Measurement types are not equal!")
-
+        
+        if self.fileInput == True:
+            self.autotitle = "Title" 
+            self.autotitleY = "Y Value"
+            self.autotitleX = "X Value"
 
     def __checkPID(self, input):
         
@@ -272,6 +322,47 @@ class KITPlot(object):
                     return True
                 else:
                     return False
+                    
+    #def __checkFiles(self, arg):
+                
+    #    if os.path.isdir(input):
+    #        return True
+    #    else:
+    #        return False
+                
+    
+    def __check_cfg(self):
+        
+        file_path = os.getcwd() + "/cfg"
+        if os.path.exists(file_path) == False:
+            return False
+        else:
+            if os.listdir(file_path) == []:
+                return False
+            if os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
+                return False
+            for cfg in os.listdir(file_path):
+                if cfg == "plot.cfg":
+                    return True
+            else:
+                return False
+                
+                
+                #if os.listdir(file_path) != []:
+                 #   for cfg in os.listdir(file_path):
+                  #      if cfg == "plot.cfg":
+                   #         self.cfgFile = "cfg/plot.cfg"
+                    #        return True
+                    #if self.cfgFile == None:
+                     #   return False
+
+                
+    def __check_cfg_input(self, arg):
+
+        if os.path.exists(arg) == False:
+            return False
+        else:
+            return True
 
 
 
@@ -319,6 +410,7 @@ class KITPlot(object):
         # args: x, y or KITDataFile
 
         if isinstance(args[0], KITDataFile.KITDataFile):
+
             self.__file.append(args[0])
             
             if self.absX:
@@ -350,7 +442,7 @@ class KITPlot(object):
                 y = args[1]
         else:
             sys.exit("Cant add graph")
-            
+        
         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
 
         return True
@@ -363,6 +455,7 @@ class KITPlot(object):
 
         self.__autoScaling()
         self.MeasurementType()
+            
         self.plotStyles(self.titleX, self.titleY, self.title)
 
         if self.logX:
@@ -380,7 +473,12 @@ class KITPlot(object):
         self.setLegend()
 
         self.canvas.Update()
-
+        
+        if self.cfg_exists == True:
+            self.canvas.SaveAs(self.cfgFile.split(".")[0].split("/")[1] + ".png")
+        else:
+            self.canvas.SaveAs("plot.png")
+            
         return True
 
     def update(self):
@@ -392,21 +490,77 @@ class KITPlot(object):
         
 
     def plotStyles(self, XTitle, YTitle, Title):
-    
+        
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
-        self.__graphs[0].SetTitle(Title)
-        self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-
-        self.counter = 0
         
+        
+        self.__graphs[0].SetTitle(Title)
+        if self.titleX == "auto":
+            self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
+        if self.titleY == "auto":
+            self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
+        if self.title == "auto":
+            self.__graphs[0].SetTitle(self.autotitle)
+        
+        if self.rangeX == "auto":
+            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+        if self.rangeY == "auto":
+            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+        if self.rangeX != "auto" and ":" in self.rangeX:
+            RangeListX = self.rangeX.split(":")
+            self.__graphs[0].GetXaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
+        if self.rangeY != "auto" and ":" in self.rangeY:
+            RangeListY = self.rangeY.split(":")
+            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
+        if self.rangeX != "auto" or self.rangeY != "auto":
+            if not ":" in self.rangeX or ":" in self.rangeY: 
+                sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
+        
+        
+        self.counter = 0
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
-            graph.SetMarkerStyle(self.getMarkerStyle(i))
+            if self.GraphGroup == False:
+                graph.SetMarkerStyle(self.getMarkerStyle(i))
 
+        
+        if self.GraphGroup == True:
+            self.setGroup()
+            if self.NameGroup == True:
+                for i, Name in enumerate(self.__file):
+                    for j, Element in enumerate(self.GroupList):
+                        if Name.getName()[:5] == Element:
+                            self.__graphs[i].SetMarkerStyle(self.markerSet[0+j])
+        
         return True
+        
+    def arrangeFileList(self):
 
+        TempList1 = []
+        TempList2 = []
+        IndexList = []
+        for i, temp in enumerate(self.__file):
+            TempList1.append(temp.getName()[:5])
+        for i, temp in enumerate(TempList1):
+            if temp not in TempList2:
+                TempList2.append(temp)
+                
+        for i, temp1 in enumerate(TempList1):
+            for j, temp2 in enumerate(TempList2):
+                if temp1 == temp2:
+                    IndexList.append(j)
+
+        TempList1[:] = []
+        max_index = 0
+        for Index in IndexList:
+            if Index > max_index:
+                max_index = Index
+        for Index in range(max_index+1):
+            for i, File in enumerate(self.__file):
+                if Index == IndexList[i]:
+                    TempList1.append(File)
+        self.__file = TempList1
 
 #######################
 ### Automatizations ###
@@ -425,17 +579,13 @@ class KITPlot(object):
 
         if self.absX:
             ListX = np.absolute(ListX)
-            
         if self.absY:
             ListY = np.absolute(ListY)
-        
-        self.Scale = []
 
+        self.Scale = []
         self.xmax = max(ListX)
-           # if min(line) < self.xmin:
         self.xmin = min(ListX)
         self.ymax = max(ListY)
-           # if min(line) < self.xmin:
         self.ymin = min(ListY)
         
         self.Scale.append(self.xmin*(1.-self.perc))
@@ -467,27 +617,46 @@ class KITPlot(object):
 
         return True
 
+
+    
     def getMarkerStyle(self, index):
         
-        markerSet = [22,21,20,26,25,24]
         if index%9 == 0 and index > 0:
             self.counter += 1
         if index == 40:
             sys.exit("Overflow. Reduce number of graphs!")
         
-        return markerSet[self.counter]
+        return self.markerSet[self.counter]
+        
+                    
+    def setGroup(self):
+    
+        self.GroupList = []
+        TempList = []
+        for i, Element in enumerate(self.__file):
+            TempList.append(self.__file[i].getName()[:5])
+        if self.GraphGroup == True:
+            if self.NameGroup == True:
+                for i, TempName in enumerate(TempList):
+                    if TempName not in self.GroupList:
+                        self.GroupList.append(TempList[i])
 
+            elif self.FluenzGroup == True:
+                for i, File in enumerate(self.__file):
+                    print File.getFluenceP()
+
+        return True
 
 ######################
 ### Legend methods ###
 ######################
 
     def setLegend(self):
-        
+
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
         self.legend.SetTextSize(.02)
-        
+
         for i,graph in enumerate(self.__graphs):
 
             try:
@@ -503,7 +672,6 @@ class KITPlot(object):
 
         self.legend.Draw()
         self.canvas.Update()
-        
 
         
     def setLegendParameters(self):
@@ -523,8 +691,6 @@ class KITPlot(object):
         Lymax = 0.93
         Lxmin = Lxmax-para/100.
         Lymin = Lymax-len(self.__graphs)*0.03
-        print Lxmin
-        print Lymin
 
         
         # Check if elements are in the top right corner. 
@@ -619,20 +785,34 @@ class KITPlot(object):
         self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
 
         KITPlot.__init = True
+        
         return True
 
     def getColor(self,clr=0):
-        colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
         KITPlot.__color += 1
         KITPlot.__color %= 9
-        #print KITPlot.__color
-        return colorSet[KITPlot.__color-1]
+
+        return self.colorSet[KITPlot.__color-1]
 
     def setColor(self):
         for graph in self.__graphs:
             graph.SetMarkerColor(self.getColor())
+            
         return True
 
+    def getShade(self):
+        i = 0
+        self.shadeSet = []
+        print self.colorSet
+        print len(self.colorSet)
+        #if i<range(self.colorSet):
+        #    for j in range(4):
+        #        self.shadeSet.append(self.colorSet[i]+j)
+        #    i +=1
+        #else:
+        #    print self.shadeSet
+        #git     return True
 
 
 ###################
@@ -652,3 +832,6 @@ class KITPlot(object):
 
     def getCanvas(self):
         return self.canvas
+        
+        
+
