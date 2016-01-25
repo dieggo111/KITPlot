@@ -18,38 +18,33 @@ class KITPlot(object):
 
     __init = False
     __color = 0
-    
+
     def __init__(self, input=None, cfgFile=None):
         
         self.fileInput = False
         self.cfgFile = cfgFile
+        self.cfg_exists = False
                     
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.markerSet = [21,20,22,23,25,24,26,32,34]
+            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
         else:
             pass
 
+        # Load parameters         
+        self.__initDefaultValues()
         
-        # if cfg path is given, check if correct
         if cfgFile is not None:
-            self.cfg_exists = self.__check_cfg_input(self.cfgFile)
-            if self.cfg_exists == False:
-                self.cfgFile = None
-                print "No cfg found! Need valid path!"
-
-        # load cfg if present
-        if self.cfgFile is not None:
-            self.__initCfg(self.cfgFile)
-            print "Found cfg!"
-        # if no cfg is given, check if cfg folder/file exists
+            self.loadCfg(cfgFile)
+        elif self.__load_defaultCfg(input):
+            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(input))[0]))
         else:
-            self.cfg_exists = self.__check_cfg()
-            self.__initDefaultValues()
-            print "Use default values!"
-        print self.cfg_exists
+            self.__writeCfg(input)
+
         self.__initStyle()
+
+        # load input
         self.__file = []
         self.__graphs = []
         
@@ -61,30 +56,28 @@ class KITPlot(object):
         # Load single PID
         elif isinstance(input, int):
             self.__file.append(KITDataFile.KITDataFile(input))
-            self.addGraph(self.__file[0].getX(), self.__file[0].getY())
+            self.addGraph(self.__file[-1].getX(), self.__file[-1].getY())
           
         elif isinstance(input, str):
 
             # Load single PID
             if input.isdigit():
                 self.__file.append(KITDataFile.KITDataFile(input))
-                self.addGraph(self.__file[0].getX(), self.__file[0].getY())
+                self.addGraph(self.__file[-1].getX(), self.__file[-1].getY())
             
             # Load multiple data files in a folder
             elif os.path.isdir(input):
-                print input
                 self.fileInput = True
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
                         self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
-#
-# If you open the file the data type changes from str to file 
-#
-#                        with open(input + file) as inputFile:
-#                            self.__file.append(KITDataFile.KITDataFile(inputFile))
-#                            self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
-                        
+
+                        # If you open the file the data type changes from str to file 
+                        # with open(input + file) as inputFile:
+                        #     self.__file.append(KITDataFile.KITDataFile(inputFile))
+                        #     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
+            
                     else:
                         pass
 
@@ -92,7 +85,7 @@ class KITPlot(object):
             elif os.path.isfile(input):
                 if self.__checkPID(input) == True:
                     with open(input) as inputFile:
-                        for i, line in enumerate(inputFile):
+                        for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
                                 self.__file.append(KITDataFile.KITDataFile(entry[0]))
@@ -103,18 +96,14 @@ class KITPlot(object):
                     self.__file.append(KITDataFile.KITDataFile(input))
                     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
         
-        # create cfg file if it doesnt exist
-        if self.cfg_exists == False:
-            self.__writeCfg()
 
         
+    ######################
+    ### Default values ###
+    ######################
 
-######################
-### Default values ###
-######################
-     
     def __initDefaultValues(self):
-        
+    
         # Title options 
         self.title = "auto"
         self.titleX0 = 0.5
@@ -159,11 +148,41 @@ class KITPlot(object):
         
         
         
-###################
-### cfg methods ###
-###################
+    ###################
+    ### cfg methods ###
+    ###################
 
+    def loadCfg(self, cfgFile=None):
+    
+        # if cfg path is given, check if correct
+        if cfgFile is not None:
+            if os.path.exits(cfgFile):
+                self.__initCfg(cfgFile)
+                print("Initialized %s!" %(cfgFile))
+            else:
+                self.cfgFile = None
+                print "No cfg found! Need valid path! Use default values!"
+            
 
+    def __load_defaultCfg(self, fileName="plot"):
+        
+        file_path = os.getcwd() + "/cfg"
+        if os.path.exists(file_path) == False:
+            print "No default cfg folder"
+            return False
+        else:
+            if os.listdir(file_path) == []:
+                print "Default cfg folder empty"
+                return False
+            for cfg in os.listdir(file_path):
+                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])):
+                    #print("cfg/%s" %(cfg))
+                    self.__initCfg("cfg/%s" %(cfg))
+                    return True
+            else:
+                return False
+                
+        
     def __initCfg(self, fileName):
         
         cfgPrs = ConfigParser.ConfigParser()
@@ -206,17 +225,18 @@ class KITPlot(object):
         self.FluenzGroup = cfgPrs.getboolean('More plot options', 'fluenz group')
         self.NameGroup = cfgPrs.getboolean('More plot options', 'name group')
 
-    def __writeCfg(self):
+    def __writeCfg(self, fileName="plot"):
         
         cfgPrs = ConfigParser.ConfigParser()
 
         if not os.path.exists("cfg"):
             os.makedirs("cfg")
 
-        fileName = "cfg/plot.cfg"
+        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])
 
+        print fileName
 
-        with open(fileName,'w') as self.cfgFile:
+        with open(fileName,'w') as cfgFile:
             cfgPrs.add_section('Global')
 
             cfgPrs.add_section('Title')
@@ -261,7 +281,7 @@ class KITPlot(object):
             cfgPrs.set('More plot options', 'fluenz group', self.FluenzGroup)
             cfgPrs.set('More plot options', 'name group', self.NameGroup)
 
-            cfgPrs.write(self.cfgFile)
+            cfgPrs.write(cfgFile)
 
         print ("Wrote %s" %(fileName))
         
@@ -323,41 +343,6 @@ class KITPlot(object):
                     return True
                 else:
                     return False
-                    
-    #def __checkFiles(self, arg):
-                
-    #    if os.path.isdir(input):
-    #        return True
-    #    else:
-    #        return False
-                
-    
-    def __check_cfg(self):
-        
-        file_path = os.getcwd() + "/cfg"
-        if os.path.exists(file_path) == False:
-            return False
-        else:
-            if os.listdir(file_path) == []:
-                return False
-            if os.path.splitext(os.listdir(file_path)[0])[1] != ".cfg":
-                return False
-            for cfg in os.listdir(file_path):
-                if cfg == "plot.cfg":
-                    return True
-            else:
-                return False
-                
-                
-    def __check_cfg_input(self, arg):
-
-        if os.path.exists(arg) == False:
-            return False
-        else:
-            return True
-
-
-
 
 #####################
 ### Graph methods ###
@@ -442,36 +427,51 @@ class KITPlot(object):
                         
     def Draw(self, arg="AP"):
 
+        # init canvas
         self.canvas = ROOT.TCanvas("c1","c1",1280,768)
         self.canvas.cd()
 
+        # apply scaling and auto title
         self.__autoScaling()
         self.MeasurementType()
-            
-        self.plotStyles(self.titleX, self.titleY, self.title)
-
+        
+        self.plotStyles(self.titleX, self.titleY, self.title)    
+        
+        # set log scale if 
         if self.logX:
             self.canvas.SetLogx()
         if self.logY:
             self.canvas.SetLogy()
 
+        # Draw plots
         for n,graph in enumerate(self.__graphs):
             if n==0:
                 graph.Draw(arg)
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
         
+
+        # Set legend
         self.setLegendParameters()
         self.setLegend()
 
         self.canvas.Update()
         
-        if self.cfg_exists == True:
+        if self.cfg_exists == True and self.cfgFile is not None:
             self.canvas.SaveAs(self.cfgFile.split(".")[0].split("/")[1] + ".png")
         else:
-            self.canvas.SaveAs("plot.png")
+            self.saveAs("plot")
             
         return True
+
+
+    def saveAs(self, fileName="plot"):
+
+        if not os.path.exists("output"):
+            os.makedirs("output")
+        
+        self.canvas.SaveAs("output/%s.png" %(fileName))        
+                
 
     def update(self):
         
@@ -497,19 +497,22 @@ class KITPlot(object):
         
         if self.rangeX == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+        elif ":" in self.rangeX:
+            RangeListX = self.rangeX.split(":")
+            #self.__graphs[0].GetXaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
+            self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0]),float(RangeListX[1]))
+        else:
+            sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
+       
         if self.rangeY == "auto":
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-        if self.rangeX != "auto" and ":" in self.rangeX:
-            RangeListX = self.rangeX.split(":")
-            self.__graphs[0].GetXaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
-        if self.rangeY != "auto" and ":" in self.rangeY:
+        elif ":" in self.rangeY:
             RangeListY = self.rangeY.split(":")
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
-        if self.rangeX != "auto" or self.rangeY != "auto":
-            if not ":" in self.rangeX or ":" in self.rangeY: 
-                sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
-        
-        
+        else:
+            sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
+                
+                
         self.counter = 0
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
@@ -523,7 +526,7 @@ class KITPlot(object):
                 for i, Name in enumerate(self.__file):
                     for j, Element in enumerate(self.GroupList):
                         if Name.getName()[:5] == Element:
-                            self.__graphs[i].SetMarkerStyle(self.markerSet[0+j])
+                            self.__graphs[i].SetMarkerStyle(self.__markerSet[0+j])
         
         return True
         
@@ -565,9 +568,9 @@ class KITPlot(object):
         ListX = [0]
         ListY = [0]
 
-        for file in self.__file:
-            ListX += file.getX()
-            ListY += file.getY()
+        for inputFile in self.__file:
+            ListX += inputFile.getX()
+            ListY += inputFile.getY()
 
         if self.absX:
             ListX = np.absolute(ListX)
@@ -619,14 +622,14 @@ class KITPlot(object):
         #if index == 30:
         #    sys.exit("Overflow. Reduce number of graphs!")
         
-        #return self.markerSet[self.counter]
+        #return self.__markerSet[self.counter]
         
         if index >= 9:
             index -= 9
         if index >= 15:
             sys.exit("Overflow. Reduce number of graphs!")
         else:
-            return self.markerSet[index]
+            return self.__markerSet[index]
             
             
     def setGroup(self):
