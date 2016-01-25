@@ -27,7 +27,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.markerSet = [22,21,20,26,25,24]
+            self.markerSet = [21,20,22,23,25,24,26,32,34]
         else:
             pass
 
@@ -153,9 +153,10 @@ class KITPlot(object):
         self.markerColor = 1100
 
         # More plot options
-        self.GraphGroup = True
+        self.GraphGroup = False
         self.FluenzGroup = False
-        self.NameGroup = True
+        self.NameGroup = False
+        
         
         
 ###################
@@ -273,35 +274,35 @@ class KITPlot(object):
     
         self.MT = self.__file[0].getParaY()
         if self.MT == "I_tot":
-            self.autotitle = "Current Voltage characteristics" 
+            self.autotitle = "Current Voltage Characteristics" 
             self.autotitleY = "Current (A)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "Pinhole":
-            self.autotitle = "Pinhole leakage" 
+            self.autotitle = "Pinhole Leakage" 
             self.autotitleY = "Current (A)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "I_leak_dc":
-            self.autotitle = "Interstrip current leakage" 
+            self.autotitle = "Interstrip Current Leakage" 
             self.autotitleY = "Current (A)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "C_tot":
-            self.autotitle = "Capacitance Voltage characteristics" 
+            self.autotitle = "Capacitance Voltage Characteristics" 
             self.autotitleY = "Capacitance (F)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "C_int":
-            self.autotitle = "Interstrip capacitance measurement" 
+            self.autotitle = "Interstrip Capacitance Measurement" 
             self.autotitleY = "Capacitance (F)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "CC":
-            self.autotitle = "Coupling capacitance measurement" 
+            self.autotitle = "Coupling Capacitance Measurement" 
             self.autotitleY = "Capacitance (F)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "R_int":
-            self.autotitle = "Interstrip resistance measurement" 
+            self.autotitle = "Interstrip Resistance Measurement" 
             self.autotitleY = "Resistance (#Omega)"
             self.autotitleX = "Voltage (V)"
         if self.MT == "R_poly":
-            self.autotitle = "Strip resistance measurement" 
+            self.autotitle = "Strip Resistance Measurement" 
             self.autotitleY = "Resistance (#Omega)"
             self.autotitleX = "Voltage (V)"
             
@@ -347,15 +348,6 @@ class KITPlot(object):
             else:
                 return False
                 
-                
-                #if os.listdir(file_path) != []:
-                 #   for cfg in os.listdir(file_path):
-                  #      if cfg == "plot.cfg":
-                   #         self.cfgFile = "cfg/plot.cfg"
-                    #        return True
-                    #if self.cfgFile == None:
-                     #   return False
-
                 
     def __check_cfg_input(self, arg):
 
@@ -621,14 +613,22 @@ class KITPlot(object):
     
     def getMarkerStyle(self, index):
         
-        if index%9 == 0 and index > 0:
-            self.counter += 1
-        if index == 40:
+        # same marker for as many graphs as possible
+        #if index%9 == 0 and index > 0:
+        #    self.counter += 1
+        #if index == 30:
+        #    sys.exit("Overflow. Reduce number of graphs!")
+        
+        #return self.markerSet[self.counter]
+        
+        if index >= 9:
+            index -= 9
+        if index >= 15:
             sys.exit("Overflow. Reduce number of graphs!")
-        
-        return self.markerSet[self.counter]
-        
-                    
+        else:
+            return self.markerSet[index]
+            
+            
     def setGroup(self):
     
         self.GroupList = []
@@ -759,28 +759,28 @@ class KITPlot(object):
         self.__kitGreen.append(ROOT.TColor(1102,125./255, 210./255, 185./255))
         self.__kitGreen.append(ROOT.TColor(1103,180./255, 230./255, 210./255))
         self.__kitGreen.append(ROOT.TColor(1104,215./255, 240./255, 230./255))
+        
+        self.__kitRed.append(ROOT.TColor(1200, 191./255, 35./255, 41./255))
+        self.__kitRed.append(ROOT.TColor(1201, 205./255, 85./255, 75./255))
+        self.__kitRed.append(ROOT.TColor(1202, 220./255, 130./255, 110./255))
+        self.__kitRed.append(ROOT.TColor(1203, 230./255, 175./255, 160./255))
+        self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
+        
+        self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
+        
+        self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
+        self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
+        self.__kitBlue.append(ROOT.TColor(1402, 155./255, 170./255, 220./255))
+        self.__kitBlue.append(ROOT.TColor(1403, 195./255, 200./255, 235./255))
+        self.__kitBlue.append(ROOT.TColor(1404, 225./255, 225./255, 245./255))
 
-        self.__kitBlue.append(ROOT.TColor(1200, 67./255, 115./255, 194./255))
-        self.__kitBlue.append(ROOT.TColor(1201, 120./255, 145./255, 210./255))
-        self.__kitBlue.append(ROOT.TColor(1202, 155./255, 170./255, 220./255))
-        self.__kitBlue.append(ROOT.TColor(1203, 195./255, 200./255, 235./255))
-        self.__kitBlue.append(ROOT.TColor(1204, 225./255, 225./255, 245./255))
-
-        self.__kitMay.append(ROOT.TColor(1300, 102./255, 196./255, 48./255))
-
-        self.__kitYellow.append(ROOT.TColor(1400, 254./255, 231./255, 2./255))
-
-        self.__kitOrange.append(ROOT.TColor(1500, 247./255, 145./255, 16./255))
+        self.__kitPurple.append(ROOT.TColor(1500, 188./255, 12./255, 141./255))
 
         self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
 
-        self.__kitRed.append(ROOT.TColor(1700, 191./255, 35./255, 41./255))
-        self.__kitRed.append(ROOT.TColor(1701, 205./255, 85./255, 75./255))
-        self.__kitRed.append(ROOT.TColor(1702, 220./255, 130./255, 110./255))
-        self.__kitRed.append(ROOT.TColor(1703, 230./255, 175./255, 160./255))
-        self.__kitRed.append(ROOT.TColor(1704, 245./255, 215./255, 200./255))
+        self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
 
-        self.__kitPurple.append(ROOT.TColor(1800, 188./255, 12./255, 141./255))
+        self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
 
         self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
 
