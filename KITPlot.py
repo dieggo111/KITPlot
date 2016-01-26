@@ -710,7 +710,7 @@ class KITPlot(object):
             Lxmin = 0.18
             Lymax = 0.88
             Lymin = Lymax-len(self.__graphs)*0.03
-            Lxmax = 2.*para/100.
+            Lxmax = Lxmin+para/100.
 
         # Check if elements are in the top left corner.
         for i in range(len(self.__file)):
