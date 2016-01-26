@@ -135,6 +135,7 @@ class KITPlot(object):
         # Legend
         self.legendEntry = "name" # name / id
         self.legendPosition = "auto"
+        self.legendTextSize = 0.02
         
         # Misc
         self.padBottomMargin = 0.15
@@ -212,6 +213,7 @@ class KITPlot(object):
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         self.legendPosition = cfgPrs.get('Legend', 'legend position')
+        self.legendTextSize = cfgPrs.getfloat('Legend', 'textSize')
 
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
@@ -267,7 +269,8 @@ class KITPlot(object):
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
-       
+            cfgPrs.set('Legend', 'TextSize', self.legendTextSize)
+
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
             cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
@@ -655,7 +658,7 @@ class KITPlot(object):
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
-        self.legend.SetTextSize(.02)
+        self.legend.SetTextSize(self.legendTextSize)
 
         for i,graph in enumerate(self.__graphs):
 
@@ -707,7 +710,7 @@ class KITPlot(object):
             Lxmin = 0.18
             Lymax = 0.88
             Lymin = Lymax-len(self.__graphs)*0.03
-            Lxmax = 1.7*para/100.
+            Lxmax = 2.*para/100.
 
         # Check if elements are in the top left corner.
         for i in range(len(self.__file)):
@@ -827,12 +830,20 @@ class KITPlot(object):
         
         if len(self.__graphs) == 1:
             return self.__graphs[0]
-        elif (len(self.__graphs) != 1) & (graph is None):
+        elif (len(self.__graphs) != 1) and (graph is None):
             return self._graphs
-        elif (len(self.__graphs) != 1) & (graph.isdigit()):
-            return self.__graphs[graph]
         else:
-            return False
+            if isinstance(graph,str):
+                if (len(self.__graphs) != 1) and (graph.isdigit()):
+                    return self.__graphs[int(graph)]
+                else:
+                    return False
+            elif isinstance(graph,int):
+                if (len(self.__graphs) != 1):
+                    return self.__graphs[graph]
+                else:
+                    return False
+
 
     def getCanvas(self):
         return self.canvas
