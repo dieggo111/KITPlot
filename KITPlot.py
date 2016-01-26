@@ -38,9 +38,10 @@ class KITPlot(object):
         if cfgFile is not None:
             self.loadCfg(cfgFile)
         elif self.__load_defaultCfg(input):
-            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(input))[0]))
+            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(input)))[0]))
         else:
             self.__writeCfg(input)
+
 
         self.__initStyle()
 
@@ -156,7 +157,7 @@ class KITPlot(object):
     
         # if cfg path is given, check if correct
         if cfgFile is not None:
-            if os.path.git (cfgFile):
+            if os.path.exists(cfgFile):
                 self.__initCfg(cfgFile)
                 print("Initialized %s!" %(cfgFile))
             else:
@@ -175,7 +176,7 @@ class KITPlot(object):
                 print "Default cfg folder empty"
                 return False
             for cfg in os.listdir(file_path):
-                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])):
+                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])):
                     #print("cfg/%s" %(cfg))
                     self.__initCfg("cfg/%s" %(cfg))
                     return True
@@ -232,7 +233,12 @@ class KITPlot(object):
         if not os.path.exists("cfg"):
             os.makedirs("cfg")
 
-        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])
+        #if os.path.isdir(fileName):
+        #    fileName = "cfg/%s.cfg" %(os.path.basename(os.path.normpath(fileName)))
+        #else:
+        #    fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])
+
+        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])
 
         print fileName
 
@@ -815,7 +821,7 @@ class KITPlot(object):
         #    i +=1
         #else:
         #    print self.shadeSet
-        #git     return True
+        #     return True
 
 
 ###################
