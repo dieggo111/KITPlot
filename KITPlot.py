@@ -72,15 +72,18 @@ class KITPlot(object):
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
-                        self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
+                    else:
+                        pass
+                for i, File in enumerate(self.__file):
+                    self.arrangeFileList()
+                    self.addGraph(self.__file[i].getX(),self.__file[i].getY())
 
                         # If you open the file the data type changes from str to file 
                         # with open(input + file) as inputFile:
                         #     self.__file.append(KITDataFile.KITDataFile(inputFile))
                         #     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
             
-                    else:
-                        pass
+
 
             # Load file with multiple PIDs
             elif os.path.isfile(input):
@@ -112,7 +115,7 @@ class KITPlot(object):
         self.titleH = 0.05
 
         # XAxis
-        self.titleX = "px"
+        self.titleX = "auto"
         self.titleSizeX = 0.05
         self.titleOffsetX = 1.1
         self.labelSizeX = 0.04
@@ -121,7 +124,7 @@ class KITPlot(object):
         self.rangeX = "auto"
 
         # YAxis
-        self.titleY = "py"
+        self.titleY = "auto"
         self.titleSizeY = 0.05
         self.titleOffsetY = 1.1
         self.labelSizeY = 0.04
@@ -131,9 +134,7 @@ class KITPlot(object):
         
         # Legend
         self.legendEntry = "name" # name / id
-        self.TopRight = True
-        self.TopLeft = False
-        self.BottomRight = False
+        self.legendPosition = "auto"
         
         # Misc
         self.padBottomMargin = 0.15
@@ -143,9 +144,7 @@ class KITPlot(object):
         self.markerColor = 1100
 
         # More plot options
-        self.GraphGroup = False
-        self.FluenzGroup = False
-        self.NameGroup = False
+        self.GraphGroup = "off"
         
         
         
@@ -212,9 +211,7 @@ class KITPlot(object):
         self.rangeY = cfgPrs.get('YAxis', 'yrange')
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
-        self.TopRight = cfgPrs.getboolean('Legend', 'top right position')
-        self.TopLeft = cfgPrs.getboolean('Legend', 'top left position')
-        self.BottomRight = cfgPrs.getboolean('Legend', 'bottom right position')
+        self.legendPosition = cfgPrs.get('Legend', 'legend position')
 
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
@@ -222,9 +219,7 @@ class KITPlot(object):
         self.markerStyle = cfgPrs.getint('Misc', 'marker style')
         self.markerColor = cfgPrs.getint('Misc', 'marker color')
 
-        self.GraphGroup = cfgPrs.getboolean('More plot options', 'graph group')
-        self.FluenzGroup = cfgPrs.getboolean('More plot options', 'fluenz group')
-        self.NameGroup = cfgPrs.getboolean('More plot options', 'name group')
+        self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
 
     def __writeCfg(self, fileName="plot"):
         
@@ -271,9 +266,7 @@ class KITPlot(object):
 
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
-            cfgPrs.set('Legend', 'top right position', self.TopRight)
-            cfgPrs.set('Legend', 'top left position', self.TopLeft)
-            cfgPrs.set('Legend', 'bottom right position', self.BottomRight)
+            cfgPrs.set('Legend', 'legend position', self.legendPosition)
        
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
@@ -284,8 +277,6 @@ class KITPlot(object):
             
             cfgPrs.add_section('More plot options')
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
-            cfgPrs.set('More plot options', 'fluenz group', self.FluenzGroup)
-            cfgPrs.set('More plot options', 'name group', self.NameGroup)
 
             cfgPrs.write(cfgFile)
 
@@ -491,9 +482,8 @@ class KITPlot(object):
         
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
-        
-        
         self.__graphs[0].SetTitle(Title)
+        
         if self.titleX == "auto":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
         if self.titleY == "auto":
@@ -505,7 +495,6 @@ class KITPlot(object):
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
         elif ":" in self.rangeX:
             RangeListX = self.rangeX.split(":")
-            #self.__graphs[0].GetXaxis().SetRangeUser(float(RangeListX[0]),float(RangeListX[1]))
             self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0]),float(RangeListX[1]))
         else:
             sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
@@ -520,20 +509,24 @@ class KITPlot(object):
                 
                 
         self.counter = 0
+        
+        # need to work on getFluenceP() method
+        if self.fileInput == True and self.GraphGroup == "fluence":
+            sys.exit("Fluence groups only work with ID inputs right now!")
+        
         for i, graph in enumerate(self.__graphs):
             graph.SetMarkerColor(self.getColor())
-            if self.GraphGroup == False:
+            if self.GraphGroup == "off":
                 graph.SetMarkerStyle(self.getMarkerStyle(i))
-
-        
-        if self.GraphGroup == True:
-            self.setGroup()
-            if self.NameGroup == True:
-                for i, Name in enumerate(self.__file):
-                    for j, Element in enumerate(self.GroupList):
-                        if Name.getName()[:5] == Element:
-                            self.__graphs[i].SetMarkerStyle(self.__markerSet[0+j])
-        
+            if self.GraphGroup == "name" or self.GraphGroup == "fluence":
+                for j, Element in enumerate(self.getGroupList()):
+                    if self.GraphGroup == "name" and self.__file[i].getName()[:5] == Element:
+                        graph.SetMarkerStyle(self.__markerSet[0+j])
+                    if self.GraphGroup == "fluence" and self.__file[i].getFluenceP() == Element:
+                        graph.SetMarkerStyle(self.__markerSet[0+j])
+            if self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence":
+                sys.exit("Invalid group parameter! Try 'off', 'name' or 'fluence'!")
+            
         return True
         
     def arrangeFileList(self):
@@ -638,23 +631,21 @@ class KITPlot(object):
             return self.__markerSet[index]
             
             
-    def setGroup(self):
+    def getGroupList(self):
     
         self.GroupList = []
         TempList = []
         for i, Element in enumerate(self.__file):
-            TempList.append(self.__file[i].getName()[:5])
-        if self.GraphGroup == True:
-            if self.NameGroup == True:
-                for i, TempName in enumerate(TempList):
-                    if TempName not in self.GroupList:
-                        self.GroupList.append(TempList[i])
+            if self.GraphGroup == "name":
+                TempList.append(self.__file[i].getName()[:5])
+            if self.GraphGroup == "fluence":
+                TempList.append(self.__file[i].getFluenceP())
 
-            elif self.FluenzGroup == True:
-                for i, File in enumerate(self.__file):
-                    print File.getFluenceP()
+        for i, TempElement in enumerate(TempList):
+            if TempElement not in self.GroupList:
+                  self.GroupList.append(TempList[i])
 
-        return True
+        return self.GroupList
 
 ######################
 ### Legend methods ###
@@ -689,45 +680,43 @@ class KITPlot(object):
         
         self.LegendParameters = []
         para = 0
+        self.TopRight = self.TopLeft = self.BottomRight = True
         
-        if len(self.__file[0].getName()) > para:
-            para=len(self.__file[0].getName())
+        for i in range(len(self.__file)):
+            if len(self.__file[i].getName()) > para:
+                para=len(self.__file[i].getName())
+
+        if self.legendPosition != "auto" and self.legendPosition != "TR" and self.legendPosition != "TL" and self.legendPosition != "BR":
+            sys.exit("Invalid legend position! Try 'auto', 'TR', 'TL' or 'BR'!")
         
-        # Top right corner is the default/starting position for the legend box.
-        self.TopRight = True
-        self.TopLeft = self.BottomRight = True
+        # Top right corner is the default/starting position for the legend box
         Lxmax = 0.98
         Lymax = 0.93
         Lxmin = Lxmax-para/100.
         Lymin = Lymax-len(self.__graphs)*0.03
-
-        
+            
+            
         # Check if elements are in the top right corner. 
         for i in range(len(self.__file)):
             for j in range(len(self.__file[i].getX())):
-                #print self.__file[i].getX()[j]
-                #print (abs(self.__file[i].getX()[j]),self.xmax*(1.+self.perc))
-                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin:
-                    #print (self.__file[i].getName(), abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))))
+                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin and self.legendPosition == "auto":
                     if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
-                        #print (self.__file[i].getName(), abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))))
-                        #print ("TR", self.__file[i].getName())
                         self.TopRight = False
         
-        if self.TopRight == False:
+        if self.TopRight == False or self.legendPosition == "TL":
             Lxmin = 0.18
             Lymax = 0.88
             Lymin = Lymax-len(self.__graphs)*0.03
-            Lxmax = 2.2*para/100.
-        
+            Lxmax = 1.7*para/100.
+
         # Check if elements are in the top left corner.
         for i in range(len(self.__file)):
             for j in range(len(self.__file[i].getX())):
-                if Lxmin-0.1 < abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax:
-                    if self.TopRight == False and abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.1:
+                if Lxmin-0.1 < abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax+0.05:
+                    if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.08 and self.legendPosition == "auto":
                         self.TopLeft = False
                 
-        if self.TopLeft == False:
+        if self.TopLeft == self.TopRight == False or self.legendPosition == "BR":
             Lxmax = 0.89
             Lymin = 0.18
             Lxmin = Lxmax-para/100.
@@ -737,15 +726,21 @@ class KITPlot(object):
         for i in range(len(self.__file)):
             for j in range(len(self.__file[i].getX())):
                 if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
-                    if self.TopLeft == False and self.TopRight == False and abs(self.__file[i].getY()[len(self.__file[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax:
+                    if abs(self.__file[i].getY()[len(self.__file[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
                         self.BottomRight = False
 
-        if self.BottomRight == False:
+        if self.BottomRight == self.TopLeft == self.TopRight == False:
             Lxmax = 0.98
             Lymax = 0.93
             Lxmin = Lxmax-para/100.
             Lymin = Lymax-len(self.__graphs)*0.03
             print "Couldn't find sufficient space!"
+            
+        if self.legendPosition == "TR":
+            Lxmax = 0.98
+            Lymax = 0.93
+            Lxmin = Lxmax-para/100.
+            Lymin = Lymax-len(self.__graphs)*0.03
 
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)
