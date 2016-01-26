@@ -156,7 +156,7 @@ class KITPlot(object):
     
         # if cfg path is given, check if correct
         if cfgFile is not None:
-            if os.path.exits(cfgFile):
+            if os.path.git (cfgFile):
                 self.__initCfg(cfgFile)
                 print("Initialized %s!" %(cfgFile))
             else:
