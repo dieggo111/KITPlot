@@ -136,7 +136,8 @@ class KITPlot(object):
         self.legendEntry = "name" # name / id
         self.legendPosition = "auto"
         self.legendTextSize = 0.02
-        
+        self.legendBoxPara = 1
+         
         # Misc
         self.padBottomMargin = 0.15
         self.padLeftMargin = 0.15
@@ -196,25 +197,26 @@ class KITPlot(object):
         self.titleH = cfgPrs.getfloat('Title', 'height')
 
         self.titleX = cfgPrs.get('XAxis', 'title')
-        self.titleSizeX = cfgPrs.getfloat('XAxis', 'titleSize')
-        self.titleOffsetX = cfgPrs.getfloat('XAxis', 'titleOffset')
-        self.labelSizeX = cfgPrs.getfloat('XAxis', 'labelsize')
+        self.titleSizeX = cfgPrs.getfloat('XAxis', 'title Size')
+        self.titleOffsetX = cfgPrs.getfloat('XAxis', 'title Offset')
+        self.labelSizeX = cfgPrs.getfloat('XAxis', 'label size')
         self.absX = cfgPrs.getboolean('XAxis', 'absolute')
         self.logX = cfgPrs.getboolean('XAxis', 'log')
         self.rangeX = cfgPrs.get('XAxis', 'xrange')
 
         self.titleY = cfgPrs.get('YAxis', 'title')
-        self.titleSizeY = cfgPrs.getfloat('YAxis', 'titleSize')
-        self.titleOffsetY = cfgPrs.getfloat('YAxis', 'titleOffset')
-        self.labelSizeY = cfgPrs.getfloat('YAxis', 'labelsize')
+        self.titleSizeY = cfgPrs.getfloat('YAxis', 'title Size')
+        self.titleOffsetY = cfgPrs.getfloat('YAxis', 'title Offset')
+        self.labelSizeY = cfgPrs.getfloat('YAxis', 'label size')
         self.absY = cfgPrs.getboolean('YAxis', 'absolute')
         self.logY = cfgPrs.getboolean('YAxis', 'log')
         self.rangeY = cfgPrs.get('YAxis', 'yrange')
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         self.legendPosition = cfgPrs.get('Legend', 'legend position')
-        self.legendTextSize = cfgPrs.getfloat('Legend', 'textSize')
-
+        self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
+        self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
+        
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
         self.markerSize = cfgPrs.getfloat('Misc', 'marker size')
@@ -250,18 +252,18 @@ class KITPlot(object):
 
             cfgPrs.add_section('XAxis')
             cfgPrs.set('XAxis', 'Title', self.titleX)
-            cfgPrs.set('XAxis', 'TitleOffset', self.titleOffsetX)
-            cfgPrs.set('XAxis', 'TitleSize', self.titleSizeX)
-            cfgPrs.set('XAxis', 'Labelsize', self.labelSizeX)
+            cfgPrs.set('XAxis', 'Title Offset', self.titleOffsetX)
+            cfgPrs.set('XAxis', 'Title Size', self.titleSizeX)
+            cfgPrs.set('XAxis', 'Label Size', self.labelSizeX)
             cfgPrs.set('XAxis', 'Absolute', self.absX)
             cfgPrs.set('XAxis', 'Log', self.logX)
             cfgPrs.set('XAxis', 'xRange', self.rangeX)
 
             cfgPrs.add_section('YAxis')
             cfgPrs.set('YAxis', 'Title', self.titleY)
-            cfgPrs.set('YAxis', 'TitleOffset', self.titleOffsetY)
-            cfgPrs.set('YAxis', 'TitleSize', self.titleSizeY)
-            cfgPrs.set('YAxis', 'Labelsize', self.labelSizeY)
+            cfgPrs.set('YAxis', 'Title Offset', self.titleOffsetY)
+            cfgPrs.set('YAxis', 'Title Size', self.titleSizeY)
+            cfgPrs.set('YAxis', 'Label Size', self.labelSizeY)
             cfgPrs.set('YAxis', 'Absolute', self.absY)
             cfgPrs.set('YAxis', 'Log', self.logY)
             cfgPrs.set('YAxis', 'yrange', self.rangeY)
@@ -269,7 +271,7 @@ class KITPlot(object):
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
-            cfgPrs.set('Legend', 'TextSize', self.legendTextSize)
+            cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
 
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
@@ -542,6 +544,7 @@ class KITPlot(object):
         for i, temp in enumerate(TempList1):
             if temp not in TempList2:
                 TempList2.append(temp)
+                TempList2.sort()
                 
         for i, temp1 in enumerate(TempList1):
             for j, temp2 in enumerate(TempList2):
@@ -658,8 +661,11 @@ class KITPlot(object):
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
-        self.legend.SetTextSize(self.legendTextSize)
-
+        if 0.02 <= self.legendTextSize <= 0.03:
+            self.legend.SetTextSize(self.legendTextSize)
+        else:
+            sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
+        
         for i,graph in enumerate(self.__graphs):
 
             try:
@@ -688,15 +694,28 @@ class KITPlot(object):
         for i in range(len(self.__file)):
             if len(self.__file[i].getName()) > para:
                 para=len(self.__file[i].getName())
-
+        
+        if para > 29:
+                sys.exit("Legend name too long! Reduce the number of characters!")
+        if not 0.5 <= self.legendBoxPara <= 1.5:
+            sys.exit("Invalid box parameter! Value must be between 0.5 and 1.5!")
+        else:
+            pass
+        
+        if self.legendTextSize == 0.02:
+            magic_para = para/100.*self.legendBoxPara
+        else: 
+            magic_para = (para/100.+para*self.legendTextSize/50)*self.legendBoxPara
+        
+        
         if self.legendPosition != "auto" and self.legendPosition != "TR" and self.legendPosition != "TL" and self.legendPosition != "BR":
             sys.exit("Invalid legend position! Try 'auto', 'TR', 'TL' or 'BR'!")
         
         # Top right corner is the default/starting position for the legend box
         Lxmax = 0.98
         Lymax = 0.93
-        Lxmin = Lxmax-para/100.
-        Lymin = Lymax-len(self.__graphs)*0.03
+        Lxmin = Lxmax-magic_para
+        Lymin = Lymax-len(self.__graphs)*0.03+self.legendTextSize
             
             
         # Check if elements are in the top right corner. 
@@ -709,8 +728,8 @@ class KITPlot(object):
         if self.TopRight == False or self.legendPosition == "TL":
             Lxmin = 0.18
             Lymax = 0.88
-            Lymin = Lymax-len(self.__graphs)*0.03
-            Lxmax = Lxmin+para/100.
+            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
+            Lxmax = Lxmin+magic_para
 
         # Check if elements are in the top left corner.
         for i in range(len(self.__file)):
@@ -722,9 +741,9 @@ class KITPlot(object):
         if self.TopLeft == self.TopRight == False or self.legendPosition == "BR":
             Lxmax = 0.89
             Lymin = 0.18
-            Lxmin = Lxmax-para/100.
-            Lymax = Lymin+len(self.__graphs)*0.03
-        
+            Lxmin = Lxmax-magic_para
+            Lymax = Lymin+len(self.__graphs)*0.03+self.legendTextSize
+            
         # If the plot is too crowded, create more space on the right.
         for i in range(len(self.__file)):
             for j in range(len(self.__file[i].getX())):
@@ -735,15 +754,15 @@ class KITPlot(object):
         if self.BottomRight == self.TopLeft == self.TopRight == False:
             Lxmax = 0.98
             Lymax = 0.93
-            Lxmin = Lxmax-para/100.
-            Lymin = Lymax-len(self.__graphs)*0.03
+            Lxmin = Lxmax-magic_para
+            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
             print "Couldn't find sufficient space!"
             
         if self.legendPosition == "TR":
             Lxmax = 0.98
             Lymax = 0.93
-            Lxmin = Lxmax-para/100.
-            Lymin = Lymax-len(self.__graphs)*0.03
+            Lxmin = Lxmax-magic_para
+            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
 
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)
