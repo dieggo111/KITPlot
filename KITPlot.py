@@ -133,7 +133,7 @@ class KITPlot(object):
         self.rangeY = "auto"
         
         # Legend
-        self.legendEntry = "name" # name / id
+        self.legendEntry = "name" 
         self.legendPosition = "auto"
         self.legendTextSize = 0.02
         self.legendBoxPara = 1
@@ -657,28 +657,62 @@ class KITPlot(object):
 ### Legend methods ###
 ######################
 
+    def setLegendEntries(self):
+    
+        UserEntries = []
+        EntryNumber = []
+        EntryName = []
+        UserEntries = self.legendEntry.replace("=",",").split(",")
+        for element in UserEntries:
+            if element.isdigit() == True:
+                EntryNumber.append(element)
+            else:
+                EntryName.append(element)
+        if len(EntryNumber) != len(EntryName):
+            sys.exit("Invalid legend entries given! Try 'entry number=entry name, ...'!")
+            
+        self.LegendEntryList = []
+        number=int(EntryNumber[0])
+        j=0
+        
+        for i in range(len(self.__graphs)):
+            if i == number:
+                self.LegendEntryList.append(EntryName[j])
+                if j < len(EntryNumber)-1:
+                    j += 1
+                number = int(EntryNumber[j])
+            else:
+                self.LegendEntryList.append(self.__file[i].getName())
+        
+        return True
+            
+
+
+
     def setLegend(self):
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
+        
         if 0.02 <= self.legendTextSize <= 0.03:
             self.legend.SetTextSize(self.legendTextSize)
         else:
             sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
         
+
         for i,graph in enumerate(self.__graphs):
-
-            try:
-                if self.legendEntry == "name":
-                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
-                elif self.legendEntry == "id":
-                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
-                else:
-                    print "Legend entry type not found. Use 'name' instead"
-                    self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
-            except:
-                pass
-
+            if self.legendEntry == "name":
+                self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+            elif self.legendEntry == "ID":
+                self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
+            elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
+                self.setLegendEntries()
+                self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
+            else:
+                print "Invalid entry! Using graph names"
+                self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+                
+ 
         self.legend.Draw()
         self.canvas.Update()
 
