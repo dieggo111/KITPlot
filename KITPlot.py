@@ -21,7 +21,6 @@ class KITPlot(object):
 
     def __init__(self, input=None, cfgFile=None):
         
-        self.fileInput = False
         self.cfgFile = cfgFile
         self.cfg_exists = False
                     
@@ -68,7 +67,6 @@ class KITPlot(object):
             
             # Load multiple data files in a folder
             elif os.path.isdir(input):
-                self.fileInput = True
                 for inputFile in os.listdir(input):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
@@ -272,6 +270,7 @@ class KITPlot(object):
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
             cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
+            cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
 
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
@@ -294,48 +293,49 @@ class KITPlot(object):
 
     def MeasurementType(self):
     
-        self.MT = self.__file[0].getParaY()
-        if self.MT == "I_tot":
-            self.autotitle = "Current Voltage Characteristics" 
-            self.autotitleY = "Current (A)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "Pinhole":
-            self.autotitle = "Pinhole Leakage" 
-            self.autotitleY = "Current (A)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "I_leak_dc":
-            self.autotitle = "Interstrip Current Leakage" 
-            self.autotitleY = "Current (A)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "C_tot":
-            self.autotitle = "Capacitance Voltage Characteristics" 
-            self.autotitleY = "Capacitance (F)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "C_int":
-            self.autotitle = "Interstrip Capacitance Measurement" 
-            self.autotitleY = "Capacitance (F)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "CC":
-            self.autotitle = "Coupling Capacitance Measurement" 
-            self.autotitleY = "Capacitance (F)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "R_int":
-            self.autotitle = "Interstrip Resistance Measurement" 
-            self.autotitleY = "Resistance (#Omega)"
-            self.autotitleX = "Voltage (V)"
-        if self.MT == "R_poly":
-            self.autotitle = "Strip Resistance Measurement" 
-            self.autotitleY = "Resistance (#Omega)"
-            self.autotitleX = "Voltage (V)"
-            
-        if len(self.__file) >= 2 and self.fileInput == False:
-            if self.__file[0].getParaY() != self.__file[1].getParaY():
-                sys.exit("Measurement types are not equal!")
-        
-        if self.fileInput == True:
+        if self.__file[0].getParaY() == None:
             self.autotitle = "Title" 
             self.autotitleY = "Y Value"
             self.autotitleX = "X Value"
+            
+        if self.__file[0].getParaY() != None:
+            self.MT = self.__file[0].getParaY()
+            if self.MT == "I_tot":
+                self.autotitle = "Current Voltage Characteristics" 
+                self.autotitleY = "Current (A)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "Pinhole":
+                self.autotitle = "Pinhole Leakage" 
+                self.autotitleY = "Current (A)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "I_leak_dc":
+                self.autotitle = "Interstrip Current Leakage" 
+                self.autotitleY = "Current (A)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "C_tot":
+                self.autotitle = "Capacitance Voltage Characteristics" 
+                self.autotitleY = "Capacitance (F)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "C_int":
+                self.autotitle = "Interstrip Capacitance Measurement" 
+                self.autotitleY = "Capacitance (F)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "CC":
+                self.autotitle = "Coupling Capacitance Measurement" 
+                self.autotitleY = "Capacitance (F)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "R_int":
+                self.autotitle = "Interstrip Resistance Measurement" 
+                self.autotitleY = "Resistance (#Omega)"
+                self.autotitleX = "Voltage (V)"
+            if self.MT == "R_poly":
+                self.autotitle = "Strip Resistance Measurement" 
+                self.autotitleY = "Resistance (#Omega)"
+                self.autotitleX = "Voltage (V)"
+            
+        if len(self.__file) >= 2 and self.__file[0].getParaY() != None:
+            if self.__file[0].getParaY() != self.__file[1].getParaY():
+                sys.exit("Measurement types are not equal!")
 
     def __checkPID(self, input):
         
@@ -516,7 +516,7 @@ class KITPlot(object):
         self.counter = 0
         
         # need to work on getFluenceP() method
-        if self.fileInput == True and self.GraphGroup == "fluence":
+        if self.__file[0].getParaY() != None and self.GraphGroup == "fluence":
             sys.exit("Fluence groups only work with ID inputs right now!")
         
         for i, graph in enumerate(self.__graphs):
@@ -803,8 +803,6 @@ class KITPlot(object):
         self.LegendParameters.append(Lxmax)
         self.LegendParameters.append(Lymax)
         
-
-        
        
 
 
@@ -827,6 +825,10 @@ class KITPlot(object):
         self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
         
         self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
+        self.__kitOrange.append(ROOT.TColor(1301, 249./255, 174./255, 73./255))
+        self.__kitOrange.append(ROOT.TColor(1302, 251./255, 195./255, 118./255))
+        self.__kitOrange.append(ROOT.TColor(1303, 252./255, 218./255, 168./255))
+        self.__kitOrange.append(ROOT.TColor(1304, 254./255, 236./255, 211./255))
         
         self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
         self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
@@ -835,14 +837,35 @@ class KITPlot(object):
         self.__kitBlue.append(ROOT.TColor(1404, 225./255, 225./255, 245./255))
 
         self.__kitPurple.append(ROOT.TColor(1500, 188./255, 12./255, 141./255))
+        self.__kitPurple.append(ROOT.TColor(1501, 205./255, 78./255, 174./255))
+        self.__kitPurple.append(ROOT.TColor(1502, 218./255, 125./255, 197./255))
+        self.__kitPurple.append(ROOT.TColor(1503, 232./255, 175./255, 220./255))
+        self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
 
         self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
 
         self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-
+        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
+        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
+        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
+        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
+        
         self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
 
         self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+       
 
         KITPlot.__init = True
         
@@ -861,18 +884,14 @@ class KITPlot(object):
             
         return True
 
-    def getShade(self):
+    def getShadeList(self):
+        shades = 5
         i = 0
-        self.shadeSet = []
-        print self.colorSet
-        print len(self.colorSet)
-        #if i<range(self.colorSet):
-        #    for j in range(4):
-        #        self.shadeSet.append(self.colorSet[i]+j)
-        #    i +=1
-        #else:
-        #    print self.shadeSet
-        #     return True
+        for i in range(len(self.colorSet)):
+            for j in range(shades):
+                self.ShadeList.append(self.colorSet[i]+j)
+            i +=1
+        return True
 
 
 ###################
