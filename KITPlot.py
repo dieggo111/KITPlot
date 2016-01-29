@@ -145,6 +145,7 @@ class KITPlot(object):
 
         # More plot options
         self.GraphGroup = "off"
+        self.ColorShades = False
         
         
         
@@ -222,6 +223,7 @@ class KITPlot(object):
         self.markerColor = cfgPrs.getint('Misc', 'marker color')
 
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
+        self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
 
     def __writeCfg(self, fileName="plot"):
         
@@ -281,6 +283,7 @@ class KITPlot(object):
             
             cfgPrs.add_section('More plot options')
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
+            cfgPrs.set('More plot options', 'color shades', self.ColorShades)
 
             cfgPrs.write(cfgFile)
 
@@ -516,23 +519,39 @@ class KITPlot(object):
         self.counter = 0
         
         # need to work on getFluenceP() method
-        if self.__file[0].getParaY() != None and self.GraphGroup == "fluence":
-            sys.exit("Fluence groups only work with ID inputs right now!")
+        if self.__file[0].getParaY() == None and self.GraphGroup == "fluence":
+            sys.exit("Fluence group only works with ID inputs right now!")
         
+        
+        # assign marker style
         for i, graph in enumerate(self.__graphs):
-            graph.SetMarkerColor(self.getColor())
             if self.GraphGroup == "off":
                 graph.SetMarkerStyle(self.getMarkerStyle(i))
-            if self.GraphGroup == "name" or self.GraphGroup == "fluence":
+            elif self.GraphGroup == "name" and self.ColorShades == True:
+                graph.SetMarkerStyle(self.getMarkerShade(i))
+            elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence":
+                sys.exit("Invalid group parameter! Try 'off', 'name' or 'fluence'!")
+            elif self.GraphGroup == "name" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
                     if self.GraphGroup == "name" and self.__file[i].getName()[:5] == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
                     if self.GraphGroup == "fluence" and self.__file[i].getFluenceP() == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
-            if self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence":
-                sys.exit("Invalid group parameter! Try 'off', 'name' or 'fluence'!")
-            
+
+                
+                
+        # assign color
+        for i, graph in enumerate(self.__graphs):
+            if self.GraphGroup == "off" :
+                graph.SetMarkerColor(self.getColor())
+            elif self.GraphGroup == "name" and self.ColorShades == False:
+                graph.SetMarkerColor(self.getColor())
+            elif self.GraphGroup == "name" and self.ColorShades == True:
+                graph.SetMarkerColor(self.getColorShades(i))
+            if self.GraphGroup == "off" and self.ColorShades == True:
+                sys.exit("Need graph groups for applying shades!")
         return True
+        
         
     def arrangeFileList(self):
 
@@ -544,7 +563,7 @@ class KITPlot(object):
         for i, temp in enumerate(TempList1):
             if temp not in TempList2:
                 TempList2.append(temp)
-                TempList2.sort()
+        TempList2.sort()
                 
         for i, temp1 in enumerate(TempList1):
             for j, temp2 in enumerate(TempList2):
@@ -636,7 +655,21 @@ class KITPlot(object):
         else:
             return self.__markerSet[index]
             
-            
+    def getMarkerShade(self, index):
+        
+        self.getShadeList()
+        MarkerShade = []
+        color_num = self.ShadeList[0]
+        
+        for i, shade in enumerate(self.ShadeList):
+            if not self.ShadeList[i]-color_num > 10:
+                MarkerShade.append(self.ShadeList[i]-color_num)
+            if self.ShadeList[i]-color_num > 10:
+                color_num += 100
+                MarkerShade.append(self.ShadeList[i]-color_num)
+        
+        return self.__markerSet[MarkerShade[index]]
+         
     def getGroupList(self):
     
         self.GroupList = []
@@ -686,7 +719,6 @@ class KITPlot(object):
         
         return True
             
-
 
 
     def setLegend(self):
@@ -811,6 +843,8 @@ class KITPlot(object):
 #####################
 
     def __initColor(self):
+    
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
@@ -872,26 +906,37 @@ class KITPlot(object):
         return True
 
     def getColor(self,clr=0):
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
         KITPlot.__color += 1
         KITPlot.__color %= 9
 
         return self.colorSet[KITPlot.__color-1]
 
-    def setColor(self):
-        for graph in self.__graphs:
-            graph.SetMarkerColor(self.getColor())
-            
-        return True
 
     def getShadeList(self):
-        shades = 5
-        i = 0
-        for i in range(len(self.colorSet)):
-            for j in range(shades):
-                self.ShadeList.append(self.colorSet[i]+j)
-            i +=1
+    
+        self.ShadeList = []
+        shade_counter = 0
+        j = 0
+        
+        for File in self.__file:
+            if File.getName()[:5] == self.getGroupList()[j]:
+                self.ShadeList.append(self.colorSet[j]+shade_counter)
+                shade_counter += 1
+            if File.getName()[:5] != self.getGroupList()[j]:
+                shade_counter = 0
+                if j <= len(self.getGroupList())-1:
+                    j += 1
+                self.ShadeList.append(self.colorSet[j]+shade_counter)
+                shade_counter += 1
+             
         return True
+        
+    def getColorShades(self, index):
+        self.getShadeList()
+        return self.ShadeList[index]
+        
+        
+
 
 
 ###################
