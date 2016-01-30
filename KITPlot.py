@@ -57,13 +57,20 @@ class KITPlot(object):
             pass
         
 
-                
     ######################
     ### Default values ###
     ######################
 
     def __initDefaultValues(self):
-    
+        """Initialize default values for all parameters
+
+        Args:
+            No arguments
+        Returns:
+            True
+         
+        """
+
         # Title options 
         self.title = "auto"
         self.titleX0 = 0.5
@@ -105,6 +112,7 @@ class KITPlot(object):
         self.GraphGroup = "off"
         self.ColorShades = False
         
+        return True
         
         
     ###################
@@ -112,18 +120,32 @@ class KITPlot(object):
     ###################
 
     def loadCfg(self, cfgFile=None):
-    
-        # if cfg path is given, check if correct
+        """Load cfg file or default values if no file is given
+
+        Args:
+            cfgFile: cfg file name
+        Returns:
+            True or False whether file was found or not
+        """
+        
         if cfgFile is not None:
             if os.path.exists(cfgFile):
                 self.__initCfg(cfgFile)
                 print("Initialized %s!" %(cfgFile))
+                return True
             else:
                 self.cfgFile = None
                 print "No cfg found! Need valid path! Use default values!"
-            
+                return False
 
     def __load_defaultCfg(self, fileName="plot"):
+        """Search for default cfg of given plot
+        
+        Args:
+            fileName: name of plot (fileName, pid)
+        Return:
+            True or False whether file was found or not
+        """
         
         file_path = os.getcwd() + "/cfg"
         if os.path.exists(file_path) == False:
@@ -143,7 +165,14 @@ class KITPlot(object):
                 
         
     def __initCfg(self, fileName):
+        """Initialize cfg for plot
         
+        Args:
+            fileName: name of cfg file
+        Returns:
+            True
+        """
+
         cfgPrs = ConfigParser.ConfigParser()
 
         cfgPrs.read(fileName)
@@ -183,7 +212,16 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
 
+        return True
+
     def __writeCfg(self, fileName="plot"):
+        """Write new cfg file
+
+        Args:
+            fileName: name of cfg file
+        Return:
+            True
+        """
         
         cfgPrs = ConfigParser.ConfigParser()
 
@@ -246,7 +284,8 @@ class KITPlot(object):
             cfgPrs.write(cfgFile)
 
         print ("Wrote %s" %(fileName))
-        
+        return True
+
 
     ##############
     ### Checks ###
@@ -381,8 +420,7 @@ class KITPlot(object):
                         #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
             
 
-
-            # Load file with multiple PIDs
+            # Load single file or file with multiple PIDs
             elif os.path.isfile(dataInput):
                 if self.__checkPID(dataInput) == True:
                     with open(dataInput) as inputFile:
@@ -990,10 +1028,8 @@ class KITPlot(object):
                     return self.__files[KITFile]
                 else:
                     return False
-        
+
 
     def getCanvas(self):
         return self.canvas
         
-        
-
