@@ -915,7 +915,25 @@ class KITPlot(object):
                     return self.__graphs[graph]
                 else:
                     return False
-
+                    
+    def getFile(self, KITFile=None):
+        
+        if len(self.__file) == 1:
+            return self.__file[0]
+        elif (len(self.__file) != 1) and (KITFile is None):
+            return self._file
+        else:
+            if isinstance(KITFile,str):
+                if (len(self.__file) != 1) and (KITFile.isdigit()):
+                    return self.__file[int(KITFile)]
+                else:
+                    return False
+            elif isinstance(KITFile,int):
+                if (len(self.__file) != 1):
+                    return self.__file[KITFile]
+                else:
+                    return False
+        
 
     def getCanvas(self):
         return self.canvas
