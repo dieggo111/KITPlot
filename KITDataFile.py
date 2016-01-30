@@ -22,15 +22,27 @@ class KITDataFile(object):
         self.__t0 = None
         self.__h0 = None
 
-        if isinstance(input, int):
+        if input is None:
+            return False
+
+        elif isinstance(input, int):
             self.__pid = input
-            self.__init_db_connection() # Establish database connection
+            print "Input: PID"
+
+            if KITDataFile.__dbCrs is None:
+                self.__init_db_connection() # Establish database connection
+            else:
+                pass
             self.__allo_db(input)
-        
+
         elif isinstance(input, str) and input.isdigit():
-            print "Input: ProbeID"
             self.__pid = input
-            self.__init_db_connection() # Establish database connection
+            print "Input: PID"
+
+            if KITDataFile.__dbCrs is None:
+                self.__init_db_connection() # Establish database connection
+            else:
+                pass
             self.__allo_db(input)
 
         elif isinstance(input, str) and os.path.isfile(input):
@@ -57,6 +69,9 @@ class KITDataFile(object):
         else:
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
+        
+
+
     def __init_db_connection(self, filename='db.cfg', section='database'):
 
         if not os.path.isfile(filename):            
@@ -79,7 +94,7 @@ class KITDataFile(object):
             KITDataFile.__dbCnx = mysql.connector.MySQLConnection(**db_config)
         
             if KITDataFile.__dbCnx.is_connected():
-                print "Connection established"
+                print "Database connection established"
             else:
                 sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
                 
@@ -135,9 +150,56 @@ class KITDataFile(object):
              pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
             self.__name = name
             self.__Fp = Fp
-            
 
-    def getDataSet(self, dataSet):
+
+    def setX(self, inputArray=None):
+        
+        if inputArray is not None:
+            try:
+                self.__x = inputArray
+                return True
+            except:
+                print "Cannot set x: wrong format"
+                return False
+    
+    def setY(self, inputArray=None):
+        
+        if inputArray is not None:
+            try:
+                self.__y = inputArray
+                return True
+            except:
+                print "Cannot set y: wrong format"
+                return False
+
+    def setY(self, inputArray=None):
+        
+        if inputArray is not None:
+            try:
+                self.__z = inputArray
+                return True
+            except:
+                print "Cannot set z: wrong format"
+                return False
+    
+    def setData(self, **kwargs):
+        
+        for key in kwargs:
+            if key is "x":
+                self.setX(kwargs[key])
+            elif key is "y":
+                self.setY(kwargs[key])
+            elif key is "z":
+                self.setZ(kwargs[key])
+            return True
+
+
+    def setName(self, name=""):
+        self.__name = name
+        return True
+
+
+    def getData(self, dataSet="x"):
         if (str(dataSet) == "x") | (dataSet == 0) :
             return self.__x
         elif (str(dataSet) == "y") | (dataSet == 1) :
@@ -171,8 +233,6 @@ class KITDataFile(object):
             return np.asarray(self.__z)
         else:
             return self.__z
-    
-
 
     def getSize(self):
         return len(self.__x)

@@ -39,9 +39,14 @@ class KITPlot(object):
 
         # Load parameters and apply deault style        
         self.__initDefaultValues()
-        
+
+
         if cfgFile is not None:
             self.loadCfg(cfgFile)
+        elif dataInput is None and self.__load_defaultCfg("plot"):
+            print("Initialized default cfg file plot.cfg")
+        elif dataInput is None and self.__load_defaultCfg("plot") is not True:
+            self.__writeCfg("plot.cfg")
         elif self.__load_defaultCfg(dataInput):
             print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
@@ -292,7 +297,7 @@ class KITPlot(object):
     ##############
 
     def MeasurementType(self):
-    
+
         if self.__files[0].getParaY() == None:
             self.autotitle = "Title" 
             self.autotitleY = "Y Value"
@@ -480,7 +485,11 @@ class KITPlot(object):
         return True
             
                         
-    def Draw(self, arg="AP"):
+    def draw(self, arg="AP"):
+
+        if len(self.__graphs) == 0:
+            print "No graphs to draw"
+            return False
 
         # init canvas
         self.canvas = ROOT.TCanvas("c1","c1",1280,768)
