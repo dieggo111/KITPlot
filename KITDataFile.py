@@ -152,6 +152,85 @@ class KITDataFile(object):
             self.__Fp = Fp
 
 
+    def dropXLower(self, xlow=0):
+        
+        xTemp = []
+        yTemp = []
+        
+        for i,x in enumerate(self.__x):
+            if x >= float(xlow):
+                xTemp.append(x)
+                yTemp.append(self.__y[i])
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    def dropXHigher(self, xhigh=0):
+
+        xTemp = []
+        yTemp = []
+        
+        for i,x in enumerate(self.__x):
+            if x <= float(xhigh):
+                xTemp.append(x)
+                yTemp.append(self.__y[i])
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    
+    def dropYLower(self, ylow=0):
+
+        xTemp = []
+        yTemp = []
+        
+        for i,y in enumerate(self.__y):
+            if y >= float(ylow):
+                xTemp.append(self.__x[i])
+                yTemp.append(y)
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+
+    def dropYHigher(self, yhigh=0):
+
+        xTemp = []
+        yTemp = []
+        
+        for i,y in enumerate(self.__y):
+            if y <= float(yhigh):
+                xTemp.append(self.__x[i])
+                yTemp.append(y)
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    def setRange(self, var="x", low=0, high=0):
+        
+        if var is "x":
+            self.dropXLower(low)
+            self.dropXHigher(high)
+        elif var is "y":
+            self.dropYLower(low)
+            self.dropYHigher(high)
+            
+        return True
+        
+
+
+    ###################
+    ### Set methods ###
+    ###################
+
     def setX(self, inputArray=None):
         
         if inputArray is not None:
@@ -198,6 +277,10 @@ class KITDataFile(object):
         self.__name = name
         return True
 
+
+    ###################
+    ### Get Methods ###
+    ###################
 
     def getData(self, dataSet="x"):
         if (str(dataSet) == "x") | (dataSet == 0) :
