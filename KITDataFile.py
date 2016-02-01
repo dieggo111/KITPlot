@@ -4,11 +4,23 @@ import mysql.connector
 import ConfigParser
 
 class KITDataFile(object):
+    """ The KITDataFile class is a very simple data container that is able
+    to connect to the IEKP database to read and store all relevant data
+    into private member varables. 
+
+    """
 
     __dbCnx = None
     __dbCrs = None
 
     def __init__(self, input=None):
+        """ Initialize KITDataFile object based on the input that is passed.
+        
+        Args:
+            input (None|pid|file): Only pid inputs will fill all additional 
+            information automatically
+
+        """
         
         self.__x = []
         self.__y = []
@@ -22,15 +34,27 @@ class KITDataFile(object):
         self.__t0 = None
         self.__h0 = None
 
-        if isinstance(input, int):
+        if input is None:
+            return False
+
+        elif isinstance(input, int):
             self.__pid = input
-            self.__init_db_connection() # Establish database connection
+            print "Input: PID"
+
+            if KITDataFile.__dbCrs is None:
+                self.__init_db_connection() # Establish database connection
+            else:
+                pass
             self.__allo_db(input)
-        
+
         elif isinstance(input, str) and input.isdigit():
-            print "Input: ProbeID"
             self.__pid = input
-            self.__init_db_connection() # Establish database connection
+            print "Input: PID"
+
+            if KITDataFile.__dbCrs is None:
+                self.__init_db_connection() # Establish database connection
+            else:
+                pass
             self.__allo_db(input)
 
         elif isinstance(input, str) and os.path.isfile(input):
@@ -57,8 +81,18 @@ class KITDataFile(object):
         else:
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
-    def __init_db_connection(self, filename='db.cfg', section='database'):
+        
 
+
+    def __init_db_connection(self, filename='db.cfg', section='database'):
+        """Initialize db_connection and set static connection and curser
+        
+        Args:
+            filename: database config file that contains all necessary data
+            section: config section where login data can be found
+
+        """
+        
         if not os.path.isfile(filename):            
             self.__createCfg()        
             sys.exit("Please add database parameters to 'db.cfg' ")
@@ -79,7 +113,7 @@ class KITDataFile(object):
             KITDataFile.__dbCnx = mysql.connector.MySQLConnection(**db_config)
         
             if KITDataFile.__dbCnx.is_connected():
-                print "Connection established"
+                print "Database connection established"
             else:
                 sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
                 
@@ -87,6 +121,9 @@ class KITDataFile(object):
         
        
     def __createCfg(self):
+        """Create empty config file dummy that has to be filled
+
+        """
         
         with open('db.cfg','w') as cfg:
             cfg.write("[database]\n")
@@ -97,7 +134,16 @@ class KITDataFile(object):
 
 
     def __check_if_folder_pid(self, fileName):
+        """Check if file contains PIDs or datasets
         
+        Args:
+            fileName: file with pids or datasets
+
+        Returns:
+            True|False whether file contains PIDs(True) or datasets(False)
+
+        """
+
         with open(fileName) as file:
             if len(file.readline().split()) == 1:
                 return True
@@ -106,6 +152,14 @@ class KITDataFile(object):
         
 
     def __allo_db(self, pid):
+        """Allocate measurement information. 
+           This works only if database connection is already established.
+
+        Args:
+            pid: probe id in the IEKP database
+
+        """
+        
 
         qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
         KITDataFile.__dbCrs.execute(qryProbeData)
@@ -135,9 +189,240 @@ class KITDataFile(object):
              pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
             self.__name = name
             self.__Fp = Fp
-            
 
-    def getDataSet(self, dataSet):
+
+    def dropXLower(self, xlow=0):
+        """Drops datasets if x < xlow
+
+        Args:
+            xlow: everything below xlow will be droped 
+
+        Returns:
+            True
+        
+        """
+        
+        xTemp = []
+        yTemp = []
+        
+        for i,x in enumerate(self.__x):
+            if x >= float(xlow):
+                xTemp.append(x)
+                yTemp.append(self.__y[i])
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    def dropXHigher(self, xhigh=0):
+        """Drops datasets if x > xhigh
+
+        Args:
+            xhigh: everything above xhigh will be droped 
+
+        Returns:
+            True
+        
+        """
+
+        xTemp = []
+        yTemp = []
+        
+        for i,x in enumerate(self.__x):
+            if x <= float(xhigh):
+                xTemp.append(x)
+                yTemp.append(self.__y[i])
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    
+    def dropYLower(self, ylow=0):
+        """Drops datasets if y < ylow
+
+        Args:
+            ylow: everything below ylow will be droped 
+
+        Returns:
+            True
+        
+        """
+
+        xTemp = []
+        yTemp = []
+        
+        for i,y in enumerate(self.__y):
+            if y >= float(ylow):
+                xTemp.append(self.__x[i])
+                yTemp.append(y)
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+
+    def dropYHigher(self, yhigh=0):
+        """Drops datasets if y > yhigh
+
+        Args:
+            yhigh: everything below yhigh will be droped 
+
+        Returns:
+            True
+        
+        """
+
+        xTemp = []
+        yTemp = []
+        
+        for i,y in enumerate(self.__y):
+            if y <= float(yhigh):
+                xTemp.append(self.__x[i])
+                yTemp.append(y)
+        
+        self.__x = xTemp
+        self.__y = yTemp
+
+        return True
+
+    def setRange(self, var="x", low=0, high=0):
+        """Set a certain data range. Every dataset outside this
+        range will be droped.
+        
+        Args:
+            var ("x"|"y"): range referes to either x or y 
+            low: lower limit
+            high: upper limit
+
+        """
+
+        if var is "x":
+            self.dropXLower(low)
+            self.dropXHigher(high)
+        elif var is "y":
+            self.dropYLower(low)
+            self.dropYHigher(high)
+            
+        return True
+        
+
+    ###################
+    ### Set methods ###
+    ###################
+
+    def setX(self, inputArray=None):
+        """Set new or initialize x values of data file
+
+        Args:
+            inputArray: array or list of floats
+
+        Returns:
+            True|False if the data format is correct or wrong
+
+        """
+        
+        if inputArray is not None:
+            try:
+                self.__x = inputArray
+                return True
+            except:
+                print "Cannot set x: wrong format"
+                return False
+    
+    def setY(self, inputArray=None):
+        """Set new or initialize y values of data file
+
+        Args:
+            inputArray: array or list of floats
+
+        Returns:
+            True|False if the data format is correct or wrong
+
+        """
+        
+        if inputArray is not None:
+            try:
+                self.__y = inputArray
+                return True
+            except:
+                print "Cannot set y: wrong format"
+                return False
+
+    def setZ(self, inputArray=None):
+        """Set new or initialize z values of data file
+
+        Args:
+            inputArray: array or list of floats
+
+        Returns:
+            True|False if the data format is correct or wrong
+
+        """
+
+
+        if inputArray is not None:
+            try:
+                self.__z = inputArray
+                return True
+            except:
+                print "Cannot set z: wrong format"
+                return False
+    
+    def setData(self, **kwargs):
+        """Set whole data sets
+
+        Args:
+            kwargs (x=[],y=[],z=[]): only x,y,z will be considered
+        
+        Returns:
+            True
+        
+        """
+
+        for key in kwargs:
+            if key is "x":
+                self.setX(kwargs[key])
+            elif key is "y":
+                self.setY(kwargs[key])
+            elif key is "z":
+                self.setZ(kwargs[key])
+            return True
+
+
+    def setName(self, name=""):
+        """Set name of data file
+
+        Args:
+            name: name of data file
+        
+        Returns:
+            True
+
+        """
+
+        self.__name = name
+        return True
+
+
+    ###################
+    ### Get Methods ###
+    ###################
+
+    def getData(self, dataSet="x"):
+        """Returns x or y array
+        
+        Args:
+            dataSet ("x"|"y"): whether x or y data will be returned
+
+        Returns:
+            List of x or y data set
+        
+        """
+
         if (str(dataSet) == "x") | (dataSet == 0) :
             return self.__x
         elif (str(dataSet) == "y") | (dataSet == 1) :
@@ -147,11 +432,27 @@ class KITDataFile(object):
 
 
     def getID(self):
+        """Returns PID
+        
+        Returns:
+            PID
+        
+        """
+
         return self.__pid
 
 
     def getX(self, asarray=False):
+        """Returns x dataset as list or array
         
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of x dataset
+
+        """
+
         if asarray:
             return np.asarray(self.__x)
         else:
@@ -159,6 +460,15 @@ class KITDataFile(object):
 
 
     def getY(self,  asarray=False):
+        """Returns y dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of y dataset
+
+        """
         
         if asarray:
             return np.asarray(self.__y)
@@ -166,46 +476,109 @@ class KITDataFile(object):
             return self.__y
     
     def getZ(self, asarray=False):
+        """Returns z dataset as list or array
         
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of z dataset
+
+        """
+                
         if asarray:
             return np.asarray(self.__z)
         else:
             return self.__z
-    
-
 
     def getSize(self):
+        """Returns size of dataset
+
+        Returns:
+            Int: length of dataset
+
+        """
+
         return len(self.__x)
 
 
     def getName(self):
+        """Returns name parameter
+
+        Returns:
+           string: name of dataset
+
+        """
+
         return self.__name
 
 
     def getParaX(self):
+        """Returns name of x variable
+
+        Returns:
+            string: name of x variable
+
+        """
+
         return self.__px
 
 
     def getParaY(self):
+        """Returns measured variable
+        
+        Returns:
+            string: measured variable
+        
+        """
+
         return self.__py
 
 
     def getTemp(self):
-        return self.__t0
+        """Returns measured temperature
+
+        Returns:
+            float: measured temperature
+
+        """
+        
+        return float(self.__t0)
 
 
     def getHumidity(self):
+        """Returns measured humidity
+
+        Returns:
+            float: measured humidity
+
+        """
+
         return self.__h0
 
-
-    def getScaleX(self):
-        return min(__x), max(__x) 
-
-
-    def getScaleY(self):
-        return 0, 1.3*max(__y)
     
     def getFluenceP(self):
+        """Returns fluence of irradiated sensors
+
+        Returns:
+            string: fluence of irradiated sensor
+        
+        """
+        
         return self.__Fp
 
 
+    #TODO: Do we need these two methods?
+    def getScaleX(self):
+        """Returns min and max of x dataset
+        
+        Returns:
+            float,float: min and max of x
+
+        """
+        
+        return min(self.__x), max(self.__x) 
+
+    def getScaleY(self):
+
+        return 0, 1.3*max(__y)

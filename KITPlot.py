@@ -19,8 +19,14 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, input=None, cfgFile=None):
+    def __init__(self, dataInput=None, cfgFile=None):
+
         
+        # init lists
+        self.__files = []
+        self.__graphs = []
+
+        # TODO: Can we get rid of these two?
         self.cfgFile = cfgFile
         self.cfg_exists = False
                     
@@ -31,83 +37,44 @@ class KITPlot(object):
         else:
             pass
 
-        # Load parameters         
+        # Load parameters and apply deault style        
         self.__initDefaultValues()
-        
+
+
         if cfgFile is not None:
             self.loadCfg(cfgFile)
-        elif self.__load_defaultCfg(input):
-            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(input)))[0]))
+        elif dataInput is None and self.__load_defaultCfg("plot"):
+            print("Initialized default cfg file plot.cfg")
+        elif dataInput is None and self.__load_defaultCfg("plot") is not True:
+            self.__writeCfg("plot.cfg")
+        elif self.__load_defaultCfg(dataInput):
+            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
-            self.__writeCfg(input)
-
+            self.__writeCfg(dataInput)
 
         self.__initStyle()
 
-        # load input
-        self.__file = []
-        self.__graphs = []
-        
-        # Load KITDataFile
-        if isinstance(input, KITDataFile.KITDataFile):
-            self.__file.append(input)
-            self.addGraph(input.getX(),input.getY())
-
-        # Load single PID
-        elif isinstance(input, int):
-            self.__file.append(KITDataFile.KITDataFile(input))
-            self.addGraph(self.__file[-1].getX(), self.__file[-1].getY())
-          
-        elif isinstance(input, str):
-
-            # Load single PID
-            if input.isdigit():
-                self.__file.append(KITDataFile.KITDataFile(input))
-                self.addGraph(self.__file[-1].getX(), self.__file[-1].getY())
-            
-            # Load multiple data files in a folder
-            elif os.path.isdir(input):
-                for inputFile in os.listdir(input):
-                    if (os.path.splitext(inputFile)[1] == ".txt"):
-                        self.__file.append(KITDataFile.KITDataFile(input + inputFile))
-                    else:
-                        pass
-                self.arrangeFileList()
-                self.arrangeEntries()
-                for i, File in enumerate(self.__file):
-                    self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-
-                        # If you open the file the data type changes from str to file 
-                        # with open(input + file) as inputFile:
-                        #     self.__file.append(KITDataFile.KITDataFile(inputFile))
-                        #     self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
-            
-
-
-            # Load file with multiple PIDs
-            elif os.path.isfile(input):
-                if self.__checkPID(input) == True:
-                    with open(input) as inputFile:
-                        for line in inputFile:
-                            entry = line.split()
-                            if entry[0].isdigit():
-                                self.__file.append(KITDataFile.KITDataFile(entry[0]))
-                    self.arrangeFileList()
-                    self.arrangeEntries()
-                    for i, File in enumerate(self.__file):
-                        self.addGraph(self.__file[i].getX(),self.__file[i].getY())
-                else:
-                    self.__file.append(KITDataFile.KITDataFile(input))
-                    self.addGraph(self.__file[-1].getX(),self.__file[-1].getY())
+        # add files
+        if dataInput is not None:
+            self.add(dataInput)
+        else:
+            pass
         
 
-        
     ######################
     ### Default values ###
     ######################
 
     def __initDefaultValues(self):
-    
+        """Initialize default values for all parameters
+
+        Args:
+            No arguments
+        Returns:
+            True
+         
+        """
+
         # Title options 
         self.title = "auto"
         self.titleX0 = 0.5
@@ -150,6 +117,7 @@ class KITPlot(object):
         self.GraphGroup = "off"
         self.ColorShades = False
         
+        return True
         
         
     ###################
@@ -157,18 +125,32 @@ class KITPlot(object):
     ###################
 
     def loadCfg(self, cfgFile=None):
-    
-        # if cfg path is given, check if correct
+        """Load cfg file or default values if no file is given
+
+        Args:
+            cfgFile: cfg file name
+        Returns:
+            True or False whether file was found or not
+        """
+        
         if cfgFile is not None:
             if os.path.exists(cfgFile):
                 self.__initCfg(cfgFile)
                 print("Initialized %s!" %(cfgFile))
+                return True
             else:
                 self.cfgFile = None
                 print "No cfg found! Need valid path! Use default values!"
-            
+                return False
 
     def __load_defaultCfg(self, fileName="plot"):
+        """Search for default cfg of given plot
+        
+        Args:
+            fileName: name of plot (fileName, pid)
+        Return:
+            True or False whether file was found or not
+        """
         
         file_path = os.getcwd() + "/cfg"
         if os.path.exists(file_path) == False:
@@ -188,7 +170,14 @@ class KITPlot(object):
                 
         
     def __initCfg(self, fileName):
+        """Initialize cfg for plot
         
+        Args:
+            fileName: name of cfg file
+        Returns:
+            True
+        """
+
         cfgPrs = ConfigParser.ConfigParser()
 
         cfgPrs.read(fileName)
@@ -229,7 +218,16 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
 
+        return True
+
     def __writeCfg(self, fileName="plot"):
+        """Write new cfg file
+
+        Args:
+            fileName: name of cfg file
+        Return:
+            True
+        """
         
         cfgPrs = ConfigParser.ConfigParser()
 
@@ -293,21 +291,22 @@ class KITPlot(object):
             cfgPrs.write(cfgFile)
 
         print ("Wrote %s" %(fileName))
-        
+        return True
 
-##############
-### Checks ###
-##############
+
+    ##############
+    ### Checks ###
+    ##############
 
     def MeasurementType(self):
-    
-        if self.__file[0].getParaY() == None:
+
+        if self.__files[0].getParaY() == None:
             self.autotitle = "Title" 
             self.autotitleY = "Y Value"
             self.autotitleX = "X Value"
             
-        if self.__file[0].getParaY() != None:
-            self.MT = self.__file[0].getParaY()
+        if self.__files[0].getParaY() != None:
+            self.MT = self.__files[0].getParaY()
             if self.MT == "I_tot":
                 self.autotitle = "Current Voltage Characteristics" 
                 self.autotitleY = "Current (A)"
@@ -341,22 +340,22 @@ class KITPlot(object):
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Voltage (V)"
             
-        if len(self.__file) >= 2 and self.__file[0].getParaY() != None:
-            if self.__file[0].getParaY() != self.__file[1].getParaY():
+        if len(self.__files) >= 2 and self.__files[0].getParaY() != None:
+            if self.__files[0].getParaY() != self.__files[1].getParaY():
                 sys.exit("Measurement types are not equal!")
 
-    def __checkPID(self, input):
+    def __checkPID(self, dataInput):
         
-        if os.path.isfile(input):
-            with open(input) as inputFile:
+        if os.path.isfile(dataInput):
+            with open(dataInput) as inputFile:
                 if len(inputFile.readline().split()) == 1:
                     return True
                 else:
                     return False
 
-#####################
-### Graph methods ###
-#####################
+    #####################
+    ### Graph methods ###
+    #####################
 
     
     def __initStyle(self):
@@ -392,13 +391,68 @@ class KITPlot(object):
         return True
 
 
+    def add(self, dataInput=None):
+        
+        # Load KITDataFile
+        if isinstance(dataInput, KITDataFile.KITDataFile):
+            self.__files.append(dataInput)
+            self.addGraph(dataInput.getX(),dataInput.getY())
+
+        # Load single PID
+        elif isinstance(dataInput, int):
+            self.__files.append(KITDataFile.KITDataFile(dataInput))
+            self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+          
+        elif isinstance(dataInput, str):
+
+            # Load single PID
+            if dataInput.isdigit():
+                self.__files.append(KITDataFile.KITDataFile(dataInput))
+                self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+            
+            # Load multiple data files in a folder
+            elif os.path.isdir(dataInput):
+                for inputFile in os.listdir(dataInput):
+                    if (os.path.splitext(inputFile)[1] == ".txt"):
+                        self.__files.append(KITDataFile.KITDataFile(dataInput + inputFile))
+                    else:
+                        pass
+                self.arrangeFileList()
+                self.arrangeEntries()
+                for i, File in enumerate(self.__files):
+                    self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+
+                        # If you open the file the data type changes from str to file 
+                        # with open(dataInput + file) as inputFile:
+                        #     self.__files.append(KITDataFile.KITDataFile(inputFile))
+                        #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
+            
+
+            # Load single file or file with multiple PIDs
+            elif os.path.isfile(dataInput):
+                if self.__checkPID(dataInput) == True:
+                    with open(dataInput) as inputFile:
+                        for line in inputFile:
+                            entry = line.split()
+                            if entry[0].isdigit():
+                                self.__files.append(KITDataFile.KITDataFile(entry[0]))
+                    self.arrangeFileList()
+                    self.arrangeEntries()
+                    for i, File in enumerate(self.__files):
+                        self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+                else:
+                    self.__files.append(KITDataFile.KITDataFile(dataInput))
+                    self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
+
+
+
     def addGraph(self, *args):
         
         # args: x, y or KITDataFile
 
         if isinstance(args[0], KITDataFile.KITDataFile):
 
-            self.__file.append(args[0])
+            self.__files.append(args[0])
             
             if self.absX:
                 x = np.absolute(args[0].getX())
@@ -435,7 +489,11 @@ class KITPlot(object):
         return True
             
                         
-    def Draw(self, arg="AP"):
+    def draw(self, arg="AP"):
+
+        if len(self.__graphs) == 0:
+            print "No graphs to draw"
+            return False
 
         # init canvas
         self.canvas = ROOT.TCanvas("c1","c1",1280,768)
@@ -524,7 +582,7 @@ class KITPlot(object):
         self.counter = 0
         
         # need to work on getFluenceP() method
-        if self.__file[0].getParaY() == None and self.GraphGroup == "fluence":
+        if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
             sys.exit("Fluence group only works with ID inputs right now!")
         
         
@@ -538,9 +596,9 @@ class KITPlot(object):
                 sys.exit("Invalid group parameter! Try 'off', 'name' or 'fluence'!")
             elif self.GraphGroup == "name" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
-                    if self.GraphGroup == "name" and self.__file[i].getName()[:5] == Element:
+                    if self.GraphGroup == "name" and self.__files[i].getName()[:5] == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
-                    if self.GraphGroup == "fluence" and self.__file[i].getFluenceP() == Element:
+                    if self.GraphGroup == "fluence" and self.__files[i].getFluenceP() == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
 
                 
@@ -563,7 +621,7 @@ class KITPlot(object):
         TempList1 = []
         TempList2 = []
         IndexList = []
-        for i, temp in enumerate(self.__file):
+        for i, temp in enumerate(self.__files):
             TempList1.append(temp.getName()[:5])
         for i, temp in enumerate(TempList1):
             if temp not in TempList2:
@@ -581,10 +639,10 @@ class KITPlot(object):
             if Index > max_index:
                 max_index = Index
         for Index in range(max_index+1):
-            for i, File in enumerate(self.__file):
+            for i, File in enumerate(self.__files):
                 if Index == IndexList[i]:
                     TempList1.append(File)
-        self.__file = TempList1
+        self.__files = TempList1
         
         
     def arrangeEntries(self):
@@ -603,22 +661,23 @@ class KITPlot(object):
             if len(After) != len(Before):
                 sys.exit("Invalid legend entries given! Try 'entry befor=entry after, ...'!")
         
-        for Name in self.__file:
-            print Name.getName()
+            for Name in self.__files:
+                print Name.getName()
             
-        j = 0
-        for i,element in enumerate(self.__file):
-            if i == Before[j]:
-                temp = element
-                self.__file[i] = self.__file[After[j]]
-                self.__file[After[j]] = temp
-                if j < len(Before)-1:
-                    j += 1
+            j = 0
+            for i,element in enumerate(self.__files):
+                if i == Before[j]:
+                    temp = element
+                    self.__files[i] = self.__files[After[j]]
+                    self.__files[After[j]] = temp
+                    if j < len(Before)-1:
+                        j += 1
         
-        for Name in self.__file:
-            print Name.getName()
-            
-            
+            for Name in self.__files:
+                print Name.getName()
+        
+        else:
+            pass
         
 
         return True
@@ -635,7 +694,7 @@ class KITPlot(object):
         ListX = [0]
         ListY = [0]
 
-        for inputFile in self.__file:
+        for inputFile in self.__files:
             ListX += inputFile.getX()
             ListY += inputFile.getY()
 
@@ -717,11 +776,11 @@ class KITPlot(object):
     
         self.GroupList = []
         TempList = []
-        for i, Element in enumerate(self.__file):
+        for i, Element in enumerate(self.__files):
             if self.GraphGroup == "name":
-                TempList.append(self.__file[i].getName()[:5])
+                TempList.append(self.__files[i].getName()[:5])
             if self.GraphGroup == "fluence":
-                TempList.append(self.__file[i].getFluenceP())
+                TempList.append(self.__files[i].getFluenceP())
 
         for i, TempElement in enumerate(TempList):
             if TempElement not in self.GroupList:
@@ -758,7 +817,7 @@ class KITPlot(object):
                     j += 1
                 number = int(EntryNumber[j])
             else:
-                self.LegendEntryList.append(self.__file[i].getName())
+                self.LegendEntryList.append(self.__files[i].getName())
         
         return True
             
@@ -777,15 +836,15 @@ class KITPlot(object):
 
         for i,graph in enumerate(self.__graphs):
             if self.legendEntry == "name":
-                self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "ID":
-                self.legend.AddEntry(self.__graphs[i], self.__file[i].getID(), "p")
+                self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
             elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
                 self.setLegendEntries()
                 self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
             else:
                 print "Invalid entry! Using graph names"
-                self.legend.AddEntry(self.__graphs[i], self.__file[i].getName(), "p")
+                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
                 
  
         self.legend.Draw()
@@ -800,9 +859,9 @@ class KITPlot(object):
         para = 0
         self.TopRight = self.TopLeft = self.BottomRight = True
         
-        for i in range(len(self.__file)):
-            if len(self.__file[i].getName()) > para:
-                para=len(self.__file[i].getName())
+        for i in range(len(self.__files)):
+            if len(self.__files[i].getName()) > para:
+                para=len(self.__files[i].getName())
         
         if para > 29:
                 sys.exit("Legend name too long! Reduce the number of characters!")
@@ -828,10 +887,10 @@ class KITPlot(object):
             
             
         # Check if elements are in the top right corner. 
-        for i in range(len(self.__file)):
-            for j in range(len(self.__file[i].getX())):
-                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin and self.legendPosition == "auto":
-                    if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
+        for i in range(len(self.__files)):
+            for j in range(len(self.__files[i].getX())):
+                if abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin and self.legendPosition == "auto":
+                    if abs(self.__files[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
                         self.TopRight = False
         
         if self.TopRight == False or self.legendPosition == "TL":
@@ -841,10 +900,10 @@ class KITPlot(object):
             Lxmax = Lxmin+magic_para
 
         # Check if elements are in the top left corner.
-        for i in range(len(self.__file)):
-            for j in range(len(self.__file[i].getX())):
-                if Lxmin-0.1 < abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax+0.05:
-                    if abs(self.__file[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.08 and self.legendPosition == "auto":
+        for i in range(len(self.__files)):
+            for j in range(len(self.__files[i].getX())):
+                if Lxmin-0.1 < abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax+0.05:
+                    if abs(self.__files[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.08 and self.legendPosition == "auto":
                         self.TopLeft = False
                 
         if self.TopLeft == self.TopRight == False or self.legendPosition == "BR":
@@ -854,10 +913,10 @@ class KITPlot(object):
             Lymax = Lymin+len(self.__graphs)*0.03+self.legendTextSize
             
         # If the plot is too crowded, create more space on the right.
-        for i in range(len(self.__file)):
-            for j in range(len(self.__file[i].getX())):
-                if abs(self.__file[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
-                    if abs(self.__file[i].getY()[len(self.__file[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
+        for i in range(len(self.__files)):
+            for j in range(len(self.__files[i].getX())):
+                if abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
+                    if abs(self.__files[i].getY()[len(self.__files[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
                         self.BottomRight = False
 
         if self.BottomRight == self.TopLeft == self.TopRight == False:
@@ -961,7 +1020,7 @@ class KITPlot(object):
         shade_counter = 0
         j = 0
         
-        for File in self.__file:
+        for File in self.__files:
             if File.getName()[:5] == self.getGroupList()[j]:
                 self.ShadeList.append(self.colorSet[j]+shade_counter)
                 shade_counter += 1
@@ -1003,10 +1062,26 @@ class KITPlot(object):
                     return self.__graphs[graph]
                 else:
                     return False
+                    
+    def getFile(self, KITFile=None):
+        
+        if len(self.__files) == 1:
+            return self.__files[0]
+        elif (len(self.__files) != 1) and (KITFile is None):
+            return self._file
+        else:
+            if isinstance(KITFile,str):
+                if (len(self.__files) != 1) and (KITFile.isdigit()):
+                    return self.__files[int(KITFile)]
+                else:
+                    return False
+            elif isinstance(KITFile,int):
+                if (len(self.__files) != 1):
+                    return self.__files[KITFile]
+                else:
+                    return False
 
 
     def getCanvas(self):
         return self.canvas
         
-        
-
