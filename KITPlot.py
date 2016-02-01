@@ -72,8 +72,9 @@ class KITPlot(object):
                         self.__file.append(KITDataFile.KITDataFile(input + inputFile))
                     else:
                         pass
+                self.arrangeFileList()
+                self.arrangeEntries()
                 for i, File in enumerate(self.__file):
-                    self.arrangeFileList()
                     self.addGraph(self.__file[i].getX(),self.__file[i].getY())
 
                         # If you open the file the data type changes from str to file 
@@ -91,8 +92,9 @@ class KITPlot(object):
                             entry = line.split()
                             if entry[0].isdigit():
                                 self.__file.append(KITDataFile.KITDataFile(entry[0]))
+                    self.arrangeFileList()
+                    self.arrangeEntries()
                     for i, File in enumerate(self.__file):
-                        self.arrangeFileList()
                         self.addGraph(self.__file[i].getX(),self.__file[i].getY())
                 else:
                     self.__file.append(KITDataFile.KITDataFile(input))
@@ -132,6 +134,7 @@ class KITPlot(object):
         
         # Legend
         self.legendEntry = "name" 
+        self.legendEntryPosition = "auto"
         self.legendPosition = "auto"
         self.legendTextSize = 0.02
         self.legendBoxPara = 1
@@ -213,6 +216,7 @@ class KITPlot(object):
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         self.legendPosition = cfgPrs.get('Legend', 'legend position')
+        self.legendEntryPosition = cfgPrs.get('Legend', 'legend entry position')
         self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
         
@@ -271,6 +275,7 @@ class KITPlot(object):
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
+            cfgPrs.set('Legend', 'legend entry position', self.legendEntryPosition)
             cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
             cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
 
@@ -459,7 +464,7 @@ class KITPlot(object):
         # Set legend
         self.setLegendParameters()
         self.setLegend()
-
+        
         self.canvas.Update()
         
         if self.cfg_exists == True and self.cfgFile is not None:
@@ -580,6 +585,44 @@ class KITPlot(object):
                 if Index == IndexList[i]:
                     TempList1.append(File)
         self.__file = TempList1
+        
+        
+    def arrangeEntries(self):
+            
+        UserEntries = []
+        Before = []
+        After = []
+
+        if self.legendEntryPosition != "auto":
+            UserEntries = self.legendEntryPosition.replace("=",",").split(",")
+            for i,element in enumerate(UserEntries):
+                if i%2 == 0:
+                    Before.append(int(element))
+                else:
+                    After.append(int(element))
+            if len(After) != len(Before):
+                sys.exit("Invalid legend entries given! Try 'entry befor=entry after, ...'!")
+        
+        for Name in self.__file:
+            print Name.getName()
+            
+        j = 0
+        for i,element in enumerate(self.__file):
+            if i == Before[j]:
+                temp = element
+                self.__file[i] = self.__file[After[j]]
+                self.__file[After[j]] = temp
+                if j < len(Before)-1:
+                    j += 1
+        
+        for Name in self.__file:
+            print Name.getName()
+            
+            
+        
+
+        return True
+        
 
 #######################
 ### Automatizations ###
