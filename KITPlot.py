@@ -59,8 +59,9 @@ class KITPlot(object):
             self.add(dataInput)
         else:
             pass
-        
 
+            
+            
     ######################
     ### Default values ###
     ######################
@@ -102,6 +103,7 @@ class KITPlot(object):
         # Legend
         self.legendEntry = "name" 
         self.legendEntryPosition = "auto"
+        self.legendList = ""
         self.legendPosition = "auto"
         self.legendTextSize = 0.02
         self.legendBoxPara = 1
@@ -208,6 +210,7 @@ class KITPlot(object):
         self.legendEntryPosition = cfgPrs.get('Legend', 'legend entry position')
         self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
+        self.legendList = cfgPrs.get('Legend', 'legend list')
         
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
@@ -276,6 +279,7 @@ class KITPlot(object):
             cfgPrs.set('Legend', 'legend entry position', self.legendEntryPosition)
             cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
             cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
+            cfgPrs.set('Legend', 'legend list', self.getLegendList())
 
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
@@ -580,7 +584,8 @@ class KITPlot(object):
                 
                 
         self.counter = 0
-        
+        marker_counter = 0
+        color_counter = 0
         # need to work on getFluenceP() method
         if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
             sys.exit("Fluence group only works with ID inputs right now!")
@@ -592,16 +597,26 @@ class KITPlot(object):
                 graph.SetMarkerStyle(self.getMarkerStyle(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
                 graph.SetMarkerStyle(self.getMarkerShade(i))
-            elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence":
-                sys.exit("Invalid group parameter! Try 'off', 'name' or 'fluence'!")
+            elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence" and self.GraphGroup[0] != "[":
+                sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
             elif self.GraphGroup == "name" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
                     if self.GraphGroup == "name" and self.__files[i].getName()[:5] == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
                     if self.GraphGroup == "fluence" and self.__files[i].getFluenceP() == Element:
                         graph.SetMarkerStyle(self.__markerSet[0+j])
-
+            else:
+                pass
                 
+        if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
+                for i,element in enumerate(self.getGroupList()):
+                    if i < len(self.GraphGroup)-1:
+                        if element != 666:
+                            self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
+                            #self.__graphs[element].SetMarkerColor(self.colorSet[0+marker_counter])
+                        else:
+                            marker_counter += 1
+                        
                 
         # assign color
         for i, graph in enumerate(self.__graphs):
@@ -611,8 +626,14 @@ class KITPlot(object):
                 graph.SetMarkerColor(self.getColor())
             elif self.GraphGroup == "name" and self.ColorShades == True:
                 graph.SetMarkerColor(self.getColorShades(i))
+            elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == False:
+                graph.SetMarkerColor(self.getColor())
+            elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == True:
+                sys.exit("User groups dont work with shades, yet!")
             if self.GraphGroup == "off" and self.ColorShades == True:
                 sys.exit("Need graph groups for applying shades!")
+            
+                
         return True
         
         
@@ -661,9 +682,6 @@ class KITPlot(object):
             if len(After) != len(Before):
                 sys.exit("Invalid legend entries given! Try 'entry befor=entry after, ...'!")
         
-            for Name in self.__files:
-                print Name.getName()
-            
             j = 0
             for i,element in enumerate(self.__files):
                 if i == Before[j]:
@@ -673,14 +691,16 @@ class KITPlot(object):
                     if j < len(Before)-1:
                         j += 1
         
-            for Name in self.__files:
-                print Name.getName()
-        
+            print self.getLegendList()
+
         else:
             pass
         
-
+        
+        
         return True
+        
+
         
 
 #######################
@@ -776,11 +796,23 @@ class KITPlot(object):
     
         self.GroupList = []
         TempList = []
+        UserList = []
         for i, Element in enumerate(self.__files):
             if self.GraphGroup == "name":
                 TempList.append(self.__files[i].getName()[:5])
             if self.GraphGroup == "fluence":
                 TempList.append(self.__files[i].getFluenceP())
+            else:
+                pass
+                
+        if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
+           for char in self.GraphGroup:
+                if char.isdigit() == True:
+                    self.GroupList.append(int(char))
+                elif char == "[" or char == ",":
+                    pass
+                else:
+                    self.GroupList.append(666)
 
         for i, TempElement in enumerate(TempList):
             if TempElement not in self.GroupList:
@@ -1080,6 +1112,18 @@ class KITPlot(object):
                     return self.__files[KITFile]
                 else:
                     return False
+
+    def getLegendList(self):
+        NameList = []
+        LegendList = ""
+        for Name in self.__files:
+            NameList.append(Name.getName())
+            
+        for Name in NameList:
+            LegendList += (Name + ", ")
+            
+        return LegendList
+        
 
 
     def getCanvas(self):
