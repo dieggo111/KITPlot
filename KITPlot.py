@@ -613,7 +613,6 @@ class KITPlot(object):
                     if i < len(self.GraphGroup)-1:
                         if element != 666:
                             self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
-                            #self.__graphs[element].SetMarkerColor(self.colorSet[0+marker_counter])
                         else:
                             marker_counter += 1
                         
@@ -643,27 +642,47 @@ class KITPlot(object):
         TempList2 = []
         IndexList = []
         for i, temp in enumerate(self.__files):
-            TempList1.append(temp.getName()[:5])
-        for i, temp in enumerate(TempList1):
-            if temp not in TempList2:
-                TempList2.append(temp)
+            TempList1.append(temp.getName())
+            TempList2.append(temp.getName())
+
         TempList2.sort()
-                
-        for i, temp1 in enumerate(TempList1):
-            for j, temp2 in enumerate(TempList2):
-                if temp1 == temp2:
-                    IndexList.append(j)
+
+        for i,Name2 in enumerate(TempList2):
+            if Name2 == TempList1[i]:
+                IndexList.append(i)
+            else:
+                for j, Name in enumerate(TempList1):
+                    if Name == Name2:
+                        IndexList.append(j)
 
         TempList1[:] = []
-        max_index = 0
-        for Index in IndexList:
-            if Index > max_index:
-                max_index = Index
-        for Index in range(max_index+1):
-            for i, File in enumerate(self.__files):
-                if Index == IndexList[i]:
-                    TempList1.append(File)
+        
+        for index in IndexList:
+            TempList1.append(self.__files[index])
         self.__files = TempList1
+
+#        for i, temp in enumerate(self.__files):
+#            TempList1.append(temp.getName()[:5])
+#        for i, temp in enumerate(TempList1):
+#            if temp not in TempList2:
+#                TempList2.append(temp)
+#        TempList2.sort()
+#                
+#        for i, temp1 in enumerate(TempList1):
+#            for j, temp2 in enumerate(TempList2):
+#                if temp1 == temp2:
+#                    IndexList.append(j)
+
+#        TempList1[:] = []
+#        max_index = 0
+#        for Index in IndexList:
+#            if Index > max_index:
+#                max_index = Index
+#        for Index in range(max_index+1):
+#            for i, File in enumerate(self.__files):
+#                if Index == IndexList[i]:
+#                    TempList1.append(File)
+#        self.__files = TempList1
         
         
     def arrangeEntries(self):
@@ -915,7 +934,7 @@ class KITPlot(object):
         Lxmax = 0.98
         Lymax = 0.93
         Lxmin = Lxmax-magic_para
-        Lymin = Lymax-len(self.__graphs)*0.03+self.legendTextSize
+        Lymin = Lymax-len(self.__graphs)*0.04+self.legendTextSize
             
             
         # Check if elements are in the top right corner. 
@@ -942,7 +961,7 @@ class KITPlot(object):
             Lxmax = 0.89
             Lymin = 0.18
             Lxmin = Lxmax-magic_para
-            Lymax = Lymin+len(self.__graphs)*0.03+self.legendTextSize
+            Lymax = Lymin+len(self.__graphs)*0.04+self.legendTextSize
             
         # If the plot is too crowded, create more space on the right.
         for i in range(len(self.__files)):
@@ -955,14 +974,14 @@ class KITPlot(object):
             Lxmax = 0.98
             Lymax = 0.93
             Lxmin = Lxmax-magic_para
-            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
+            Lymin = Lymax-len(self.__graphs)*0.04-self.legendTextSize
             print "Couldn't find sufficient space!"
             
         if self.legendPosition == "TR":
             Lxmax = 0.98
             Lymax = 0.93
             Lxmin = Lxmax-magic_para
-            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
+            Lymin = Lymax-len(self.__graphs)*0.04-self.legendTextSize
 
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)

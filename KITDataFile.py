@@ -70,8 +70,13 @@ class KITDataFile(object):
                     if len(splited) > 2:
                         self.__z.append(float(splited[2]))
 
-                self.__name = os.path.basename(input).split("-")[0]
-        
+                self.__name = os.path.basename(input).split(".")[0]
+                for char in os.path.basename(input):
+                    if char == "-":
+                        self.__name = os.path.basename(input).split("-")[0]
+                    else:
+                        pass
+                            
         #  elif isinstance(input, file): 
 
         #elif self.__check_if_folder_pid(input):
