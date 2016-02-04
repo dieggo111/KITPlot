@@ -26,9 +26,8 @@ class KITPlot(object):
         self.__files = []
         self.__graphs = []
 
-        # TODO: Can we get rid of these two?
+        # TODO: Can we get rid of these two? - self.cfg is used in self.loadCfg...
         self.cfgFile = cfgFile
-        self.cfg_exists = False
                     
         # init colors and markers
         if self.__init == False:
@@ -109,6 +108,7 @@ class KITPlot(object):
         self.legendBoxPara = 1
          
         # Misc
+        self.axisMaxDigits = 4
         self.padBottomMargin = 0.15
         self.padLeftMargin = 0.15
         self.markerSize = 1.5
@@ -118,6 +118,7 @@ class KITPlot(object):
         # More plot options
         self.GraphGroup = "off"
         self.ColorShades = False
+        self.Standardization = "off"
         
         return True
         
@@ -212,6 +213,7 @@ class KITPlot(object):
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
         self.legendList = cfgPrs.get('Legend', 'legend list')
         
+        self.axisMaxDigits = cfgPrs.getint('Misc', 'axis max digits')
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
         self.markerSize = cfgPrs.getfloat('Misc', 'marker size')
@@ -220,6 +222,7 @@ class KITPlot(object):
 
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
+        self.Standardization = cfgPrs.get('More plot options', 'standardization')
 
         return True
 
@@ -282,6 +285,7 @@ class KITPlot(object):
             cfgPrs.set('Legend', 'legend list', self.getLegendList())
 
             cfgPrs.add_section('Misc')
+            cfgPrs.set('Misc', 'axis max digits', self.axisMaxDigits)
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
             cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
             cfgPrs.set('Misc', 'marker size', self.markerSize)
@@ -291,6 +295,7 @@ class KITPlot(object):
             cfgPrs.add_section('More plot options')
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
+            cfgPrs.set('More plot options','standardization', self.Standardization)
 
             cfgPrs.write(cfgFile)
 
@@ -377,6 +382,7 @@ class KITPlot(object):
         
         ROOT.gStyle.SetLabelSize(self.labelSizeX,"X")
         ROOT.gStyle.SetLabelSize(self.labelSizeY,"Y")
+        ROOT.TGaxis.SetMaxDigits(self.axisMaxDigits)
         
         # Canvas Options
         ROOT.gStyle.SetPadBottomMargin(self.padBottomMargin)
@@ -423,9 +429,16 @@ class KITPlot(object):
                         pass
                 self.arrangeFileList()
                 self.arrangeEntries()
-                for i, File in enumerate(self.__files):
-                    self.addGraph(self.__files[i].getX(),self.__files[i].getY())
-
+                if self.Standardization == "off":
+                    for i, File in enumerate(self.__files):
+                        self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+                elif self.Standardization[0] == "[" and self.Standardization[len(self.Standardization)-1] == "]":
+                    for i, File in enumerate(self.__files):
+                        self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
+                else:
+                    sys.exit("Invalid standardization input! Try 'off' or '[float,float,...]'!")
+                        
+                        
                         # If you open the file the data type changes from str to file 
                         # with open(dataInput + file) as inputFile:
                         #     self.__files.append(KITDataFile.KITDataFile(inputFile))
@@ -529,10 +542,7 @@ class KITPlot(object):
         
         self.canvas.Update()
         
-        if self.cfg_exists == True and self.cfgFile is not None:
-            self.canvas.SaveAs(self.cfgFile.split(".")[0].split("/")[1] + ".png")
-        else:
-            self.saveAs("plot")
+        self.saveAs("plot")
             
         return True
 
@@ -709,8 +719,6 @@ class KITPlot(object):
                     self.__files[After[j]] = temp
                     if j < len(Before)-1:
                         j += 1
-        
-            print self.getLegendList()
 
         else:
             pass
@@ -729,13 +737,19 @@ class KITPlot(object):
     def __autoScaling(self):
         # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
 
+
         self.perc = 0.05
         ListX = [0]
         ListY = [0]
 
-        for inputFile in self.__files:
-            ListX += inputFile.getX()
-            ListY += inputFile.getY()
+        if self.Standardization[0] == "[" and self.Standardization[len(self.Standardization)-1] == "]":
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += self.manipulate(inputFile.getY(),i)
+        else:
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += inputFile.getY()
 
         if self.absX:
             ListX = np.absolute(ListX)
@@ -759,6 +773,26 @@ class KITPlot(object):
         return True
 
 
+    def manipulate(self, ListY,index):
+        
+        FacList = []
+        TempList = []
+        
+        for char in self.Standardization.replace("[", "").replace("]", "").split(","):
+            FacList.append(float(char))
+        
+        if len(self.__files) != len(FacList):
+            sys.exit("Invalid standardization input! Number of factors differs from the number of graphs.")
+        else:
+            for val in ListY:
+                TempList.append(val/FacList[index])
+        
+        ListY = TempList
+        
+        return ListY
+    
+    
+    
 ###################
 ### Set methods ###
 ###################
