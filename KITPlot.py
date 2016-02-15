@@ -32,7 +32,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+            self.__markerSet = [21,20,22,23,34,25,24,26,32] 
         else:
             pass
 
@@ -320,34 +320,50 @@ class KITPlot(object):
                 self.autotitle = "Current Voltage Characteristics" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "Pinhole":
+            elif self.MT == "Pinhole":
                 self.autotitle = "Pinhole Leakage" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "I_leak_dc":
+            elif self.MT == "I_leak_dc":
                 self.autotitle = "Interstrip Current Leakage" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "C_tot":
+            elif self.MT == "C_tot":
                 self.autotitle = "Capacitance Voltage Characteristics" 
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "C_int":
+            elif self.MT == "C_int":
                 self.autotitle = "Interstrip Capacitance Measurement" 
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "CC":
+            elif self.MT == "CC":
                 self.autotitle = "Coupling Capacitance Measurement" 
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "R_int":
+            elif self.MT == "R_int":
                 self.autotitle = "Interstrip Resistance Measurement" 
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Voltage (V)"
-            if self.MT == "R_poly":
+            elif self.MT == "R_poly":
                 self.autotitle = "Strip Resistance Measurement" 
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Voltage (V)"
+            elif self.MT == "C_int_Ramp":
+                self.autotitle = "Interstrip Capacitance Measurement" 
+                self.autotitleY = "Capacitance (F)"
+                self.autotitleX = "Voltage (V)"
+            elif self.MT == "R_int_Ramp":
+                self.autotitle = "Strip Resistance Measurement" 
+                self.autotitleY = "Resistance (#Omega)"
+                self.autotitleX = "Voltage (V)"
+            elif self.MT == "I_leak_dc_Ramp":
+                self.autotitle = "Interstrip Current Leakage" 
+                self.autotitleY = "Current (A)"
+                self.autotitleX = "Voltage (V)"
+            else:
+                self.autotitle = "Title" 
+                self.autotitleY = "Y Value"
+                self.autotitleX = "X Value"
             
         if len(self.__files) >= 2 and self.__files[0].getParaY() != None:
             if self.__files[0].getParaY() != self.__files[1].getParaY():
@@ -411,14 +427,20 @@ class KITPlot(object):
         # Load single PID
         elif isinstance(dataInput, int):
             self.__files.append(KITDataFile.KITDataFile(dataInput))
-            self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+            if "Ramp" in self.__files[-1].getParaY():
+                self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+            else:
+                self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
           
         elif isinstance(dataInput, str):
 
             # Load single PID
             if dataInput.isdigit():
                 self.__files.append(KITDataFile.KITDataFile(dataInput))
-                self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+                if "Ramp" in self.__files[-1].getParaY():
+                    self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+                else:
+                    self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
             
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
@@ -427,8 +449,10 @@ class KITPlot(object):
                         self.__files.append(KITDataFile.KITDataFile(dataInput + inputFile))
                     else:
                         pass
+
                 self.arrangeFileList()
                 self.arrangeEntries()
+
                 if self.Standardization == "off":
                     for i, File in enumerate(self.__files):
                         self.addGraph(self.__files[i].getX(),self.__files[i].getY())
@@ -445,21 +469,31 @@ class KITPlot(object):
                         #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
             
 
-            # Load single file or file with multiple PIDs
+            # Load file
             elif os.path.isfile(dataInput):
+                # multiple PIDs
                 if self.__checkPID(dataInput) == True:
                     with open(dataInput) as inputFile:
                         for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
                                 self.__files.append(KITDataFile.KITDataFile(entry[0]))
+
                     self.arrangeFileList()
                     self.arrangeEntries()
-                    for i, File in enumerate(self.__files):
-                        self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+
+                    for File in self.__files:
+                        if "Ramp" in File.getParaY():
+                            self.addGraph(File.getZ(), File.getY())
+                        else:
+                            self.addGraph(File.getX(), File.getY())
+                # single data file
                 else:
                     self.__files.append(KITDataFile.KITDataFile(dataInput))
-                    self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
+                    if "Ramp" in self.__files[-1].getParaY():
+                        self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+                    else:
+                        self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
 
 
@@ -543,16 +577,17 @@ class KITPlot(object):
         self.canvas.Update()
         
         self.saveAs("plot")
+        self.saveAs("plot","pdf")
             
         return True
 
 
-    def saveAs(self, fileName="plot"):
+    def saveAs(self, fileName="plot", fileType="png"):
 
         if not os.path.exists("output"):
             os.makedirs("output")
         
-        self.canvas.SaveAs("output/%s.png" %(fileName))        
+        self.canvas.SaveAs("output/%s.%s" %(fileName,fileType))        
                 
 
     def update(self):
@@ -824,9 +859,7 @@ class KITPlot(object):
         #return self.__markerSet[self.counter]
         
         if index >= 9:
-            index -= 9
-        if index >= 15:
-            sys.exit("Overflow. Reduce number of graphs!")
+            return self.__markerSet[index % 8]
         else:
             return self.__markerSet[index]
             
