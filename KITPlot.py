@@ -646,17 +646,17 @@ class KITPlot(object):
         # assign color
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
-                graph.SetMarkerColor(self.getColor())
-                graph.SetLineColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor())
-                graph.SetLineColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
                 graph.SetMarkerColor(self.getColorShades(i))
                 graph.SetLineColor(self.getColorShades(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor())
-                graph.SetLineColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == True:
                 sys.exit("User groups dont work with shades, yet!")
             if self.GraphGroup == "off" and self.ColorShades == True:
@@ -1105,10 +1105,11 @@ class KITPlot(object):
         
         return True
 
-    def getColor(self,clr=0):
-        KITPlot.__color += 1
+    def getColor(self, index):
+        
+        KITPlot.__color = index + 1
         KITPlot.__color %= 9
-
+        
         return self.colorSet[KITPlot.__color-1]
 
 
