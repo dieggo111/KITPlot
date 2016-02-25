@@ -1075,28 +1075,30 @@ class KITPlot(object):
         self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
 
         self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        self.__kitBrown.append(ROOT.TColor(1601, 193./255, 157./255, 82./255))
+        self.__kitBrown.append(ROOT.TColor(1602, 208./255, 181./255, 122./255))
+        self.__kitBrown.append(ROOT.TColor(1603, 226./255, 208./255, 169./255))
+        self.__kitBrown.append(ROOT.TColor(1604, 241./255, 231./255, 210./255))
 
         self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        
-        self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        self.__kitMay.append(ROOT.TColor(1701, 148./255, 213./255, 98./255))
+        self.__kitMay.append(ROOT.TColor(1702, 178./255, 225./255, 137./255))
+        self.__kitMay.append(ROOT.TColor(1703, 209./255, 237./255, 180./255))
+        self.__kitMay.append(ROOT.TColor(1704, 232./255, 246./255, 217./255))
 
-        self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        self.__kitCyan.append(ROOT.TColor(1800, 28./255, 174./255, 236./255))
+        self.__kitCyan.append(ROOT.TColor(1801, 95./255, 197./255, 241./255))
+        self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
+        self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
+        self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
+        
+        self.__kitYellow.append(ROOT.TColor(1900, 254./255, 231./255, 2./255))
+        self.__kitYellow.append(ROOT.TColor(1901, 254./255, 238./255, 76./255))
+        self.__kitYellow.append(ROOT.TColor(1902, 254./255, 242./255, 126./255))
+        self.__kitYellow.append(ROOT.TColor(1903, 255./255, 247./255, 177./255))
+        self.__kitYellow.append(ROOT.TColor(1900, 255./255, 231./255, 216./255))
+
+
        
 
         KITPlot.__init = True
