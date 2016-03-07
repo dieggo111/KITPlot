@@ -118,7 +118,10 @@ class KITPlot(object):
         # More plot options
         self.GraphGroup = "off"
         self.ColorShades = False
-        self.Standardization = "off"
+        self.Normalization = "off"
+        
+        #for graph in graphs
+        self.List = ""
         
         return True
         
@@ -222,7 +225,13 @@ class KITPlot(object):
 
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
-        self.Standardization = cfgPrs.get('More plot options', 'standardization')
+        self.Normalization = cfgPrs.get('More plot options', 'normalization')
+        
+        #if self.__load_defaultCfg() == True:
+        #    self.List = cfgPrs.get('More plot options', 'list')
+        #    print self.List
+        #else:
+        #    print "write list"
 
         return True
 
@@ -295,7 +304,8 @@ class KITPlot(object):
             cfgPrs.add_section('More plot options')
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
-            cfgPrs.set('More plot options','standardization', self.Standardization)
+            cfgPrs.set('More plot options','normalization', self.Normalization)
+            cfgPrs.set('More plot options','list', self.List)
 
             cfgPrs.write(cfgFile)
 
@@ -323,31 +333,31 @@ class KITPlot(object):
             elif self.MT == "Pinhole":
                 self.autotitle = "Pinhole Leakage" 
                 self.autotitleY = "Current (A)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "I_leak_dc":
-                self.autotitle = "Interstrip Current Leakage" 
+                self.autotitleX = "Strip No"
+            if self.MT == "I_leak_dc":
+                self.autotitle = "Strip Leakage Current" 
                 self.autotitleY = "Current (A)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "C_tot":
+                self.autotitleX = "Strip No"
+            if self.MT == "C_tot":
                 self.autotitle = "Capacitance Voltage Characteristics" 
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "C_int":
                 self.autotitle = "Interstrip Capacitance Measurement" 
                 self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Voltage (V)"
+                self.autotitleX = "Strip No"
             elif self.MT == "CC":
                 self.autotitle = "Coupling Capacitance Measurement" 
                 self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Voltage (V)"
+                self.autotitleX = "Strip No"
             elif self.MT == "R_int":
                 self.autotitle = "Interstrip Resistance Measurement" 
                 self.autotitleY = "Resistance (#Omega)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "R_poly":
+                self.autotitleX = "Strip No"
+            elif self.MT == "R_poly_dc":
                 self.autotitle = "Strip Resistance Measurement" 
                 self.autotitleY = "Resistance (#Omega)"
-                self.autotitleX = "Voltage (V)"
+                self.autotitleX = "Strip No"
             elif self.MT == "C_int_Ramp":
                 self.autotitle = "Interstrip Capacitance Measurement" 
                 self.autotitleY = "Capacitance (F)"
@@ -453,14 +463,14 @@ class KITPlot(object):
                 self.arrangeFileList()
                 self.arrangeEntries()
 
-                if self.Standardization == "off":
+                if self.Normalization == "off":
                     for i, File in enumerate(self.__files):
                         self.addGraph(self.__files[i].getX(),self.__files[i].getY())
-                elif self.Standardization[0] == "[" and self.Standardization[len(self.Standardization)-1] == "]":
+                elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
                     for i, File in enumerate(self.__files):
                         self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
                 else:
-                    sys.exit("Invalid standardization input! Try 'off' or '[float,float,...]'!")
+                    sys.exit("Invalid normalization input! Try 'off' or '[float,float,...]'!")
                         
                         
                         # If you open the file the data type changes from str to file 
@@ -482,12 +492,17 @@ class KITPlot(object):
                     self.arrangeFileList()
                     self.arrangeEntries()
 
-                    for File in self.__files:
+                    for i,File in enumerate(self.__files):
                         if "Ramp" in File.getParaY():
                             self.addGraph(File.getZ(), File.getY())
                         else:
-                            self.addGraph(File.getX(), File.getY())
-                # single data file
+                            # single data file
+                            if self.Normalization == "off":
+                                self.addGraph(File.getX(),File.getY())
+                            elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
+                                self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                            else:
+                                sys.exit("Invalid normalization input! Try 'off' or '[float,float,...]'!")
                 else:
                     self.__files.append(KITDataFile.KITDataFile(dataInput))
                     if "Ramp" in self.__files[-1].getParaY():
@@ -618,14 +633,14 @@ class KITPlot(object):
             self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0]),float(RangeListX[1]))
         else:
             sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
-       
+        
         if self.rangeY == "auto":
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
         elif ":" in self.rangeY:
             RangeListY = self.rangeY.split(":")
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
         else:
-            sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
+            sys.exit("Invalid Y-axis range! Try 'auto' or 'float:float'!")
                 
                 
         self.counter = 0
@@ -665,13 +680,17 @@ class KITPlot(object):
         # assign color
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
-                graph.SetMarkerColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
                 graph.SetMarkerColor(self.getColorShades(i))
+                graph.SetLineColor(self.getColorShades(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor())
+                graph.SetMarkerColor(self.getColor(i))
+                graph.SetLineColor(self.getColor(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == True:
                 sys.exit("User groups dont work with shades, yet!")
             if self.GraphGroup == "off" and self.ColorShades == True:
@@ -685,13 +704,23 @@ class KITPlot(object):
 
         TempList1 = []
         TempList2 = []
+        IDList = []
         IndexList = []
-        for i, temp in enumerate(self.__files):
+
+        for temp in self.__files:
             TempList1.append(temp.getName())
             TempList2.append(temp.getName())
-
+        
+        for i, Name1 in enumerate(TempList1):
+            if TempList1.count(Name1) > 1:
+                Test = Name1 + "_" + "(" + str(i) + ")"
+                TempList2[i] = Test
+                TempList1[i] = Test
+            else: 
+                pass
+                
         TempList2.sort()
-
+        
         for i,Name2 in enumerate(TempList2):
             if Name2 == TempList1[i]:
                 IndexList.append(i)
@@ -705,29 +734,6 @@ class KITPlot(object):
         for index in IndexList:
             TempList1.append(self.__files[index])
         self.__files = TempList1
-
-#        for i, temp in enumerate(self.__files):
-#            TempList1.append(temp.getName()[:5])
-#        for i, temp in enumerate(TempList1):
-#            if temp not in TempList2:
-#                TempList2.append(temp)
-#        TempList2.sort()
-#                
-#        for i, temp1 in enumerate(TempList1):
-#            for j, temp2 in enumerate(TempList2):
-#                if temp1 == temp2:
-#                    IndexList.append(j)
-
-#        TempList1[:] = []
-#        max_index = 0
-#        for Index in IndexList:
-#            if Index > max_index:
-#                max_index = Index
-#        for Index in range(max_index+1):
-#            for i, File in enumerate(self.__files):
-#                if Index == IndexList[i]:
-#                    TempList1.append(File)
-#        self.__files = TempList1
         
         
     def arrangeEntries(self):
@@ -777,7 +783,7 @@ class KITPlot(object):
         ListX = [0]
         ListY = [0]
 
-        if self.Standardization[0] == "[" and self.Standardization[len(self.Standardization)-1] == "]":
+        if self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
             for i,inputFile in enumerate(self.__files):
                 ListX += inputFile.getX()
                 ListY += self.manipulate(inputFile.getY(),i)
@@ -808,22 +814,26 @@ class KITPlot(object):
         return True
 
 
-    def manipulate(self, ListY,index):
+    def manipulate(self, ListY, index):
         
         FacList = []
         TempList = []
-        
-        for char in self.Standardization.replace("[", "").replace("]", "").split(","):
+                    
+      
+        for char in self.Normalization.replace("[", "").replace("]", "").split(","):
             FacList.append(float(char))
-        
+    
         if len(self.__files) != len(FacList):
-            sys.exit("Invalid standardization input! Number of factors differs from the number of graphs.")
+            sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
         else:
+            #1/C^2 plots
+            #for val in ListY:
+            #    TempList.append(1/(val*val))
             for val in ListY:
                 TempList.append(val/FacList[index])
-        
+                    
         ListY = TempList
-        
+               
         return ListY
     
     
@@ -1097,38 +1107,41 @@ class KITPlot(object):
         self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
 
         self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        #self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        self.__kitBrown.append(ROOT.TColor(1601, 193./255, 157./255, 82./255))
+        self.__kitBrown.append(ROOT.TColor(1602, 208./255, 181./255, 122./255))
+        self.__kitBrown.append(ROOT.TColor(1603, 226./255, 208./255, 169./255))
+        self.__kitBrown.append(ROOT.TColor(1604, 241./255, 231./255, 210./255))
 
         self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        #self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        
-        self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
-        #self.__kitYellow.append(ROOT.TColor(1800, 254./255, 231./255, 2./255))
+        self.__kitMay.append(ROOT.TColor(1701, 148./255, 213./255, 98./255))
+        self.__kitMay.append(ROOT.TColor(1702, 178./255, 225./255, 137./255))
+        self.__kitMay.append(ROOT.TColor(1703, 209./255, 237./255, 180./255))
+        self.__kitMay.append(ROOT.TColor(1704, 232./255, 246./255, 217./255))
 
-        self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
-        #self.__kitCyan.append(ROOT.TColor(1900, 28./255, 174./255, 236./255))
+        self.__kitCyan.append(ROOT.TColor(1800, 28./255, 174./255, 236./255))
+        self.__kitCyan.append(ROOT.TColor(1801, 95./255, 197./255, 241./255))
+        self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
+        self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
+        self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
+        
+        self.__kitYellow.append(ROOT.TColor(1900, 254./255, 231./255, 2./255))
+        self.__kitYellow.append(ROOT.TColor(1901, 254./255, 238./255, 76./255))
+        self.__kitYellow.append(ROOT.TColor(1902, 254./255, 242./255, 126./255))
+        self.__kitYellow.append(ROOT.TColor(1903, 255./255, 247./255, 177./255))
+        self.__kitYellow.append(ROOT.TColor(1900, 255./255, 231./255, 216./255))
+
+
        
 
         KITPlot.__init = True
         
         return True
 
-    def getColor(self,clr=0):
-        KITPlot.__color += 1
+    def getColor(self, index):
+        
+        KITPlot.__color = index + 1
         KITPlot.__color %= 9
-
+        
         return self.colorSet[KITPlot.__color-1]
 
 
