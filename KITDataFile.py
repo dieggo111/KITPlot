@@ -6,14 +6,14 @@ import ConfigParser
 class KITDataFile(object):
     """ The KITDataFile class is a very simple data container that is able
     to connect to the IEKP database to read and store all relevant data
-    into private member varables. 
+    into private member variables. 
 
     """
 
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, input=None):
+    def __init__(self, input=None, measurement="probe"):
         """ Initialize KITDataFile object based on the input that is passed.
         
         Args:
@@ -21,46 +21,59 @@ class KITDataFile(object):
             information automatically
 
         """
-        
+
         self.__x = []
         self.__y = []
+        self.__dy = []
         self.__z = []
         self.__temp = []
         self.__humid = []
         self.__name = None
-        self.__pid = None        
+        self.__id = None        
         self.__px = None
         self.__py = None
+        self.__pz = None
         self.__t0 = None
         self.__h0 = None
+
 
         if input is None:
             return False
 
         elif isinstance(input, int):
-            self.__pid = input
-            print "Input: PID"
+            self.__id = input
 
             if KITDataFile.__dbCrs is None:
                 self.__init_db_connection() # Establish database connection
             else:
                 pass
-            self.__allo_db(input)
+
+            if measurement == "alibava":
+                print "Input: ALiBaVa run number"
+                self.__allo_db_alibava(input)
+            elif measurement == "probe":
+                print "Input: PID"
+                self.__allo_db(input)
 
         elif isinstance(input, str) and input.isdigit():
-            self.__pid = input
-            print "Input: PID"
+            self.__id = input
 
             if KITDataFile.__dbCrs is None:
-                self.__init_db_connection() # Establish database connection
+                self.__init_db_connection() 
             else:
                 pass
-            self.__allo_db(input)
+
+            if measurement == "alibava":
+                print "Input: ALiBaVa run number"
+                self.__allo_db_alibava(input)
+            elif measurement == "probe":
+                print "Input: PID"
+                self.__allo_db(input)
 
         elif isinstance(input, str) and os.path.isfile(input):
 
             print "Input: File: " + input
-        
+
             with open(input, 'r') as inputFile:
                 for line in inputFile:
                     splited = line.split();
@@ -76,17 +89,30 @@ class KITDataFile(object):
                         self.__name = os.path.basename(input).split("-")[0]
                     else:
                         pass
-                            
+
         #  elif isinstance(input, file): 
 
         #elif self.__check_if_folder_pid(input):
         #    print "Input: Folder"
         #    self.__init_db_connection() # Establish database connection
 
+        elif isinstance(input,list) and all(isinstance(i, KITDataFile) for i in input):
+            
+            self.__px = input[0].getParaX()
+            self.__py = input[0].getParaY()
+            self.__pz = input[0].getParaZ()
+            self.__name = input[0].getName()
+
+            for kitFile in input:
+                self.__x.append(kitFile.getX()[0])
+                self.__y.append(kitFile.getY()[0])
+                self.__z.append(kitFile.getZ()[0])
+                self.__dy.append(kitFile.getdY()[0])
+                
+
         else:
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
-        
 
 
     def __init_db_connection(self, filename='db.cfg', section='database'):
@@ -165,7 +191,6 @@ class KITDataFile(object):
 
         """
         
-
         qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
         KITDataFile.__dbCrs.execute(qryProbeData)
         for (uid, pid, x, y, z, t, h) in KITDataFile.__dbCrs:
@@ -194,6 +219,35 @@ class KITDataFile(object):
              pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
             self.__name = name
             self.__Fp = Fp
+
+    def __allo_db_alibava(self, run):
+        
+        self.__px = "Voltage"
+        self.__py = "Signal"
+        self.__pz = "Annealing"
+        self.__name = "ALiBaVa"
+        
+        tmpID = None
+        tmpDate = None
+        annealing = 0
+
+        qryRunData = ("SELECT voltage, current, electron_sig, signal_e_err, id, date FROM alibava WHERE run=%s" %(run))
+        KITDataFile.__dbCrs.execute(qryRunData)
+
+        for (voltage, current, electron_sig, signal_e_err, id, date) in KITDataFile.__dbCrs:
+            self.__x.append(voltage)
+            self.__y.append(electron_sig)
+            self.__dy.append(signal_e_err)
+            tmpID = id
+            tmpDate = date
+
+
+        qryAnnealing = ("SELECT equiv FROM annealing WHERE id=%s and DATE(date)<='%s'" %(tmpID,tmpDate))
+        KITDataFile.__dbCrs.execute(qryAnnealing)
+
+        for equiv in KITDataFile.__dbCrs:
+            annealing += equiv[0]
+        self.__z.append(annealing)
 
 
     def dropXLower(self, xlow=0):
@@ -435,16 +489,26 @@ class KITDataFile(object):
         else:
             return []
 
-
-    def getID(self):
-        """Returns PID
+    def getRun(self):
+        """Returns PID or Run number
         
         Returns:
-            PID
+            PID/Run
+        
+        """
+        
+        return self.__id
+
+
+    def getID(self):
+        """Returns PID or Run number
+        
+        Returns:
+            PID/Run
         
         """
 
-        return self.__pid
+        return self.__id
 
 
     def getX(self, asarray=False):
@@ -496,6 +560,23 @@ class KITDataFile(object):
         else:
             return self.__z
 
+
+    def getdY(self, asarray=False):
+        """Returns dy dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        if asarray:
+            return np.asarray(self.__dy)
+        else:
+            return self.__dy
+
+
     def getSize(self):
         """Returns size of dataset
 
@@ -538,6 +619,17 @@ class KITDataFile(object):
         """
 
         return self.__py
+
+    def getParaZ(self):
+        """Returns measured variable
+        
+        Returns:
+            string: measured variable
+        
+        """
+
+        return self.__pz
+
 
 
     def getTemp(self):

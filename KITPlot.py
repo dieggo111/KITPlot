@@ -27,6 +27,7 @@ class KITPlot(object):
         self.__graphs = []
 
         # TODO: Can we get rid of these two? - self.cfg is used in self.loadCfg...
+        # - but it is passed as an argument
         self.cfgFile = cfgFile
                     
         # init colors and markers
@@ -36,7 +37,7 @@ class KITPlot(object):
         else:
             pass
 
-        # Load parameters and apply deault style        
+        # Load parameters and apply default style        
         self.__initDefaultValues()
 
 
@@ -55,7 +56,27 @@ class KITPlot(object):
 
         # add files
         if dataInput is not None:
-            self.add(dataInput)
+            #try:
+            print self.measurement
+            self.add(dataInput, self.measurement)
+            #except:
+            #    print "Measurement not found."
+            #    if self.measurement == "probe":
+            #        print "Try to find alibava measurement."
+            #        self.measurement = "alibava"
+            #        #try:
+            #        print self.measurement
+            #        self.add(dataInput, self.measurement)
+                        # except:
+                        #     sys.exit("Could not find measurement")
+            #    elif self.measurement == "alibava":
+            #        print "Try to find probe measurement"
+            #        self.measurement = "probe"
+            #        try:
+            #            self.add(dataInput, self.measurement)
+            #        except:
+            #            sys.exit("Could not find measurement")
+
         else:
             pass
 
@@ -74,6 +95,9 @@ class KITPlot(object):
             True
          
         """
+
+        # Global settings
+        self.measurement = "probe"
 
         # Title options 
         self.title = "auto"
@@ -187,7 +211,9 @@ class KITPlot(object):
         cfgPrs = ConfigParser.ConfigParser()
 
         cfgPrs.read(fileName)
-            
+        
+        self.measurement = cfgPrs.get('Global', 'measurement')
+        
         self.title = cfgPrs.get('Title', 'title')
         self.titleX0 = cfgPrs.getfloat('Title', 'x0')
         self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
@@ -260,6 +286,7 @@ class KITPlot(object):
 
         with open(fileName,'w') as cfgFile:
             cfgPrs.add_section('Global')
+            cfgPrs.set('Global', 'Measurement', self.measurement)
 
             cfgPrs.add_section('Title')
             cfgPrs.set('Title', 'Title', self.title)
@@ -427,7 +454,7 @@ class KITPlot(object):
         return True
 
 
-    def add(self, dataInput=None):
+    def add(self, dataInput=None, measurement="probe"):
         
         # Load KITDataFile
         if isinstance(dataInput, KITDataFile.KITDataFile):
@@ -484,10 +511,17 @@ class KITPlot(object):
                 # multiple PIDs
                 if self.__checkPID(dataInput) == True:
                     with open(dataInput) as inputFile:
+                        fileList = []
                         for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
-                                self.__files.append(KITDataFile.KITDataFile(entry[0]))
+                                fileList.append(KITDataFile.KITDataFile(entry[0],measurement))
+                        if measurement == "probe":
+                            self.__files = fileList
+                        elif measurement == "alibava":
+                            self.__files.append(KITDataFile.KITDataFile(fileList))
+                    
+                    print type(self.__files[0])
 
                     self.arrangeFileList()
                     self.arrangeEntries()
@@ -495,6 +529,8 @@ class KITPlot(object):
                     for i,File in enumerate(self.__files):
                         if "Ramp" in File.getParaY():
                             self.addGraph(File.getZ(), File.getY())
+                        elif File.getParaY() is "Signal":
+                            self.addGraph(File.getX(), File.getY())
                         else:
                             # single data file
                             if self.Normalization == "off":
