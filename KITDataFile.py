@@ -102,6 +102,7 @@ class KITDataFile(object):
             self.__py = input[0].getParaY()
             self.__pz = input[0].getParaZ()
             self.__name = input[0].getName()
+            self.__Fp = input[0].getFluenceP()
 
             for kitFile in input:
                 self.__x.append(kitFile.getX()[0])
@@ -249,6 +250,13 @@ class KITDataFile(object):
             annealing += equiv[0]
         self.__z.append(annealing)
 
+        qrySensorName = ("SELECT name, F_p_aim_n_cm2 FROM info WHERE id=%s" %(tmpID))
+        KITDataFile.__dbCrs.execute(qrySensorName)
+
+        for (name, Fp) in KITDataFile.__dbCrs:
+            self.__name = name
+            self.__Fp = Fp
+        
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow

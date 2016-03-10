@@ -33,7 +33,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,34,25,24,26,32] 
+            self.__markerSet = [20,22,23,21,34,25,24,26,32] 
         else:
             pass
 
