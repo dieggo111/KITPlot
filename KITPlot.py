@@ -43,9 +43,8 @@ class KITPlot(object):
         if cfgFile is not None:
             self.loadCfg(cfgFile)
             self.cfg_exists = True
-        #?????????
         elif dataInput is None and self.__load_defaultCfg("plot"):
-            self.cfg_exists = True
+            self.cfg_exists = False
             print("Initialized default cfg file plot.cfg")
         elif dataInput is None and self.__load_defaultCfg("plot") is not True:
             self.cfg_exists = False            
@@ -65,11 +64,8 @@ class KITPlot(object):
         else:
             pass
         
-        # if cfg file exists, then write specifics 
-        if self.cfg_exists == True:
-            self.__writeSpecifics("plot.cfg")
-        else:
-            pass
+        #for testing
+        self.cfgname = dataInput
 
             
             
@@ -135,7 +131,7 @@ class KITPlot(object):
         self.Normalization = "off"
         
         #for graph in graphs
-        self.List = ""
+        self.GraphString = ""
         
         return True
         
@@ -242,14 +238,9 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
         self.Normalization = cfgPrs.get('More plot options', 'normalization')
-        
-        #if self.__load_defaultCfg() == True:
-        #    self.List = cfgPrs.get('More plot options', 'list')
-        #    print self.List
-        #else:
-        #    print "write list"
 
         return True
+
 
     def __writeCfg(self, fileName="plot"):
         """Write new cfg file
@@ -323,7 +314,7 @@ class KITPlot(object):
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
             cfgPrs.set('More plot options','normalization', self.Normalization)
-            cfgPrs.set('More plot options','list', self.List)
+            cfgPrs.set('More plot options','list', self.GraphString)
 
             cfgPrs.write(cfgFile)
 
@@ -331,21 +322,28 @@ class KITPlot(object):
         return True
 
 
-    def __writeSpecifics(self, fileName="plot"):
+    def __writeSpecifics(self,fileName):
 
-        cfgPrs = ConfigParser.RawConfigParser()
+        # UNDER CONSTRUCTION:writes specific values from files into the config file
+
         fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])
-
-        self.List = "awdawdawd"
-        cfgPrs.add_section('More plot options')
-        cfgPrs.set('More plot options','list', self.List)
         
-        with open(fileName,'wb') as cfgFile:
+        # write graph names in a string
+        self.GraphString = "["
+        for Name in self.__files:
+            self.GraphString += str(Name.getName()) + ","
+        self.GraphString = self.GraphString[:-1]        
+        self.GraphString += "]"
+        
+        
+        cfgPrs =  ConfigParser.ConfigParser()
+        cfgPrs.read(fileName)
+
+        with open(fileName,'w') as cfgFile:
+            cfgPrs.set('More plot options','list', self.GraphString)
+         
             cfgPrs.write(cfgFile)
         
-        cfgPrs.read(fileName)
-        print cfgPrs.get('More plot options','list')
-
 
     ##############
     ### Checks ###
@@ -515,7 +513,6 @@ class KITPlot(object):
                     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
 
-
     def addGraph(self, *args):
         
         # args: x, y or KITDataFile
@@ -622,6 +619,24 @@ class KITPlot(object):
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
         
+        # sets titles
+        self.setTitles()
+        # sets marker styles (std assigning, graph group assigning)
+        self.setMarkerStyles()
+        # assign color
+        self.setGraphColor()
+                
+        # UNDER CONSTRUCTION: write plot specific values into cfg file
+        if self.cfg_exists == True:
+            self.__writeSpecifics(self.cfgname)
+        else:
+            pass
+
+        return True
+        
+
+    def setTitles(self):
+
         if self.titleX == "auto":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
         if self.titleY == "auto":
@@ -644,17 +659,10 @@ class KITPlot(object):
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
         else:
             sys.exit("Invalid Y-axis range! Try 'auto' or 'float:float'!")
-                
-                
-        self.counter = 0
-        marker_counter = 0
-        color_counter = 0
-        # need to work on getFluenceP() method
-        if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
-            sys.exit("Fluence group only works with ID inputs right now!")
-        
-        
-        # assign marker style
+
+
+    def setMarkerStyles(self):
+
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off":
                 graph.SetMarkerStyle(self.getMarkerStyle(i))
@@ -670,7 +678,15 @@ class KITPlot(object):
                         graph.SetMarkerStyle(self.__markerSet[0+j])
             else:
                 pass
-                
+
+        self.counter = 0
+        marker_counter = 0
+        color_counter = 0
+        # UNDER CONSTRUCTION: getFluenceP() method
+        if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
+            sys.exit("Fluence group only works with ID inputs right now!")
+        
+
         if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
                 for i,element in enumerate(self.getGroupList()):
                     if i < len(self.GraphGroup)-1:
@@ -678,9 +694,9 @@ class KITPlot(object):
                             self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
                         else:
                             marker_counter += 1
-                        
-                
-        # assign color
+
+    def setGraphColor(self):
+
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
                 graph.SetMarkerColor(self.getColor(i))
@@ -699,10 +715,7 @@ class KITPlot(object):
             if self.GraphGroup == "off" and self.ColorShades == True:
                 sys.exit("Need graph groups for applying shades!")
             
-                
-        return True
-        
-        
+
     def arrangeFileList(self):
 
         TempList1 = []
@@ -766,9 +779,7 @@ class KITPlot(object):
 
         else:
             pass
-        
-        
-        
+       
         return True
         
 
