@@ -42,20 +42,32 @@ class KITPlot(object):
 
         if cfgFile is not None:
             self.loadCfg(cfgFile)
+            self.cfg_exists = True
+        #?????????
         elif dataInput is None and self.__load_defaultCfg("plot"):
+            self.cfg_exists = True
             print("Initialized default cfg file plot.cfg")
         elif dataInput is None and self.__load_defaultCfg("plot") is not True:
+            self.cfg_exists = False            
             self.__writeCfg("plot.cfg")
         elif self.__load_defaultCfg(dataInput):
+            self.cfg_exists = True
             print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
             self.__writeCfg(dataInput)
+            self.cfg_exists = False
 
         self.__initStyle()
 
         # add files
         if dataInput is not None:
             self.add(dataInput)
+        else:
+            pass
+        
+        # if cfg file exists, then write specifics 
+        if self.cfg_exists == True:
+            self.__writeSpecifics("plot.cfg")
         else:
             pass
 
@@ -104,10 +116,12 @@ class KITPlot(object):
         self.legendEntryPosition = "auto"
         self.legendList = ""
         self.legendPosition = "auto"
-        self.legendTextSize = 0.02
+        self.legendTextSize = 0.03
         self.legendBoxPara = 1
          
         # Misc
+        self.titleF = 62
+        self.labelF = 62
         self.axisMaxDigits = 4
         self.padBottomMargin = 0.15
         self.padLeftMargin = 0.15
@@ -192,7 +206,7 @@ class KITPlot(object):
         self.titleX0 = cfgPrs.getfloat('Title', 'x0')
         self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
         self.titleH = cfgPrs.getfloat('Title', 'height')
-
+        
         self.titleX = cfgPrs.get('XAxis', 'title')
         self.titleSizeX = cfgPrs.getfloat('XAxis', 'title Size')
         self.titleOffsetX = cfgPrs.getfloat('XAxis', 'title Offset')
@@ -216,6 +230,8 @@ class KITPlot(object):
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
         self.legendList = cfgPrs.get('Legend', 'legend list')
         
+        self.titleF = cfgPrs.getint('Misc', 'axis title font')
+        self.labelF = cfgPrs.getint('Misc', 'axis label font')
         self.axisMaxDigits = cfgPrs.getint('Misc', 'axis max digits')
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
@@ -265,7 +281,7 @@ class KITPlot(object):
             cfgPrs.set('Title', 'Title', self.title)
             cfgPrs.set('Title', 'X0', self.titleX0)
             cfgPrs.set('Title', 'Y0', self.titleY0)
-            cfgPrs.set('Title', 'Height', self.titleH)
+            cfgPrs.set('Title', 'Height', self.titleH)            
 
             cfgPrs.add_section('XAxis')
             cfgPrs.set('XAxis', 'Title', self.titleX)
@@ -294,6 +310,8 @@ class KITPlot(object):
             cfgPrs.set('Legend', 'legend list', self.getLegendList())
 
             cfgPrs.add_section('Misc')
+            cfgPrs.set('Misc', 'axis title font', self.titleF)
+            cfgPrs.set('Misc', 'axis label font', self.labelF)
             cfgPrs.set('Misc', 'axis max digits', self.axisMaxDigits)
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
             cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
@@ -311,6 +329,22 @@ class KITPlot(object):
 
         print ("Wrote %s" %(fileName))
         return True
+
+
+    def __writeSpecifics(self, fileName="plot"):
+
+        cfgPrs = ConfigParser.RawConfigParser()
+        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])
+
+        self.List = "awdawdawd"
+        cfgPrs.add_section('More plot options')
+        cfgPrs.set('More plot options','list', self.List)
+        
+        with open(fileName,'wb') as cfgFile:
+            cfgPrs.write(cfgFile)
+        
+        cfgPrs.read(fileName)
+        print cfgPrs.get('More plot options','list')
 
 
     ##############
@@ -390,6 +424,9 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleOffset(self.titleOffsetX,"X")
         ROOT.gStyle.SetTitleOffset(self.titleOffsetY,"Y")
         
+        ROOT.gStyle.SetTitleFont(self.titleF, "")
+        ROOT.gStyle.SetTitleFont(self.titleF, "XYZ")
+        ROOT.gStyle.SetLabelFont(self.labelF,"XYZ")
         ROOT.gStyle.SetLabelSize(self.labelSizeX,"X")
         ROOT.gStyle.SetLabelSize(self.labelSizeY,"Y")
         ROOT.TGaxis.SetMaxDigits(self.axisMaxDigits)
@@ -969,7 +1006,7 @@ class KITPlot(object):
         if self.legendTextSize == 0.02:
             magic_para = para/100.*self.legendBoxPara
         else: 
-            magic_para = (para/100.+para*self.legendTextSize/50)*self.legendBoxPara
+            magic_para = (para/100.+para*self.legendTextSize/10)*self.legendBoxPara
         
         
         if self.legendPosition != "auto" and self.legendPosition != "TR" and self.legendPosition != "TL" and self.legendPosition != "BR":
