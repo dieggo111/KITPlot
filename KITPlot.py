@@ -38,7 +38,7 @@ class KITPlot(object):
         self.__initDefaultValues()
 
         #for testing
-        self.cfgName = os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
+        self.cfgPath = "cfg/" + os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
 
         if cfgFile is not None:
             self.loadCfg(cfgFile)
@@ -323,18 +323,14 @@ class KITPlot(object):
     def __writeSpecifics(self, fileName, section, title, var):
         
         # after cfg file is created and self.__files is filled, the graph names can be written into the cfg file
-        
         cfgPrs = ConfigParser.ConfigParser()
         cfgPrs.read(fileName)
 
-        if self.graphNames == "":
-            self.graphNames = self.__findNames()
-
-            with open(fileName,'w') as cfgFile:
-                cfgPrs.set('More plot options','graph names', self.graphNames)
-                cfgPrs.write(cfgFile)
-        else:
-            pass
+        with open(fileName,'w') as cfgFile:
+            cfgPrs.set(section, title, var)
+            cfgPrs.write(cfgFile)
+        
+        return True
 
 
     def __findNames(self):
@@ -576,7 +572,7 @@ class KITPlot(object):
         self.__autoScaling()
         self.MeasurementType()
         
-        print self.cfg_entryCheck("Title", "title", self.title)
+        
         self.plotStyles(self.titleX, self.titleY, self.title)    
         
         # set log scale if 
@@ -599,26 +595,17 @@ class KITPlot(object):
         
         self.canvas.Update()
         
-        self.saveAs("plot")
-
-
-        # write plot specific values into cfg file
-        if self.graphNames == "":
-            self.__writeSpecifics("cfg/" + self.cfgName)
-        else:
-            pass
-
+        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
             
         return True
 
 
-    def saveAs(self, fileName="plot"):
+    def saveAs(self, fileName):
 
         if not os.path.exists("output"):
             os.makedirs("output")
-        
         self.canvas.SaveAs("output/%s.png" %(fileName))        
-                
+        self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
     def update(self):
         
@@ -797,12 +784,12 @@ class KITPlot(object):
         
         if self.cfg_exists == True and self.legendEntry == "list":
             cfgPrs = ConfigParser.ConfigParser()
-
-            cfgPrs.read("cfg/" + self.cfgName)
+            cfgPrs.read(self.cfgPath)
 
             # "" can be used to reset the graph names to default
             if self.graphNames == "":
-                self.__writeSpecifics("cfg/" + self.cfgName)
+                self.graphNames = self.__findNames()
+                self.__writeSpecifics(self.cfgPath, "More plot options", "graph names", self.graphNames)
                 print "Graph names are set back to default!"
 
             # read out all the name changes the user made
@@ -815,7 +802,10 @@ class KITPlot(object):
             else:
                 self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
         else:
-            pass
+            self.graphNames = self.__findNames()
+            self.__writeSpecifics(self.cfgPath, "More plot options", "graph names", self.graphNames)
+
+        return True
 
 
     def changeOrder(self):
@@ -823,13 +813,13 @@ class KITPlot(object):
         if self.cfg_exists == True:
             cfgPrs = ConfigParser.ConfigParser()
 
-            cfgPrs.read("cfg/" + self.cfgName)
+            cfgPrs.read(self.cfgPath)
 
        
     def cfg_entryCheck(self, section, title, var):
         
         cfgPrs = ConfigParser.ConfigParser()
-        cfgPrs.read("cfg/" + self.cfgName)
+        cfgPrs.read(self.cfgPath)
 
         if var != cfgPrs.get(section, title):
             var = cfgPrs.get(section, title)
@@ -1041,7 +1031,10 @@ class KITPlot(object):
             #elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
                 #self.setLegendEntries()
                 #self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
-            elif self.legendEntry == "list":
+            elif self.legendEntry == "list" and self.cfg_exists == False:
+                self.changeNames()
+                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
+            elif self.legendEntry == "list" and self.cfg_exists == True:
                 self.changeNames()
                 self.legend.AddEntry(self.__graphs[i], self.graphNames[i], "p")
             else:
