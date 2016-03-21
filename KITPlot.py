@@ -105,7 +105,7 @@ class KITPlot(object):
         self.rangeY = "auto"
         
         # Legend
-        self.legendEntry = "name" 
+        self.legendEntry = "list" 
         self.legendEntryPosition = "auto"
         self.legendList = ""
         self.legendPosition = "auto"
@@ -129,7 +129,7 @@ class KITPlot(object):
         
         #for graph in graphs
         self.graphNames = ""
-        
+
         return True
         
         
@@ -235,6 +235,7 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
         self.Normalization = cfgPrs.get('More plot options', 'normalization')
+        self.graphNames = cfgPrs.get('More plot options', 'graph names')
 
         return True
 
@@ -319,26 +320,34 @@ class KITPlot(object):
         return True
 
 
-    def __writeSpecifics(self,fileName):
+    def __writeSpecifics(self, fileName, section, title, var):
+        
+        # after cfg file is created and self.__files is filled, the graph names can be written into the cfg file
+        
+        cfgPrs = ConfigParser.ConfigParser()
+        cfgPrs.read(fileName)
 
-        #fileName = "cfg/" + self.cfgName
-        
         if self.graphNames == "":
-            # write graph names in a string
-            self.graphNames = "["
-            for Name in self.__files:
-                self.graphNames += str(Name.getName()) + ","
-            self.graphNames = self.graphNames[:-1]        
-            self.graphNames += "]"
-        
-            cfgPrs = ConfigParser.ConfigParser()
-            cfgPrs.read(fileName)
+            self.graphNames = self.__findNames()
 
             with open(fileName,'w') as cfgFile:
                 cfgPrs.set('More plot options','graph names', self.graphNames)
                 cfgPrs.write(cfgFile)
         else:
             pass
+
+
+    def __findNames(self):
+        
+        # write graph names in a strisng
+        Names = "["
+        for graph in self.__files:
+            Names += str(graph.getName()) + ","
+        Names = Names[:-1]        
+        Names += "]"
+            
+        return Names
+        
 
     ##############
     ### Checks ###
@@ -567,6 +576,7 @@ class KITPlot(object):
         self.__autoScaling()
         self.MeasurementType()
         
+        print self.cfg_entryCheck("Title", "title", self.title)
         self.plotStyles(self.titleX, self.titleY, self.title)    
         
         # set log scale if 
@@ -592,8 +602,8 @@ class KITPlot(object):
         self.saveAs("plot")
 
 
-        # UNDER CONSTRUCTION: write plot specific values into cfg file
-        if self.cfg_exists == True:
+        # write plot specific values into cfg file
+        if self.graphNames == "":
             self.__writeSpecifics("cfg/" + self.cfgName)
         else:
             pass
@@ -785,22 +795,48 @@ class KITPlot(object):
 
     def changeNames(self):
         
+        if self.cfg_exists == True and self.legendEntry == "list":
+            cfgPrs = ConfigParser.ConfigParser()
+
+            cfgPrs.read("cfg/" + self.cfgName)
+
+            # "" can be used to reset the graph names to default
+            if self.graphNames == "":
+                self.__writeSpecifics("cfg/" + self.cfgName)
+                print "Graph names are set back to default!"
+
+            # read out all the name changes the user made
+            if self.graphNames != cfgPrs.get('More plot options', 'graph names'):
+                if len(self.__files) != len(self.graphNames):
+                    sys.exit("Number of graph names in cfg file is not sufficient!!!")
+                else:
+                    self.graphNames = cfgPrs.get('More plot options', 'graph names')
+                    self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
+            else:
+                self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
+        else:
+            pass
+
+
+    def changeOrder(self):
+
         if self.cfg_exists == True:
             cfgPrs = ConfigParser.ConfigParser()
 
             cfgPrs.read("cfg/" + self.cfgName)
-            
-            self.graphNames = cfgPrs.get('More plot options', 'graph names')
-            self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
-            
-            if len(self.__files) != len(self.graphNames):
-                sys.exit("Number of graph names in cfg file is not sufficient!!!")
-            else:
-                pass
+
+       
+    def cfg_entryCheck(self, section, title, var):
+        
+        cfgPrs = ConfigParser.ConfigParser()
+        cfgPrs.read("cfg/" + self.cfgName)
+
+        if var != cfgPrs.get(section, title):
+            var = cfgPrs.get(section, title)
         else:
             pass
 
-#    def changeOrder(self):
+        return var
 
 
 
@@ -1005,7 +1041,7 @@ class KITPlot(object):
             #elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
                 #self.setLegendEntries()
                 #self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
-            elif self.legendEntry == "list" and self.graphNames != "":
+            elif self.legendEntry == "list":
                 self.changeNames()
                 self.legend.AddEntry(self.__graphs[i], self.graphNames[i], "p")
             else:
