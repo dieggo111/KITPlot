@@ -26,8 +26,6 @@ class KITPlot(object):
         self.__files = []
         self.__graphs = []
 
-        # TODO: Can we get rid of these two? - self.cfg is used in self.loadCfg...
-        self.cfgFile = cfgFile
                     
         # init colors and markers
         if self.__init == False:
@@ -39,6 +37,8 @@ class KITPlot(object):
         # Load parameters and apply deault style        
         self.__initDefaultValues()
 
+        #for testing
+        self.cfgName = os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
 
         if cfgFile is not None:
             self.loadCfg(cfgFile)
@@ -64,10 +64,7 @@ class KITPlot(object):
         else:
             pass
         
-        #for testing
-        self.cfgname = dataInput
 
-            
             
     ######################
     ### Default values ###
@@ -131,7 +128,7 @@ class KITPlot(object):
         self.Normalization = "off"
         
         #for graph in graphs
-        self.GraphString = ""
+        self.graphNames = ""
         
         return True
         
@@ -155,7 +152,7 @@ class KITPlot(object):
                 print("Initialized %s!" %(cfgFile))
                 return True
             else:
-                self.cfgFile = None
+                cfgFile = None
                 print "No cfg found! Need valid path! Use default values!"
                 return False
 
@@ -195,7 +192,7 @@ class KITPlot(object):
         """
 
         cfgPrs = ConfigParser.ConfigParser()
-
+        print fileName
         cfgPrs.read(fileName)
             
         self.title = cfgPrs.get('Title', 'title')
@@ -314,7 +311,7 @@ class KITPlot(object):
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
             cfgPrs.set('More plot options','normalization', self.Normalization)
-            cfgPrs.set('More plot options','list', self.GraphString)
+            cfgPrs.set('More plot options','graph names', self.graphNames)
 
             cfgPrs.write(cfgFile)
 
@@ -324,26 +321,24 @@ class KITPlot(object):
 
     def __writeSpecifics(self,fileName):
 
-        # UNDER CONSTRUCTION:writes specific values from files into the config file
+        #fileName = "cfg/" + self.cfgName
+        
+        if self.graphNames == "":
+            # write graph names in a string
+            self.graphNames = "["
+            for Name in self.__files:
+                self.graphNames += str(Name.getName()) + ","
+            self.graphNames = self.graphNames[:-1]        
+            self.graphNames += "]"
+        
+            cfgPrs = ConfigParser.ConfigParser()
+            cfgPrs.read(fileName)
 
-        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])
-        
-        # write graph names in a string
-        self.GraphString = "["
-        for Name in self.__files:
-            self.GraphString += str(Name.getName()) + ","
-        self.GraphString = self.GraphString[:-1]        
-        self.GraphString += "]"
-        
-        
-        cfgPrs =  ConfigParser.ConfigParser()
-        cfgPrs.read(fileName)
-
-        with open(fileName,'w') as cfgFile:
-            cfgPrs.set('More plot options','list', self.GraphString)
-         
-            cfgPrs.write(cfgFile)
-        
+            with open(fileName,'w') as cfgFile:
+                cfgPrs.set('More plot options','graph names', self.graphNames)
+                cfgPrs.write(cfgFile)
+        else:
+            pass
 
     ##############
     ### Checks ###
@@ -473,6 +468,7 @@ class KITPlot(object):
                     else:
                         pass
                 self.arrangeFileList()
+                self.changeNames()
                 self.arrangeEntries()
                 if self.Normalization == "off":
                     for i, File in enumerate(self.__files):
@@ -499,6 +495,7 @@ class KITPlot(object):
                             if entry[0].isdigit():
                                 self.__files.append(KITDataFile.KITDataFile(entry[0]))
                     self.arrangeFileList()
+                    self.changeNames()
                     self.arrangeEntries()
                     if self.Normalization == "off":
                         for i, File in enumerate(self.__files):
@@ -593,6 +590,14 @@ class KITPlot(object):
         self.canvas.Update()
         
         self.saveAs("plot")
+
+
+        # UNDER CONSTRUCTION: write plot specific values into cfg file
+        if self.cfg_exists == True:
+            self.__writeSpecifics("cfg/" + self.cfgName)
+        else:
+            pass
+
             
         return True
 
@@ -621,17 +626,11 @@ class KITPlot(object):
         
         # sets titles
         self.setTitles()
-        # sets marker styles (std assigning, graph group assigning)
+        # sets marker styles (std assigning and/or graph group assigning)
         self.setMarkerStyles()
-        # assign color
+        # assigns colors
         self.setGraphColor()
                 
-        # UNDER CONSTRUCTION: write plot specific values into cfg file
-        if self.cfg_exists == True:
-            self.__writeSpecifics(self.cfgname)
-        else:
-            pass
-
         return True
         
 
@@ -727,6 +726,7 @@ class KITPlot(object):
             TempList1.append(temp.getName())
             TempList2.append(temp.getName())
         
+        # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
                 Test = Name1 + "_" + "(" + str(i) + ")"
@@ -783,7 +783,26 @@ class KITPlot(object):
         return True
         
 
+    def changeNames(self):
         
+        if self.cfg_exists == True:
+            cfgPrs = ConfigParser.ConfigParser()
+
+            cfgPrs.read("cfg/" + self.cfgName)
+            
+            self.graphNames = cfgPrs.get('More plot options', 'graph names')
+            self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
+            
+            if len(self.__files) != len(self.graphNames):
+                sys.exit("Number of graph names in cfg file is not sufficient!!!")
+            else:
+                pass
+        else:
+            pass
+
+#    def changeOrder(self):
+
+
 
 #######################
 ### Automatizations ###
@@ -981,11 +1000,14 @@ class KITPlot(object):
         for i,graph in enumerate(self.__graphs):
             if self.legendEntry == "name":
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
-            elif self.legendEntry == "ID":
+            elif self.legendEntry == "ID" and self.__checkPID == True:
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
-            elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
-                self.setLegendEntries()
-                self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
+            #elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
+                #self.setLegendEntries()
+                #self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
+            elif self.legendEntry == "list" and self.graphNames != "":
+                self.changeNames()
+                self.legend.AddEntry(self.__graphs[i], self.graphNames[i], "p")
             else:
                 print "Invalid entry! Using graph names"
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
@@ -993,6 +1015,7 @@ class KITPlot(object):
  
         self.legend.Draw()
         self.canvas.Update()
+
 
         
     def setLegendParameters(self):
