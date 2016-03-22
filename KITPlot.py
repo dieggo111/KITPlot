@@ -106,8 +106,6 @@ class KITPlot(object):
         
         # Legend
         self.legendEntry = "list" 
-        self.legendEntryPosition = "auto"
-        self.legendList = ""
         self.legendPosition = "auto"
         self.legendTextSize = 0.03
         self.legendBoxPara = 1
@@ -126,9 +124,7 @@ class KITPlot(object):
         self.GraphGroup = "off"
         self.ColorShades = False
         self.Normalization = "off"
-        
-        #for graph in graphs
-        self.graphNames = ""
+        self.graphDetails = ""
 
         return True
         
@@ -218,10 +214,8 @@ class KITPlot(object):
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         self.legendPosition = cfgPrs.get('Legend', 'legend position')
-        self.legendEntryPosition = cfgPrs.get('Legend', 'legend entry position')
         self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
-        self.legendList = cfgPrs.get('Legend', 'legend list')
         
         self.titleF = cfgPrs.getint('Misc', 'axis title font')
         self.labelF = cfgPrs.getint('Misc', 'axis label font')
@@ -235,7 +229,7 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
         self.Normalization = cfgPrs.get('More plot options', 'normalization')
-        self.graphNames = cfgPrs.get('More plot options', 'graph names')
+        self.graphDetails = cfgPrs.get('More plot options', 'graph details')
 
         return True
 
@@ -293,10 +287,8 @@ class KITPlot(object):
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
-            cfgPrs.set('Legend', 'legend entry position', self.legendEntryPosition)
             cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
             cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
-            cfgPrs.set('Legend', 'legend list', self.getLegendList())
 
             cfgPrs.add_section('Misc')
             cfgPrs.set('Misc', 'axis title font', self.titleF)
@@ -312,7 +304,7 @@ class KITPlot(object):
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
             cfgPrs.set('More plot options','normalization', self.Normalization)
-            cfgPrs.set('More plot options','graph names', self.graphNames)
+            cfgPrs.set('More plot options','graph details', self.graphDetails)
 
             cfgPrs.write(cfgFile)
 
@@ -322,7 +314,7 @@ class KITPlot(object):
 
     def __writeSpecifics(self, fileName, section, title, var):
         
-        # after cfg file is created and self.__files is filled, the graph names can be written into the cfg file
+        # after cfg file is created and self.__files is filled, the graph details can be written into the cfg file
         cfgPrs = ConfigParser.ConfigParser()
         cfgPrs.read(fileName)
 
@@ -335,12 +327,11 @@ class KITPlot(object):
 
     def __findNames(self):
         
-        # write graph names in a strisng
-        Names = "["
-        for graph in self.__files:
-            Names += str(graph.getName()) + ","
-        Names = Names[:-1]        
-        Names += "]"
+        # write graph details in a strisng
+        Names = ""
+        for i, graph in enumerate(self.__files):
+            Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
+        Names = Names[:-2]        
             
         return Names
         
@@ -474,7 +465,6 @@ class KITPlot(object):
                         pass
                 self.arrangeFileList()
                 self.changeNames()
-                self.arrangeEntries()
                 if self.Normalization == "off":
                     for i, File in enumerate(self.__files):
                         self.addGraph(self.__files[i].getX(),self.__files[i].getY())
@@ -501,7 +491,6 @@ class KITPlot(object):
                                 self.__files.append(KITDataFile.KITDataFile(entry[0]))
                     self.arrangeFileList()
                     self.changeNames()
-                    self.arrangeEntries()
                     if self.Normalization == "off":
                         for i, File in enumerate(self.__files):
                             self.addGraph(self.__files[i].getX(),self.__files[i].getY())
@@ -588,7 +577,6 @@ class KITPlot(object):
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
         
-
         # Set legend
         self.setLegendParameters()
         self.setLegend()
@@ -620,6 +608,7 @@ class KITPlot(object):
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
+        self.getLegendOrder()
         
         # set titles
         self.setTitles()
@@ -669,17 +658,17 @@ class KITPlot(object):
 
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off":
-                graph.SetMarkerStyle(self.getMarkerStyle(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
-                graph.SetMarkerStyle(self.getMarkerShade(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
             elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence" and self.GraphGroup[0] != "[":
                 sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
             elif self.GraphGroup == "name" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
                     if self.GraphGroup == "name" and self.__files[i].getName()[:5] == Element:
-                        graph.SetMarkerStyle(self.__markerSet[0+j])
+                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
                     if self.GraphGroup == "fluence" and self.__files[i].getFluenceP() == Element:
-                        graph.SetMarkerStyle(self.__markerSet[0+j])
+                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
             else:
                 pass
 
@@ -690,7 +679,7 @@ class KITPlot(object):
         if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
             sys.exit("Fluence group only works with ID inputs right now!")
         
-
+        # set markers for user groups
         if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
                 for i,element in enumerate(self.getGroupList()):
                     if i < len(self.GraphGroup)-1:
@@ -704,17 +693,18 @@ class KITPlot(object):
 
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
-                graph.SetMarkerColor(self.getColorShades(i))
-                graph.SetLineColor(self.getColorShades(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+            # UNDER CONSTRUCTION: shades for user groups
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == True:
                 sys.exit("User groups dont work with shades, yet!")
             if self.GraphGroup == "off" and self.ColorShades == True:
@@ -757,37 +747,6 @@ class KITPlot(object):
             TempList1.append(self.__files[index])
         self.__files = TempList1
         
-        
-    def arrangeEntries(self):
-            
-        UserEntries = []
-        Before = []
-        After = []
-
-        if self.legendEntryPosition != "auto":
-            UserEntries = self.legendEntryPosition.replace("=",",").split(",")
-            for i,element in enumerate(UserEntries):
-                if i%2 == 0:
-                    Before.append(int(element))
-                else:
-                    After.append(int(element))
-            if len(After) != len(Before):
-                sys.exit("Invalid legend entries given! Try 'entry befor=entry after, ...'!")
-        
-            j = 0
-            for i,element in enumerate(self.__files):
-                if i == Before[j]:
-                    temp = element
-                    self.__files[i] = self.__files[After[j]]
-                    self.__files[After[j]] = temp
-                    if j < len(Before)-1:
-                        j += 1
-
-        else:
-            pass
-       
-        return True
-        
 
     def changeNames(self):
         
@@ -795,37 +754,27 @@ class KITPlot(object):
             cfgPrs = ConfigParser.ConfigParser()
             cfgPrs.read(self.cfgPath)
 
-            # "" can be used to reset the graph names to default
-            if self.graphNames == "":
-                self.graphNames = self.__findNames()
-                self.__writeSpecifics(self.cfgPath, "More plot options", "graph names", self.graphNames)
-                print "Graph names are set back to default!"
+            # if cfg exists, "" can be used to reset the graph details to default
+            if self.graphDetails == "":
+                self.graphDetails = self.__findNames()
+                self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
+                print "Graph details are set back to default!"
 
             # read out all the name changes the user made
-            if self.graphNames != cfgPrs.get('More plot options', 'graph names'):
-                if len(self.__files) != len(self.graphNames):
-                    sys.exit("Number of graph names in cfg file is not sufficient!!!")
+            elif self.graphDetails != cfgPrs.get('More plot options', 'graph details'):
+                if len(self.__files) != len(self.graphDetails):
+                    sys.exit("Number of graph details in cfg file is not sufficient! You can delete the entry to go back to default values")
                 else:
-                    self.graphNames = cfgPrs.get('More plot options', 'graph names')
-                    self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
+                    self.graphDetails = cfgPrs.get('More plot options', 'graph details')
+                    self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
             else:
-                self.graphNames = self.graphNames.replace("[","").replace("]","").split(",")
+                self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+        # when cfg has just been created, this command will send default values
         else:
-            self.graphNames = self.__findNames()
-            self.__writeSpecifics(self.cfgPath, "More plot options", "graph names", self.graphNames)
+            self.graphDetails = self.__findNames()
+            self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
 
         return True
-
-
-    def changeOrder(self):
-
-        if self.cfg_exists == True:
-            cfgPrs = ConfigParser.ConfigParser()
-
-            cfgPrs.read(self.cfgPath)
-
-
-
 
 
 #######################
@@ -979,41 +928,36 @@ class KITPlot(object):
 ### Legend methods ###
 ######################
 
-    def setLegendEntries(self):
-    
-        UserEntries = []
-        EntryNumber = []
-        EntryName = []
-        UserEntries = self.legendEntry.replace("=",",").split(",")
-        for element in UserEntries:
-            if element.isdigit() == True:
-                EntryNumber.append(element)
-            else:
-                EntryName.append(element)
-        if len(EntryNumber) != len(EntryName):
-            sys.exit("Invalid legend entries given! Try 'entry number=entry name, ...'!")
-            
-        self.LegendEntryList = []
-        number=int(EntryNumber[0])
-        j=0
+
+    def getLegendOrder(self):
+
+        self.EntryPosition = []
+
+        for Name in self.graphDetails:
+            self.EntryPosition.append(Name.replace(" ","")[1])
         
-        for i in range(len(self.__graphs)):
-            if i == number:
-                self.LegendEntryList.append(EntryName[j])
-                if j < len(EntryNumber)-1:
-                    j += 1
-                number = int(EntryNumber[j])
+        for Name in self.EntryPosition:
+            if self.EntryPosition.count(Name) > 1:
+                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
             else:
-                self.LegendEntryList.append(self.__files[i].getName())
-        
-        return True
+                pass
+
+
+    def changeOrder(self, counter):
+
+        for j, number in enumerate(self.EntryPosition):
             
+            if int(number) == counter:
+                return int(j)
+            else:
+                pass
 
 
     def setLegend(self):
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
+
         
         if 0.02 <= self.legendTextSize <= 0.03:
             self.legend.SetTextSize(self.legendTextSize)
@@ -1026,23 +970,19 @@ class KITPlot(object):
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "ID" and self.__checkPID == True:
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
-            #elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
-                #self.setLegendEntries()
-                #self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
             elif self.legendEntry == "list" and self.cfg_exists == False:
                 self.changeNames()
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "list" and self.cfg_exists == True:
                 self.changeNames()
-                self.legend.AddEntry(self.__graphs[i], self.graphNames[i], "p")
+                self.legend.AddEntry(self.__graphs[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
             else:
-                print "Invalid entry! Using graph names"
+                print "Invalid entry! Using graph details"
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
                 
  
         self.legend.Draw()
         self.canvas.Update()
-
 
         
     def setLegendParameters(self):
@@ -1277,19 +1217,7 @@ class KITPlot(object):
                     return self.__files[KITFile]
                 else:
                     return False
-
-    def getLegendList(self):
-        NameList = []
-        LegendList = ""
-        for Name in self.__files:
-            NameList.append(Name.getName())
-            
-        for Name in NameList:
-            LegendList += (Name + ", ")
-            
-        return LegendList
         
-
 
     def getCanvas(self):
         return self.canvas
