@@ -621,24 +621,32 @@ class KITPlot(object):
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
         
-        # sets titles
+        # set titles
         self.setTitles()
-        # sets marker styles (std assigning and/or graph group assigning)
+        # set axis ranges
+        self.setRanges()
+        # set marker styles (std assigning and/or graph group assigning)
         self.setMarkerStyles()
-        # assigns colors
+        # assign colors
         self.setGraphColor()
                 
         return True
-        
 
+        
     def setTitles(self):
 
         if self.titleX == "auto":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
+            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
         if self.titleY == "auto":
             self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
+            self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
         if self.title == "auto":
             self.__graphs[0].SetTitle(self.autotitle)
+            self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
+    
+
+    def setRanges(self):
         
         if self.rangeX == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
@@ -690,6 +698,7 @@ class KITPlot(object):
                             self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
                         else:
                             marker_counter += 1
+
 
     def setGraphColor(self):
 
@@ -815,18 +824,7 @@ class KITPlot(object):
 
             cfgPrs.read(self.cfgPath)
 
-       
-    def cfg_entryCheck(self, section, title, var):
-        
-        cfgPrs = ConfigParser.ConfigParser()
-        cfgPrs.read(self.cfgPath)
 
-        if var != cfgPrs.get(section, title):
-            var = cfgPrs.get(section, title)
-        else:
-            pass
-
-        return var
 
 
 
