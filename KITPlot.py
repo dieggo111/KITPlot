@@ -547,8 +547,8 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITDataFile.KITDataFile(fileList))
                     
-                        
                     self.arrangeFileList()
+                    self.changeNames()
 
                     for i,File in enumerate(self.__files):
                         if "Ramp" in File.getParaY():
@@ -726,7 +726,7 @@ class KITPlot(object):
 
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off":
-                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
+                self.__graphs[i].SetMarkerStyle(self.getMarkerStyle(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
                 self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
             elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence" and self.GraphGroup[0] != "[":
@@ -761,6 +761,7 @@ class KITPlot(object):
 
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
+                print (i,self.changeOrder(i))
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
@@ -827,6 +828,7 @@ class KITPlot(object):
                 self.graphDetails = self.__findNames()
                 self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
                 print "Graph details are set back to default!"
+                self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
 
             # read out all the name changes the user made
             elif self.graphDetails != cfgPrs.get('More plot options', 'graph details'):
@@ -841,7 +843,7 @@ class KITPlot(object):
         else:
             self.graphDetails = self.__findNames()
             self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
-
+            self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
         return True
 
 
@@ -930,23 +932,15 @@ class KITPlot(object):
 
         return True
 
-
     
     def getMarkerStyle(self, index):
-        
-        # same marker for as many graphs as possible
-        #if index%9 == 0 and index > 0:
-        #    self.counter += 1
-        #if index == 30:
-        #    sys.exit("Overflow. Reduce number of graphs!")
-        
-        #return self.__markerSet[self.counter]
         
         if index >= 9:
             return self.__markerSet[index % 8]
         else:
             return self.__markerSet[index]
             
+
     def getMarkerShade(self, index):
         
         self.getShadeList()
@@ -1037,10 +1031,8 @@ class KITPlot(object):
             elif self.legendEntry == "ID" and self.__checkPID == True:
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
             elif self.legendEntry == "list" and self.cfg_exists == False:
-                self.changeNames()
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "list" and self.cfg_exists == True:
-                self.changeNames()
                 self.legend.AddEntry(self.__graphs[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
             else:
                 print "Invalid entry! Using graph details"
