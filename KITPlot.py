@@ -25,10 +25,6 @@ class KITPlot(object):
         # init lists
         self.__files = []
         self.__graphs = []
-
-        # TODO: Can we get rid of these two? - self.cfg is used in self.loadCfg...
-        # - but it is passed as an argument
-        self.cfgFile = cfgFile
                     
         # init colors and markers
         if self.__init == False:
@@ -40,17 +36,24 @@ class KITPlot(object):
         # Load parameters and apply default style        
         self.__initDefaultValues()
 
+        #for testing
+        self.cfgPath = "cfg/" + os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
 
         if cfgFile is not None:
             self.loadCfg(cfgFile)
+            self.cfg_exists = True
         elif dataInput is None and self.__load_defaultCfg("plot"):
+            self.cfg_exists = False
             print("Initialized default cfg file plot.cfg")
         elif dataInput is None and self.__load_defaultCfg("plot") is not True:
+            self.cfg_exists = False            
             self.__writeCfg("plot.cfg")
         elif self.__load_defaultCfg(dataInput):
+            self.cfg_exists = True
             print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
             self.__writeCfg(dataInput)
+            self.cfg_exists = False
 
         self.__initStyle()
 
@@ -79,8 +82,8 @@ class KITPlot(object):
 
         else:
             pass
+        
 
-            
             
     ######################
     ### Default values ###
@@ -124,14 +127,14 @@ class KITPlot(object):
         self.rangeY = "auto"
         
         # Legend
-        self.legendEntry = "name" 
-        self.legendEntryPosition = "auto"
-        self.legendList = ""
+        self.legendEntry = "list" 
         self.legendPosition = "auto"
-        self.legendTextSize = 0.02
+        self.legendTextSize = 0.03
         self.legendBoxPara = 1
          
         # Misc
+        self.titleF = 62
+        self.labelF = 62
         self.axisMaxDigits = 4
         self.padBottomMargin = 0.15
         self.padLeftMargin = 0.15
@@ -143,10 +146,8 @@ class KITPlot(object):
         self.GraphGroup = "off"
         self.ColorShades = False
         self.Normalization = "off"
-        
-        #for graph in graphs
-        self.List = ""
-        
+        self.graphDetails = ""
+
         return True
         
         
@@ -169,7 +170,7 @@ class KITPlot(object):
                 print("Initialized %s!" %(cfgFile))
                 return True
             else:
-                self.cfgFile = None
+                cfgFile = None
                 print "No cfg found! Need valid path! Use default values!"
                 return False
 
@@ -209,7 +210,7 @@ class KITPlot(object):
         """
 
         cfgPrs = ConfigParser.ConfigParser()
-
+        print fileName
         cfgPrs.read(fileName)
         
         self.measurement = cfgPrs.get('Global', 'measurement')
@@ -218,7 +219,7 @@ class KITPlot(object):
         self.titleX0 = cfgPrs.getfloat('Title', 'x0')
         self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
         self.titleH = cfgPrs.getfloat('Title', 'height')
-
+        
         self.titleX = cfgPrs.get('XAxis', 'title')
         self.titleSizeX = cfgPrs.getfloat('XAxis', 'title Size')
         self.titleOffsetX = cfgPrs.getfloat('XAxis', 'title Offset')
@@ -237,11 +238,11 @@ class KITPlot(object):
 
         self.legendEntry = cfgPrs.get('Legend', 'entry')
         self.legendPosition = cfgPrs.get('Legend', 'legend position')
-        self.legendEntryPosition = cfgPrs.get('Legend', 'legend entry position')
         self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
         self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
-        self.legendList = cfgPrs.get('Legend', 'legend list')
         
+        self.titleF = cfgPrs.getint('Misc', 'axis title font')
+        self.labelF = cfgPrs.getint('Misc', 'axis label font')
         self.axisMaxDigits = cfgPrs.getint('Misc', 'axis max digits')
         self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
         self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
@@ -252,14 +253,10 @@ class KITPlot(object):
         self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
         self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
         self.Normalization = cfgPrs.get('More plot options', 'normalization')
-        
-        #if self.__load_defaultCfg() == True:
-        #    self.List = cfgPrs.get('More plot options', 'list')
-        #    print self.List
-        #else:
-        #    print "write list"
+        self.graphDetails = cfgPrs.get('More plot options', 'graph details')
 
         return True
+
 
     def __writeCfg(self, fileName="plot"):
         """Write new cfg file
@@ -292,7 +289,7 @@ class KITPlot(object):
             cfgPrs.set('Title', 'Title', self.title)
             cfgPrs.set('Title', 'X0', self.titleX0)
             cfgPrs.set('Title', 'Y0', self.titleY0)
-            cfgPrs.set('Title', 'Height', self.titleH)
+            cfgPrs.set('Title', 'Height', self.titleH)            
 
             cfgPrs.add_section('XAxis')
             cfgPrs.set('XAxis', 'Title', self.titleX)
@@ -315,12 +312,12 @@ class KITPlot(object):
             cfgPrs.add_section('Legend')
             cfgPrs.set('Legend', 'Entry', self.legendEntry)
             cfgPrs.set('Legend', 'legend position', self.legendPosition)
-            cfgPrs.set('Legend', 'legend entry position', self.legendEntryPosition)
             cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
             cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
-            cfgPrs.set('Legend', 'legend list', self.getLegendList())
 
             cfgPrs.add_section('Misc')
+            cfgPrs.set('Misc', 'axis title font', self.titleF)
+            cfgPrs.set('Misc', 'axis label font', self.labelF)
             cfgPrs.set('Misc', 'axis max digits', self.axisMaxDigits)
             cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
             cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
@@ -332,13 +329,37 @@ class KITPlot(object):
             cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
             cfgPrs.set('More plot options', 'color shades', self.ColorShades)
             cfgPrs.set('More plot options','normalization', self.Normalization)
-            cfgPrs.set('More plot options','list', self.List)
+            cfgPrs.set('More plot options','graph details', self.graphDetails)
 
             cfgPrs.write(cfgFile)
 
         print ("Wrote %s" %(fileName))
         return True
 
+
+    def __writeSpecifics(self, fileName, section, title, var):
+        
+        # after cfg file is created and self.__files is filled, the graph details can be written into the cfg file
+        cfgPrs = ConfigParser.ConfigParser()
+        cfgPrs.read(fileName)
+
+        with open(fileName,'w') as cfgFile:
+            cfgPrs.set(section, title, var)
+            cfgPrs.write(cfgFile)
+        
+        return True
+
+
+    def __findNames(self):
+        
+        # write graph details in a strisng
+        Names = ""
+        for i, graph in enumerate(self.__files):
+            Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
+        Names = Names[:-2]        
+            
+        return Names
+        
 
     ##############
     ### Checks ###
@@ -433,6 +454,9 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleOffset(self.titleOffsetX,"X")
         ROOT.gStyle.SetTitleOffset(self.titleOffsetY,"Y")
         
+        ROOT.gStyle.SetTitleFont(self.titleF, "")
+        ROOT.gStyle.SetTitleFont(self.titleF, "XYZ")
+        ROOT.gStyle.SetLabelFont(self.labelF,"XYZ")
         ROOT.gStyle.SetLabelSize(self.labelSizeX,"X")
         ROOT.gStyle.SetLabelSize(self.labelSizeY,"Y")
         ROOT.TGaxis.SetMaxDigits(self.axisMaxDigits)
@@ -490,7 +514,7 @@ class KITPlot(object):
                         pass
 
                 self.arrangeFileList()
-                self.arrangeEntries()
+                self.changeNames()
 
                 if self.Normalization == "off":
                     for i, File in enumerate(self.__files):
@@ -525,7 +549,6 @@ class KITPlot(object):
                     
                         
                     self.arrangeFileList()
-                    self.arrangeEntries()
 
                     for i,File in enumerate(self.__files):
                         if "Ramp" in File.getParaY():
@@ -540,13 +563,13 @@ class KITPlot(object):
                                 self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                             else:
                                 sys.exit("Invalid normalization input! Try 'off' or '[float,float,...]'!")
+
                 else:
                     self.__files.append(KITDataFile.KITDataFile(dataInput))
                     if "Ramp" in self.__files[-1].getParaY():
                         self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
                     else:
                         self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
-
 
 
     def addGraph(self, *args):
@@ -606,6 +629,7 @@ class KITPlot(object):
         self.__autoScaling()
         self.MeasurementType()
         
+        
         self.plotStyles(self.titleX, self.titleY, self.title)    
         
         # set log scale if 
@@ -621,26 +645,23 @@ class KITPlot(object):
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
         
-
         # Set legend
         self.setLegendParameters()
         self.setLegend()
         
         self.canvas.Update()
         
-        self.saveAs("plot")
-        self.saveAs("plot","pdf")
+        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
             
         return True
 
 
-    def saveAs(self, fileName="plot", fileType="png"):
+    def saveAs(self, fileName):
 
         if not os.path.exists("output"):
             os.makedirs("output")
-        
-        self.canvas.SaveAs("output/%s.%s" %(fileName,fileType))        
-                
+        self.canvas.SaveAs("output/%s.png" %(fileName))        
+        self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
     def update(self):
         
@@ -655,13 +676,34 @@ class KITPlot(object):
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
+        self.getLegendOrder()
         
+        # set titles
+        self.setTitles()
+        # set axis ranges
+        self.setRanges()
+        # set marker styles (std assigning and/or graph group assigning)
+        self.setMarkerStyles()
+        # assign colors
+        self.setGraphColor()
+                
+        return True
+
+        
+    def setTitles(self):
+
         if self.titleX == "auto":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
+            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
         if self.titleY == "auto":
             self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
+            self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
         if self.title == "auto":
             self.__graphs[0].SetTitle(self.autotitle)
+            self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
+    
+
+    def setRanges(self):
         
         if self.rangeX == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
@@ -678,33 +720,34 @@ class KITPlot(object):
             self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
         else:
             sys.exit("Invalid Y-axis range! Try 'auto' or 'float:float'!")
-                
-                
-        self.counter = 0
-        marker_counter = 0
-        color_counter = 0
-        # need to work on getFluenceP() method
-        if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
-            sys.exit("Fluence group only works with ID inputs right now!")
-        
-        
-        # assign marker style
+
+
+    def setMarkerStyles(self):
+
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off":
-                graph.SetMarkerStyle(self.getMarkerStyle(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
-                graph.SetMarkerStyle(self.getMarkerShade(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
             elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence" and self.GraphGroup[0] != "[":
                 sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
             elif self.GraphGroup == "name" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
                     if self.GraphGroup == "name" and self.__files[i].getName()[:5] == Element:
-                        graph.SetMarkerStyle(self.__markerSet[0+j])
+                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
                     if self.GraphGroup == "fluence" and self.__files[i].getFluenceP() == Element:
-                        graph.SetMarkerStyle(self.__markerSet[0+j])
+                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
             else:
                 pass
-                
+
+        self.counter = 0
+        marker_counter = 0
+        color_counter = 0
+        # UNDER CONSTRUCTION: getFluenceP() method
+        if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
+            sys.exit("Fluence group only works with ID inputs right now!")
+        
+        # set markers for user groups
         if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
                 for i,element in enumerate(self.getGroupList()):
                     if i < len(self.GraphGroup)-1:
@@ -712,31 +755,30 @@ class KITPlot(object):
                             self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
                         else:
                             marker_counter += 1
-                        
-                
-        # assign color
+
+
+    def setGraphColor(self):
+
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
-                graph.SetMarkerColor(self.getColorShades(i))
-                graph.SetLineColor(self.getColorShades(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == False:
-                graph.SetMarkerColor(self.getColor(i))
-                graph.SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+            # UNDER CONSTRUCTION: shades for user groups
             elif self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]" and self.ColorShades == True:
                 sys.exit("User groups dont work with shades, yet!")
             if self.GraphGroup == "off" and self.ColorShades == True:
                 sys.exit("Need graph groups for applying shades!")
             
-                
-        return True
-        
-        
+
     def arrangeFileList(self):
 
         TempList1 = []
@@ -748,6 +790,7 @@ class KITPlot(object):
             TempList1.append(temp.getName())
             TempList2.append(temp.getName())
         
+        # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
                 Test = Name1 + "_" + "(" + str(i) + ")"
@@ -772,41 +815,35 @@ class KITPlot(object):
             TempList1.append(self.__files[index])
         self.__files = TempList1
         
-        
-    def arrangeEntries(self):
-            
-        UserEntries = []
-        Before = []
-        After = []
 
-        if self.legendEntryPosition != "auto":
-            UserEntries = self.legendEntryPosition.replace("=",",").split(",")
-            for i,element in enumerate(UserEntries):
-                if i%2 == 0:
-                    Before.append(int(element))
+    def changeNames(self):
+        
+        if self.cfg_exists == True and self.legendEntry == "list":
+            cfgPrs = ConfigParser.ConfigParser()
+            cfgPrs.read(self.cfgPath)
+
+            # if cfg exists, "" can be used to reset the graph details to default
+            if self.graphDetails == "":
+                self.graphDetails = self.__findNames()
+                self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
+                print "Graph details are set back to default!"
+
+            # read out all the name changes the user made
+            elif self.graphDetails != cfgPrs.get('More plot options', 'graph details'):
+                if len(self.__files) != len(self.graphDetails):
+                    sys.exit("Number of graph details in cfg file is not sufficient! You can delete the entry to go back to default values")
                 else:
-                    After.append(int(element))
-            if len(After) != len(Before):
-                sys.exit("Invalid legend entries given! Try 'entry befor=entry after, ...'!")
-        
-            j = 0
-            for i,element in enumerate(self.__files):
-                if i == Before[j]:
-                    temp = element
-                    self.__files[i] = self.__files[After[j]]
-                    self.__files[After[j]] = temp
-                    if j < len(Before)-1:
-                        j += 1
-
+                    self.graphDetails = cfgPrs.get('More plot options', 'graph details')
+                    self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+            else:
+                self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+        # when cfg has just been created, this command will send default values
         else:
-            pass
-        
-        
-        
-        return True
-        
+            self.graphDetails = self.__findNames()
+            self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
 
-        
+        return True
+
 
 #######################
 ### Automatizations ###
@@ -957,41 +994,36 @@ class KITPlot(object):
 ### Legend methods ###
 ######################
 
-    def setLegendEntries(self):
-    
-        UserEntries = []
-        EntryNumber = []
-        EntryName = []
-        UserEntries = self.legendEntry.replace("=",",").split(",")
-        for element in UserEntries:
-            if element.isdigit() == True:
-                EntryNumber.append(element)
-            else:
-                EntryName.append(element)
-        if len(EntryNumber) != len(EntryName):
-            sys.exit("Invalid legend entries given! Try 'entry number=entry name, ...'!")
-            
-        self.LegendEntryList = []
-        number=int(EntryNumber[0])
-        j=0
+
+    def getLegendOrder(self):
+
+        self.EntryPosition = []
+
+        for Name in self.graphDetails:
+            self.EntryPosition.append(Name.replace(" ","")[1])
         
-        for i in range(len(self.__graphs)):
-            if i == number:
-                self.LegendEntryList.append(EntryName[j])
-                if j < len(EntryNumber)-1:
-                    j += 1
-                number = int(EntryNumber[j])
+        for Name in self.EntryPosition:
+            if self.EntryPosition.count(Name) > 1:
+                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
             else:
-                self.LegendEntryList.append(self.__files[i].getName())
-        
-        return True
+                pass
+
+
+    def changeOrder(self, counter):
+
+        for j, number in enumerate(self.EntryPosition):
             
+            if int(number) == counter:
+                return int(j)
+            else:
+                pass
 
 
     def setLegend(self):
 
         self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
         self.legend.SetFillColor(0)
+
         
         if 0.02 <= self.legendTextSize <= 0.03:
             self.legend.SetTextSize(self.legendTextSize)
@@ -1002,13 +1034,16 @@ class KITPlot(object):
         for i,graph in enumerate(self.__graphs):
             if self.legendEntry == "name":
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
-            elif self.legendEntry == "ID":
+            elif self.legendEntry == "ID" and self.__checkPID == True:
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
-            elif self.legendEntry[0].isdigit() == True and self.legendEntry[1] == "=":
-                self.setLegendEntries()
-                self.legend.AddEntry(self.__graphs[i], self.LegendEntryList[i], "p")
+            elif self.legendEntry == "list" and self.cfg_exists == False:
+                self.changeNames()
+                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
+            elif self.legendEntry == "list" and self.cfg_exists == True:
+                self.changeNames()
+                self.legend.AddEntry(self.__graphs[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
             else:
-                print "Invalid entry! Using graph names"
+                print "Invalid entry! Using graph details"
                 self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
                 
  
@@ -1038,7 +1073,7 @@ class KITPlot(object):
         if self.legendTextSize == 0.02:
             magic_para = para/100.*self.legendBoxPara
         else: 
-            magic_para = (para/100.+para*self.legendTextSize/50)*self.legendBoxPara
+            magic_para = (para/100.+para*self.legendTextSize/10)*self.legendBoxPara
         
         
         if self.legendPosition != "auto" and self.legendPosition != "TR" and self.legendPosition != "TL" and self.legendPosition != "BR":
@@ -1248,19 +1283,7 @@ class KITPlot(object):
                     return self.__files[KITFile]
                 else:
                     return False
-
-    def getLegendList(self):
-        NameList = []
-        LegendList = ""
-        for Name in self.__files:
-            NameList.append(Name.getName())
-            
-        for Name in NameList:
-            LegendList += (Name + ", ")
-            
-        return LegendList
         
-
 
     def getCanvas(self):
         return self.canvas
