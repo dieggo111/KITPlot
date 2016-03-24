@@ -761,7 +761,6 @@ class KITPlot(object):
 
         for i, graph in enumerate(self.__graphs):
             if self.GraphGroup == "off" :
-                print (i,self.changeOrder(i))
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
@@ -955,7 +954,8 @@ class KITPlot(object):
                 MarkerShade.append(self.ShadeList[i]-color_num)
         
         return self.__markerSet[MarkerShade[index]]
-         
+
+
     def getGroupList(self):
     
         self.GroupList = []
@@ -983,6 +983,7 @@ class KITPlot(object):
                   self.GroupList.append(TempList[i])
 
         return self.GroupList
+
 
 ######################
 ### Legend methods ###
