@@ -465,6 +465,7 @@ class KITPlot(object):
         elif isinstance(dataInput, int):
             self.__files.append(KITDataFile.KITDataFile(dataInput))
             if "Ramp" in self.__files[-1].getParaY():
+                print "Ramp measurement"
                 self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
             else:
                 self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
@@ -475,6 +476,7 @@ class KITPlot(object):
             if dataInput.isdigit():
                 self.__files.append(KITDataFile.KITDataFile(dataInput))
                 if "Ramp" in self.__files[-1].getParaY():
+                    print "Ramp measurement"
                     self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
                 else:
                     self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
@@ -521,8 +523,7 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITDataFile.KITDataFile(fileList))
                     
-                    print type(self.__files[0])
-
+                        
                     self.arrangeFileList()
                     self.arrangeEntries()
 
