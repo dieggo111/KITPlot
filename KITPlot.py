@@ -103,13 +103,13 @@ class KITPlot(object):
         self.measurement = "probe"
 
         # Title options 
-        self.title = "auto"
+        self.title = "Title"
         self.titleX0 = 0.5
         self.titleY0 = 0.97
         self.titleH = 0.05
 
         # XAxis
-        self.titleX = "auto"
+        self.titleX = "X Value"
         self.titleSizeX = 0.05
         self.titleOffsetX = 1.1
         self.labelSizeX = 0.04
@@ -118,7 +118,7 @@ class KITPlot(object):
         self.rangeX = "auto"
 
         # YAxis
-        self.titleY = "auto"
+        self.titleY = "Y Value"
         self.titleSizeY = 0.05
         self.titleOffsetY = 1.1
         self.labelSizeY = 0.04
@@ -371,7 +371,7 @@ class KITPlot(object):
             self.autotitle = "Title" 
             self.autotitleY = "Y Value"
             self.autotitleX = "X Value"
-            
+    
         if self.__files[0].getParaY() != None:
             self.MT = self.__files[0].getParaY()
             if self.MT == "I_tot":
@@ -382,11 +382,11 @@ class KITPlot(object):
                 self.autotitle = "Pinhole Leakage" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Strip No"
-            if self.MT == "I_leak_dc":
+            elif self.MT == "I_leak_dc":
                 self.autotitle = "Strip Leakage Current" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Strip No"
-            if self.MT == "C_tot":
+            elif self.MT == "C_tot":
                 self.autotitle = "Capacitance Voltage Characteristics" 
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
@@ -629,7 +629,6 @@ class KITPlot(object):
         self.__autoScaling()
         self.MeasurementType()
         
-        
         self.plotStyles(self.titleX, self.titleY, self.title)    
         
         # set log scale if 
@@ -678,7 +677,7 @@ class KITPlot(object):
         self.__graphs[0].SetTitle(Title)
         self.getLegendOrder()
         
-        # set titles
+        # set titles (take auto titles when creating the cfg and the cfg value from here after)
         self.setTitles()
         # set axis ranges
         self.setRanges()
@@ -692,16 +691,28 @@ class KITPlot(object):
         
     def setTitles(self):
 
-        if self.titleX == "auto":
+        
+        if self.titleX == "X Value":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
             self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
-        if self.titleY == "auto":
+        else:
+            self.__graphs[0].GetXaxis().SetTitle(self.titleX)
+            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.titleX)
+
+        if self.titleY == "Y Value":
             self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
             self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
-        if self.title == "auto":
+        else:
+            self.__graphs[0].GetYaxis().SetTitle(self.titleY)
+            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
+
+        if self.title == "Title":
             self.__graphs[0].SetTitle(self.autotitle)
             self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
-    
+        else:
+            self.__graphs[0].SetTitle(self.title)
+            self.__writeSpecifics(self.cfgPath, "Title", "title", self.title)
+
 
     def setRanges(self):
         
