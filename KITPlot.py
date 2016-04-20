@@ -29,7 +29,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [20,22,23,21,34,25,24,26,32] 
+            self.__markerSet = [21,20,22,23,34,25,24,26,32] 
         else:
             pass
 
@@ -691,27 +691,25 @@ class KITPlot(object):
         
     def setTitles(self):
 
+        # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
         
         if self.titleX == "X Value":
             self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
             self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
         else:
             self.__graphs[0].GetXaxis().SetTitle(self.titleX)
-            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.titleX)
 
         if self.titleY == "Y Value":
             self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
             self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
         else:
             self.__graphs[0].GetYaxis().SetTitle(self.titleY)
-            self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
 
         if self.title == "Title":
             self.__graphs[0].SetTitle(self.autotitle)
             self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
         else:
             self.__graphs[0].SetTitle(self.title)
-            self.__writeSpecifics(self.cfgPath, "Title", "title", self.title)
 
 
     def setRanges(self):
@@ -742,7 +740,7 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
             elif self.GraphGroup != "off" and self.GraphGroup != "name" and self.GraphGroup != "fluence" and self.GraphGroup[0] != "[":
                 sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
-            elif self.GraphGroup == "name" and self.ColorShades == False:
+            elif self.GraphGroup != "off" and self.ColorShades == False:
                 for j, Element in enumerate(self.getGroupList()):
                     if self.GraphGroup == "name" and self.__files[i].getName()[:5] == Element:
                         self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
@@ -756,7 +754,7 @@ class KITPlot(object):
         color_counter = 0
         # UNDER CONSTRUCTION: getFluenceP() method
         if self.__files[0].getParaY() == None and self.GraphGroup == "fluence":
-            sys.exit("Fluence group only works with ID inputs right now!")
+            sys.exit("Fluence groups can only works with ID inputs!")
         
         # set markers for user groups
         if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
@@ -775,6 +773,9 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == False:
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+            elif self.GraphGroup == "fluence" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             elif self.GraphGroup == "name" and self.ColorShades == True:
@@ -975,11 +976,11 @@ class KITPlot(object):
         for i, Element in enumerate(self.__files):
             if self.GraphGroup == "name":
                 TempList.append(self.__files[i].getName()[:5])
-            if self.GraphGroup == "fluence":
+            elif self.GraphGroup == "fluence":
                 TempList.append(self.__files[i].getFluenceP())
             else:
                 pass
-                
+
         if self.GraphGroup[0] == "[" and self.GraphGroup[len(self.GraphGroup)-1] == "]":
            for char in self.GraphGroup:
                 if char.isdigit() == True:
@@ -1035,7 +1036,6 @@ class KITPlot(object):
             self.legend.SetTextSize(self.legendTextSize)
         else:
             sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
-        
 
         for i,graph in enumerate(self.__graphs):
             if self.legendEntry == "name":
@@ -1060,24 +1060,33 @@ class KITPlot(object):
         # Plot is arround 80% of canvas from (0.1,0.15) to (0.9,0.9). 
         
         self.LegendParameters = []
-        para = 0
+        para_height = 0
+        para_width = 0
         self.TopRight = self.TopLeft = self.BottomRight = True
         
-        for i in range(len(self.__files)):
-            if len(self.__files[i].getName()) > para:
-                para=len(self.__files[i].getName())
-        
-        if para > 29:
+        # para_height contains the number of entries and determines the height of the legend box
+        para_height = len(self.__files)
+
+        # para_width contains the lenght of the longest entry
+        for Name in self.graphDetails:
+            if len(Name) > para_width:
+                para_width = len(Name)
+            else:
+                pass
+
+        # hold off some errors
+        if para_width > 30:
                 sys.exit("Legend name too long! Reduce the number of characters!")
-        if not 0.5 <= self.legendBoxPara <= 1.5:
+        elif not 0.5 <= self.legendBoxPara <= 1.5:
             sys.exit("Invalid box parameter! Value must be between 0.5 and 1.5!")
         else:
             pass
         
+        # magic_para .... it's magic!
         if self.legendTextSize == 0.02:
-            magic_para = para/100.*self.legendBoxPara
-        else: 
-            magic_para = (para/100.+para*self.legendTextSize/10)*self.legendBoxPara
+            magic_para = para_width/100.*self.legendBoxPara
+        else:
+            magic_para = para_width*0.0105*self.legendBoxPara
         
         
         if self.legendPosition != "auto" and self.legendPosition != "TR" and self.legendPosition != "TL" and self.legendPosition != "BR":
@@ -1087,7 +1096,7 @@ class KITPlot(object):
         Lxmax = 0.98
         Lymax = 0.93
         Lxmin = Lxmax-magic_para
-        Lymin = Lymax-len(self.__graphs)*0.04+self.legendTextSize
+        Lymin = Lymax-para_height*0.04
             
             
         # Check if elements are in the top right corner. 
@@ -1100,8 +1109,8 @@ class KITPlot(object):
         if self.TopRight == False or self.legendPosition == "TL":
             Lxmin = 0.18
             Lymax = 0.88
-            Lymin = Lymax-len(self.__graphs)*0.03-self.legendTextSize
-            Lxmax = Lxmin+magic_para
+            Lymin = Lymax-para_height*0.04
+            Lxmax = Lxmin+magic_para*1.05
 
         # Check if elements are in the top left corner.
         for i in range(len(self.__files)):
@@ -1114,7 +1123,7 @@ class KITPlot(object):
             Lxmax = 0.89
             Lymin = 0.18
             Lxmin = Lxmax-magic_para
-            Lymax = Lymin+len(self.__graphs)*0.04+self.legendTextSize
+            Lymax = Lymin+para_height*0.04
             
         # If the plot is too crowded, create more space on the right.
         for i in range(len(self.__files)):
@@ -1122,20 +1131,16 @@ class KITPlot(object):
                 if abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
                     if abs(self.__files[i].getY()[len(self.__files[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
                         self.BottomRight = False
-
-        if self.BottomRight == self.TopLeft == self.TopRight == False:
-            Lxmax = 0.98
-            Lymax = 0.93
-            Lxmin = Lxmax-magic_para
-            Lymin = Lymax-len(self.__graphs)*0.04-self.legendTextSize
-            print "Couldn't find sufficient space!"
             
-        if self.legendPosition == "TR":
+            
+        if self.legendPosition == "TR" or self.BottomRight == self.TopLeft == self.TopRight == False:
             Lxmax = 0.98
             Lymax = 0.93
             Lxmin = Lxmax-magic_para
-            Lymin = Lymax-len(self.__graphs)*0.04-self.legendTextSize
-
+            Lymin = Lymax-para_height*0.04
+            if self.BottomRight == self.TopLeft == self.TopRight == False:
+                print "Couldn't find sufficient space!"
+        
         self.LegendParameters.append(Lxmin)
         self.LegendParameters.append(Lymin)
         self.LegendParameters.append(Lxmax)
