@@ -522,8 +522,11 @@ class KITPlot(object):
                 elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
                     for i, File in enumerate(self.__files):
                         self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
+                elif self.Normalization == "1/C^{2}":
+                    for i, File in enumerate(self.__files):
+                        self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                 else:
-                    sys.exit("Invalid normalization input! Try 'off' or '[float,float,...]'!")
+                    sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
                         
                         
                         # If you open the file the data type changes from str to file 
@@ -561,8 +564,10 @@ class KITPlot(object):
                                 self.addGraph(File.getX(),File.getY())
                             elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
                                 self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                            elif self.Normalization == "1/C^{2}":
+                                self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                             else:
-                                sys.exit("Invalid normalization input! Try 'off' or '[float,float,...]'!")
+                                sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
 
                 else:
                     self.__files.append(KITDataFile.KITDataFile(dataInput))
@@ -690,7 +695,7 @@ class KITPlot(object):
 
         
     def setTitles(self):
-
+        print self.autotitle
         # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
         
         if self.titleX == "X Value":
@@ -874,6 +879,10 @@ class KITPlot(object):
             for i,inputFile in enumerate(self.__files):
                 ListX += inputFile.getX()
                 ListY += self.manipulate(inputFile.getY(),i)
+        elif self.Normalization == "1/C^{2}":
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += self.manipulate(inputFile.getY(),i)
         else:
             for i,inputFile in enumerate(self.__files):
                 ListX += inputFile.getX()
@@ -906,18 +915,18 @@ class KITPlot(object):
         FacList = []
         TempList = []
                     
-      
-        for char in self.Normalization.replace("[", "").replace("]", "").split(","):
-            FacList.append(float(char))
-    
-        if len(self.__files) != len(FacList):
-            sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
-        else:
-            #1/C^2 plots
-            #for val in ListY:
-            #    TempList.append(1/(val*val))
+        if self.Normalization == "1/C^{2}":
             for val in ListY:
-                TempList.append(val/FacList[index])
+                    TempList.append(1/(val*val))
+        else:
+            for char in self.Normalization.replace("[", "").replace("]", "").split(","):
+                FacList.append(float(char))
+    
+            if len(self.__files) != len(FacList):
+                sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
+            else:
+                for val in ListY:
+                    TempList.append(val/FacList[index])
                     
         ListY = TempList
                
