@@ -728,7 +728,22 @@ class KITPlot(object):
             self.__graphs[0].SetTitle(self.autotitle)
             self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
         else:
-            self.__graphs[0].SetTitle(self.title)
+            self.__graphs[0].SetTitle(self.checkTitleLenght(self.title))
+
+
+    def checkTitleLenght(self, Title):
+
+        cfgPrs = ConfigParser.ConfigParser()
+        cfgPrs.read(self.cfgPath)
+
+        # adapt title size in case it's too long
+        if len(Title) > 30 and cfgPrs.get('Title', 'y0') <= 0.97: 
+            ROOT.gStyle.SetTitleY(0.99)
+            self.__writeSpecifics(self.cfgPath, "Title", "y0", 0.99)
+        else: 
+            pass
+
+        return Title
 
 
     def setRanges(self):
