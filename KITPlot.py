@@ -54,7 +54,7 @@ class KITPlot(object):
         else:
             self.__writeCfg(dataInput)
             self.cfg_exists = False
-
+        
         self.__initStyle()
 
         # add files
@@ -350,14 +350,14 @@ class KITPlot(object):
         return True
 
 
-    def __findNames(self):
+    def __getDefaultNames(self):
         
         # write graph details in a strisng
         Names = ""
         for i, graph in enumerate(self.__files):
             Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
         Names = Names[:-2]        
-            
+        
         return Names
         
 
@@ -559,7 +559,7 @@ class KITPlot(object):
                         elif File.getParaY() is "Signal":
                             self.addGraph(File.getX(), File.getY())
                         else:
-                            # single data file
+                        # ???? 
                             if self.Normalization == "off":
                                 self.addGraph(File.getX(),File.getY())
                             elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
@@ -568,13 +568,27 @@ class KITPlot(object):
                                 self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                             else:
                                 sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
-
+                        
+                # singel file
                 else:
                     self.__files.append(KITDataFile.KITDataFile(dataInput))
-                    if "Ramp" in self.__files[-1].getParaY():
-                        self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
-                    else:
+                    
+                    self.changeNames()
+
+                    if self.Normalization == "off":
                         self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
+                    elif self.Normalization[0] == "[" and self.Normalization[len(self.Normalization)-1] == "]":
+                        self.addGraph(self.__files[-1].getX(),self.manipulate(self.__files[-1].getY(),i))
+                    elif self.Normalization == "1/C^{2}":
+                        self.addGraph(self.__files[-1].getX(),self.manipulate(self.__files[-1].getY(),i))
+                    else:
+                        sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+
+
+                    #if "Ramp" in self.__files[-1].getParaY():
+                        #self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+                    #else:
+                    #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
 
     def addGraph(self, *args):
@@ -695,7 +709,7 @@ class KITPlot(object):
 
         
     def setTitles(self):
-        print self.autotitle
+
         # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
         
         if self.titleX == "X Value":
@@ -834,17 +848,17 @@ class KITPlot(object):
         
 
     def changeNames(self):
-        
+
         if self.cfg_exists == True and self.legendEntry == "list":
             cfgPrs = ConfigParser.ConfigParser()
             cfgPrs.read(self.cfgPath)
 
             # if cfg exists, "" can be used to reset the graph details to default
             if self.graphDetails == "":
-                self.graphDetails = self.__findNames()
+                self.graphDetails = self.__getDefaultNames()
                 self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
                 print "Graph details are set back to default!"
-                self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+                self.graphDetails = self.graphDetails.split(",")
 
             # read out all the name changes the user made
             elif self.graphDetails != cfgPrs.get('More plot options', 'graph details'):
@@ -852,14 +866,14 @@ class KITPlot(object):
                     sys.exit("Number of graph details in cfg file is not sufficient! You can delete the entry to go back to default values")
                 else:
                     self.graphDetails = cfgPrs.get('More plot options', 'graph details')
-                    self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+                    self.graphDetails = self.graphDetails.split(",")
             else:
-                self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+                self.graphDetails = self.graphDetails.split(",")
         # when cfg has just been created, this command will send default values
         else:
-            self.graphDetails = self.__findNames()
+            self.graphDetails = self.__getDefaultNames()
             self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
-            self.graphDetails = self.graphDetails.replace("[","").replace("]","").split(",")
+            self.graphDetails = self.graphDetails.split(",")
         return True
 
 
@@ -1033,6 +1047,8 @@ class KITPlot(object):
                 return int(j)
             else:
                 pass
+
+        return 0
 
 
     def setLegend(self):
