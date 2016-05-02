@@ -37,7 +37,10 @@ class KITPlot(object):
         self.__initDefaultValues()
 
         #for testing
-        self.cfgPath = "cfg/" + os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
+        if dataInput is not None:
+            self.cfgPath = "cfg/" + os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
+        else:
+            self.cfgPath = "cfg/plot.cfg"
 
         if cfgFile is not None:
             self.loadCfg(cfgFile)
@@ -62,24 +65,6 @@ class KITPlot(object):
             #try:
             print self.measurement
             self.add(dataInput, self.measurement)
-            #except:
-            #    print "Measurement not found."
-            #    if self.measurement == "probe":
-            #        print "Try to find alibava measurement."
-            #        self.measurement = "alibava"
-            #        #try:
-            #        print self.measurement
-            #        self.add(dataInput, self.measurement)
-                        # except:
-                        #     sys.exit("Could not find measurement")
-            #    elif self.measurement == "alibava":
-            #        print "Try to find probe measurement"
-            #        self.measurement = "probe"
-            #        try:
-            #            self.add(dataInput, self.measurement)
-            #        except:
-            #            sys.exit("Could not find measurement")
-
         else:
             pass
         
@@ -352,7 +337,7 @@ class KITPlot(object):
 
     def __getDefaultNames(self):
         
-        # write graph details in a strisng
+        # write graph details in a string
         Names = ""
         for i, graph in enumerate(self.__files):
             Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
