@@ -3,8 +3,8 @@ import numpy as np
 import mysql.connector
 import ConfigParser
 
-class KITDataFile(object):
-    """ The KITDataFile class is a very simple data container that is able
+class KITData(object):
+    """ The KITData class is a very simple data container that is able
     to connect to the IEKP database to read and store all relevant data
     into private member variables. 
 
@@ -14,7 +14,7 @@ class KITDataFile(object):
     __dbCrs = None
 
     def __init__(self, input=None, measurement="probe"):
-        """ Initialize KITDataFile object based on the input that is passed.
+        """ Initialize KITData object based on the input that is passed.
         
         Args:
             input (None|pid|file): Only pid inputs will fill all additional 
@@ -43,7 +43,7 @@ class KITDataFile(object):
         elif isinstance(input, int):
             self.__id = input
 
-            if KITDataFile.__dbCrs is None:
+            if KITData.__dbCrs is None:
                 self.__init_db_connection() # Establish database connection
             else:
                 pass
@@ -58,7 +58,7 @@ class KITDataFile(object):
         elif isinstance(input, str) and input.isdigit():
             self.__id = input
 
-            if KITDataFile.__dbCrs is None:
+            if KITData.__dbCrs is None:
                 self.__init_db_connection() 
             else:
                 pass
@@ -96,7 +96,7 @@ class KITDataFile(object):
         #    print "Input: Folder"
         #    self.__init_db_connection() # Establish database connection
 
-        elif isinstance(input,list) and all(isinstance(i, KITDataFile) for i in input):
+        elif isinstance(input,list) and all(isinstance(i, KITData) for i in input):
             
             self.__px = input[0].getParaX()
             self.__py = input[0].getParaY()
@@ -142,14 +142,14 @@ class KITDataFile(object):
             else:
                 raise Exception('{0} not found in the {1} file'.format(section, filename))
  
-            KITDataFile.__dbCnx = mysql.connector.MySQLConnection(**db_config)
+            KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
         
-            if KITDataFile.__dbCnx.is_connected():
+            if KITData.__dbCnx.is_connected():
                 print "Database connection established"
             else:
                 sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
                 
-            KITDataFile.__dbCrs = KITDataFile.__dbCnx.cursor()
+            KITData.__dbCrs = KITData.__dbCnx.cursor()
         
        
     def __createCfg(self):
@@ -193,8 +193,8 @@ class KITDataFile(object):
         """
         
         qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
-        KITDataFile.__dbCrs.execute(qryProbeData)
-        for (uid, pid, x, y, z, t, h) in KITDataFile.__dbCrs:
+        KITData.__dbCrs.execute(qryProbeData)
+        for (uid, pid, x, y, z, t, h) in KITData.__dbCrs:
             self.__x.append(x)
             self.__y.append(y)
             self.__z.append(z)
@@ -204,10 +204,10 @@ class KITDataFile(object):
         name = None
 
         qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
-        KITDataFile.__dbCrs.execute(qryProbe)
+        KITData.__dbCrs.execute(qryProbe)
 
         for (pid, sid, pX, pY, pZ, date, op, t, h, stat, f, com, flag, cernt, guard, aLCR, 
-             mLCR, n, start, stop, bias, vdep, fmode) in KITDataFile.__dbCrs:
+             mLCR, n, start, stop, bias, vdep, fmode) in KITData.__dbCrs:
             self.__px = pX
             self.__py = pY
             self.__t0 = t
@@ -215,9 +215,9 @@ class KITDataFile(object):
             name = sid
             
         qrySensorName = ("SELECT * FROM info WHERE id=%s" %(name))
-        KITDataFile.__dbCrs.execute(qrySensorName)
+        KITData.__dbCrs.execute(qrySensorName)
         for (sid,name,project,man,cls,stype,spec,thick,width,length,strips,
-             pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITDataFile.__dbCrs:
+             pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
 
@@ -233,9 +233,9 @@ class KITDataFile(object):
         annealing = 0
 
         qryRunData = ("SELECT voltage, current, electron_sig, signal_e_err, id, date FROM alibava WHERE run=%s" %(run))
-        KITDataFile.__dbCrs.execute(qryRunData)
+        KITData.__dbCrs.execute(qryRunData)
 
-        for (voltage, current, electron_sig, signal_e_err, id, date) in KITDataFile.__dbCrs:
+        for (voltage, current, electron_sig, signal_e_err, id, date) in KITData.__dbCrs:
             self.__x.append(voltage)
             self.__y.append(electron_sig)
             self.__dy.append(signal_e_err)
@@ -244,16 +244,16 @@ class KITDataFile(object):
 
 
         qryAnnealing = ("SELECT equiv FROM annealing WHERE id=%s and DATE(date)<='%s'" %(tmpID,tmpDate))
-        KITDataFile.__dbCrs.execute(qryAnnealing)
+        KITData.__dbCrs.execute(qryAnnealing)
 
-        for equiv in KITDataFile.__dbCrs:
+        for equiv in KITData.__dbCrs:
             annealing += equiv[0]
         self.__z.append(annealing)
 
         qrySensorName = ("SELECT name, F_p_aim_n_cm2 FROM info WHERE id=%s" %(tmpID))
-        KITDataFile.__dbCrs.execute(qrySensorName)
+        KITData.__dbCrs.execute(qrySensorName)
 
-        for (name, Fp) in KITDataFile.__dbCrs:
+        for (name, Fp) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
         

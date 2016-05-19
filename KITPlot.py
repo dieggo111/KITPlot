@@ -2,7 +2,7 @@ import numpy as np
 import ROOT
 import os, sys
 import ConfigParser
-import KITDataFile
+import KITData
 
 class KITPlot(object):
 
@@ -465,14 +465,14 @@ class KITPlot(object):
 
     def add(self, dataInput=None, measurement="probe"):
         
-        # Load KITDataFile
-        if isinstance(dataInput, KITDataFile.KITDataFile):
+        # Load KITData
+        if isinstance(dataInput, KITData.KITData):
             self.__files.append(dataInput)
             self.addGraph(dataInput.getX(),dataInput.getY())
 
         # Load single PID
         elif isinstance(dataInput, int):
-            self.__files.append(KITDataFile.KITDataFile(dataInput))
+            self.__files.append(KITData.KITData(dataInput))
             if "Ramp" in self.__files[-1].getParaY():
                 print "Ramp measurement"
                 self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
@@ -483,7 +483,7 @@ class KITPlot(object):
 
             # Load single PID
             if dataInput.isdigit():
-                self.__files.append(KITDataFile.KITDataFile(dataInput))
+                self.__files.append(KITData.KITData(dataInput))
                 if "Ramp" in self.__files[-1].getParaY():
                     print "Ramp measurement"
                     self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
@@ -494,7 +494,7 @@ class KITPlot(object):
             elif os.path.isdir(dataInput):
                 for inputFile in os.listdir(dataInput):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
-                        self.__files.append(KITDataFile.KITDataFile(dataInput + inputFile))
+                        self.__files.append(KITData.KITData(dataInput + inputFile))
                     else:
                         pass
 
@@ -516,7 +516,7 @@ class KITPlot(object):
                         
                         # If you open the file the data type changes from str to file 
                         # with open(dataInput + file) as inputFile:
-                        #     self.__files.append(KITDataFile.KITDataFile(inputFile))
+                        #     self.__files.append(KITData.KITData(inputFile))
                         #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
             
 
@@ -529,11 +529,11 @@ class KITPlot(object):
                         for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
-                                fileList.append(KITDataFile.KITDataFile(entry[0],measurement))
+                                fileList.append(KITData.KITData(entry[0],measurement))
                         if measurement == "probe":
                             self.__files = fileList
                         elif measurement == "alibava":
-                            self.__files.append(KITDataFile.KITDataFile(fileList))
+                            self.__files.append(KITData.KITData(fileList))
                     
                     self.arrangeFileList()
                     self.changeNames()
@@ -556,7 +556,7 @@ class KITPlot(object):
                         
                 # singel file
                 else:
-                    self.__files.append(KITDataFile.KITDataFile(dataInput))
+                    self.__files.append(KITData.KITData(dataInput))
                     
                     self.changeNames()
 
@@ -578,9 +578,9 @@ class KITPlot(object):
 
     def addGraph(self, *args):
         
-        # args: x, y or KITDataFile
+        # args: x, y or KITData
 
-        if isinstance(args[0], KITDataFile.KITDataFile):
+        if isinstance(args[0], KITData.KITData):
 
             self.__files.append(args[0])
             
@@ -600,7 +600,7 @@ class KITPlot(object):
                 elif args[1] == "z":
                     y = args[0].getZ()
                 
-        elif len(args) == 2 and not isinstance(args[0], KITDataFile.KITDataFile):
+        elif len(args) == 2 and not isinstance(args[0], KITData.KITData):
             
             if self.absX:
                 x = np.absolute(args[0])
