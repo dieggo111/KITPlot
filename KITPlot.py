@@ -2,7 +2,7 @@ import numpy as np
 import ROOT
 import os, sys
 import ConfigParser
-import KITData
+import KITData, ConfigHandler/ConfigHandler
 
 class KITPlot(object):
 
@@ -68,6 +68,56 @@ class KITPlot(object):
         else:
             pass
         
+    #####################
+    ### ConfigHandler ###
+    #####################
+
+    def __initDefaultCfg(self, name="default.cfg"):
+        
+        pDict = {'General' :{ 'Measurement': 'probe'   },
+                 'Title'   :{ 'Title'      : 'Title',
+                              'X0'         : 0.5,
+                              'Y0'         : 0.97,
+                              'H'          : 0.5,
+                              'Font'       : 62        },
+                 'XAxis'   :{ 'Title'      : 'X Value',
+                              'Size'       : 0.05,
+                              'Offset'     : 1.1,
+                              'LabelSize'  : 0.04,
+                              'MaxDigits'  : 4,      
+                              'Font'       : 62,
+                              'Abs'        : True,
+                              'Log'        : False,
+                              'Range'      : 'auto',   },
+                 'YAxis'   :{ 'Title'      : 'Y Value',
+                              'Size'       : 0.05,
+                              'Offset'     : 1.1,
+                              'LabelSize'  : 0.04,
+                              'MaxDigits'  : 4,
+                              'Font'       : 62,
+                              'Abs'        : True,
+                              'Log'        : False,
+                              'Range'      : 'auto'    },
+                 'Legend'  :{ 'Entry'      : 'list',
+                              'Position'   : 'auto',
+                              'TextSize'   : 0.03,
+                              'BoxPara'    : 1         },
+                 'Marker'  :{ 'Size'       : 1.5,
+                              'Style'      : 22,
+                              'Color'      : 1100      }, 
+                 'Canvas'  :{ 'SizeX'      : 800,
+                              'SizeY'      : 600,
+                              'PadBMargin' : 0.15,
+                              'PadLMargin' : 0.15      },
+                        
+                 #TODO More Plot options
+
+        }
+        
+        
+            
+
+    
 
             
     ######################
