@@ -14,13 +14,11 @@ class ConfigHandler(ConfigParser):
     def __cfgExists(self):
         return os.path.exists(self.__cfg)
     
-    def __load(self, cfg='config.cfg'):
+    def __load(self, cfg='default.cfg'):
 
         if os.path.exists(self.__dir + cfg):
 
             fullDict = {}
-            
-            print "Found: %s" %(self.__dir + cfg)
             
             self.read(self.__dir + cfg)
             for sec in self.sections():
@@ -51,7 +49,7 @@ class ConfigHandler(ConfigParser):
         #TODO: Check if val of key is dict
             self.__prmtr = fullDict
 
-    def load(self,cfg='config.cfg'):
+    def load(self,cfg='default.cfg'):
         self.__prmtr = self.__load(cfg)
 
     def setDir(self, dirName="cfg/"):
@@ -60,7 +58,7 @@ class ConfigHandler(ConfigParser):
     def setNoDir(self):
         self.__dir = ""
         
-    def write(self, cfg='config.cfg', owrite=True):
+    def write(self, cfg='default.cfg', owrite=True):
         #TODO: Add overwrite part
         
         if not os.path.isdir(self.__dir):
@@ -76,7 +74,7 @@ class ConfigHandler(ConfigParser):
                         self.set(sec,key,self.__prmtr[sec][key])
             ConfigParser.write(self,cfgFile)
                         
-    def update(self, cfg='config.cfg'):
+    def update(self, cfg='default.cfg'):
         tmpDict = self.__load(self.__dir + cfg)
 
         #TODO compare tmpDict with self.__prmtr
@@ -103,7 +101,7 @@ if __name__ == '__main__':
         cfg.init(pDict)        
         cfg.write()
     else:
-        cfg.load("config.cfg")
+        cfg.load("default.cfg")
         
     print cfg.get("General","path")
     print cfg.get("Special","d")

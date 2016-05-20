@@ -1,8 +1,10 @@
 import numpy as np
 import ROOT
 import os, sys
-import ConfigParser
-import KITData, ConfigHandler/ConfigHandler
+sys.path.append('modules/ConfigHandler/')
+#import ConfigParser
+import KITData 
+from ConfigHandler import ConfigHandler
 
 class KITPlot(object):
 
@@ -34,37 +36,35 @@ class KITPlot(object):
             pass
 
         # Load parameters and apply default style        
-        self.__initDefaultValues()
-
-        #for testing
-        if dataInput is not None:
-            self.cfgPath = "cfg/" + os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0] + ".cfg"
-        else:
-            self.cfgPath = "cfg/plot.cfg"
-
-        if cfgFile is not None:
-            self.loadCfg(cfgFile)
-            self.cfg_exists = True
-        elif dataInput is None and self.__load_defaultCfg("plot"):
-            self.cfg_exists = False
-            print("Initialized default cfg file plot.cfg")
-        elif dataInput is None and self.__load_defaultCfg("plot") is not True:
-            self.cfg_exists = False            
-            self.__writeCfg("plot.cfg")
-        elif self.__load_defaultCfg(dataInput):
-            self.cfg_exists = True
-            print("Initialized default cfg file %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
-        else:
-            self.__writeCfg(dataInput)
-            self.cfg_exists = False
+        self.__cfg = ConfigHandler()
         
-        self.__initStyle()
+        if cfgFile is not None: #Load cfg file
+            self.__cfg.load(cfgFile)
+            self.cfg__exists = True # necessary?
+        elif dataInput is None and self.__cfgPresent(): # Empty KITPlot with existing default cfg
+            self.cfg_exists = False
+            self.__cfg.load('default.cfg')
+            print("Initialized default.cfg")
+        elif dataInput is None and self.__cfgPresent() is not True: # Empty KITPlot / create new default cfg
+            self.cfg_exists = False
+            self.__initDefaultCfg()
+            self.__cfg.write()
+            print("Created new default.cfg")
+        elif dataInput is not None and self.__cfgPresent(dataInput): # Load default dataInput cfg 
+            self.cfg_exists = True
+            self.__cfg.load('%s.cfg' % dataInput)
+            print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
+        else:
+            self.__initDefaultCfg()
+            self.__cfg.write("%s.cfg" %dataInput)
+            self.__cfg_exists = False
+            print("&s.cfg has been created" %dataInput)
+
+        #self.__initStyle()
 
         # add files
         if dataInput is not None:
-            #try:
-            print self.measurement
-            self.add(dataInput, self.measurement)
+            self.add(dataInput, self.__cfg.get('General','measurement'))
         else:
             pass
         
@@ -72,304 +72,68 @@ class KITPlot(object):
     ### ConfigHandler ###
     #####################
 
-    def __initDefaultCfg(self, name="default.cfg"):
+    def __initDefaultCfg(self):
         
-        pDict = {'General' :{ 'Measurement': 'probe'   },
-                 'Title'   :{ 'Title'      : 'Title',
-                              'X0'         : 0.5,
-                              'Y0'         : 0.97,
-                              'H'          : 0.5,
-                              'Font'       : 62        },
-                 'XAxis'   :{ 'Title'      : 'X Value',
-                              'Size'       : 0.05,
-                              'Offset'     : 1.1,
-                              'LabelSize'  : 0.04,
-                              'MaxDigits'  : 4,      
-                              'Font'       : 62,
-                              'Abs'        : True,
-                              'Log'        : False,
-                              'Range'      : 'auto',   },
-                 'YAxis'   :{ 'Title'      : 'Y Value',
-                              'Size'       : 0.05,
-                              'Offset'     : 1.1,
-                              'LabelSize'  : 0.04,
-                              'MaxDigits'  : 4,
-                              'Font'       : 62,
-                              'Abs'        : True,
-                              'Log'        : False,
-                              'Range'      : 'auto'    },
-                 'Legend'  :{ 'Entry'      : 'list',
-                              'Position'   : 'auto',
-                              'TextSize'   : 0.03,
-                              'BoxPara'    : 1         },
-                 'Marker'  :{ 'Size'       : 1.5,
-                              'Style'      : 22,
-                              'Color'      : 1100      }, 
-                 'Canvas'  :{ 'SizeX'      : 800,
-                              'SizeY'      : 600,
-                              'PadBMargin' : 0.15,
-                              'PadLMargin' : 0.15      },
-                        
-                 #TODO More Plot options
+        pDict = {'General' :{ 'Measurement'  : 'probe'   },
+                 'Title'   :{ 'Title'        : 'Title',
+                              'X0'           : 0.5,
+                              'Y0'           : 0.97,
+                              'H'            : 0.5,
+                              'Font'         : 62        },
+                 'XAxis'   :{ 'Title'        : 'X Value',
+                              'Size'         : 0.05,
+                              'Offset'       : 1.1,
+                              'LabelSize'    : 0.04,
+                              'MaxDigits'    : 4,      
+                              'Font'         : 62,
+                              'Abs'          : True,
+                              'Log'          : False,
+                              'Range'        : 'auto',   },
+                 'YAxis'   :{ 'Title'        : 'Y Value',
+                              'Size'         : 0.05,
+                              'Offset'       : 1.1,
+                              'LabelSize'    : 0.04,
+                              'MaxDigits'    : 4,
+                              'Font'         : 62,
+                              'Abs'          : True,
+                              'Log'          : False,
+                              'Range'        : 'auto'    },
+                 'Legend'  :{ 'Entry'        : 'list',
+                              'Position'     : 'auto',
+                              'TextSize'     : 0.03,
+                              'BoxPara'      : 1         },
+                 'Marker'  :{ 'Size'         : 1.5,
+                              'Style'        : 22,
+                              'Color'        : 1100      }, 
+                 'Canvas'  :{ 'SizeX'        : 800,
+                              'SizeY'        : 600,
+                              'PadBMargin'   : 0.15,
+                              'PadLMargin'   : 0.15      },
+                         
+                 'Misc'    :{ 'GraphGroup'   : 'off',
+                              'ColorShades'  : False,
+                              'Normalization': 'off',
+                              'graphDetails' : ''        }
 
         }
         
-        
-            
-
-    
-
-            
-    ######################
-    ### Default values ###
-    ######################
-
-    def __initDefaultValues(self):
-        """Initialize default values for all parameters
-
-        Args:
-            No arguments
-        Returns:
-            True
-         
-        """
-
-        # Global settings
-        self.measurement = "probe"
-
-        # Title options 
-        self.title = "Title"
-        self.titleX0 = 0.5
-        self.titleY0 = 0.97
-        self.titleH = 0.05
-
-        # XAxis
-        self.titleX = "X Value"
-        self.titleSizeX = 0.05
-        self.titleOffsetX = 1.1
-        self.labelSizeX = 0.04
-        self.absX = True
-        self.logX = False
-        self.rangeX = "auto"
-
-        # YAxis
-        self.titleY = "Y Value"
-        self.titleSizeY = 0.05
-        self.titleOffsetY = 1.1
-        self.labelSizeY = 0.04
-        self.absY = True
-        self.logY = False
-        self.rangeY = "auto"
-        
-        # Legend
-        self.legendEntry = "list" 
-        self.legendPosition = "auto"
-        self.legendTextSize = 0.03
-        self.legendBoxPara = 1
-         
-        # Misc
-        self.titleF = 62
-        self.labelF = 62
-        self.axisMaxDigits = 4
-        self.padBottomMargin = 0.15
-        self.padLeftMargin = 0.15
-        self.markerSize = 1.5
-        self.markerStyle = 22
-        self.markerColor = 1100
-
-        # More plot options
-        self.GraphGroup = "off"
-        self.ColorShades = False
-        self.Normalization = "off"
-        self.graphDetails = ""
-
+        self.__cfg.init(pDict)    
         return True
-        
-        
-    ###################
-    ### cfg methods ###
-    ###################
 
-    def loadCfg(self, cfgFile=None):
-        """Load cfg file or default values if no file is given
-
-        Args:
-            cfgFile: cfg file name
-        Returns:
-            True or False whether file was found or not
-        """
-        
-        if cfgFile is not None:
-            if os.path.exists(cfgFile):
-                self.__initCfg(cfgFile)
-                print("Initialized %s!" %(cfgFile))
-                return True
-            else:
-                cfgFile = None
-                print "No cfg found! Need valid path! Use default values!"
-                return False
-
-    def __load_defaultCfg(self, fileName="plot"):
-        """Search for default cfg of given plot
-        
-        Args:
-            fileName: name of plot (fileName, pid)
-        Return:
-            True or False whether file was found or not
-        """
+            
+    def __cfgPresent(self, fileName='default'):
         
         file_path = os.getcwd() + "/cfg"
         if os.path.exists(file_path) == False:
-            print "No default cfg folder"
             return False
         else:
             if os.listdir(file_path) == []:
-                print "Default cfg folder empty"
                 return False
             for cfg in os.listdir(file_path):
-                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])):
-                    #print("cfg/%s" %(cfg))
-                    self.__initCfg("cfg/%s" %(cfg))
+                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])):                    
                     return True
             else:
                 return False
-                
-        
-    def __initCfg(self, fileName):
-        """Initialize cfg for plot
-        
-        Args:
-            fileName: name of cfg file
-        Returns:
-            True
-        """
-
-        cfgPrs = ConfigParser.ConfigParser()
-        print fileName
-        cfgPrs.read(fileName)
-        
-        self.measurement = cfgPrs.get('Global', 'measurement')
-        
-        self.title = cfgPrs.get('Title', 'title')
-        self.titleX0 = cfgPrs.getfloat('Title', 'x0')
-        self.titleY0 = cfgPrs.getfloat('Title', 'Y0')
-        self.titleH = cfgPrs.getfloat('Title', 'height')
-        
-        self.titleX = cfgPrs.get('XAxis', 'title')
-        self.titleSizeX = cfgPrs.getfloat('XAxis', 'title Size')
-        self.titleOffsetX = cfgPrs.getfloat('XAxis', 'title Offset')
-        self.labelSizeX = cfgPrs.getfloat('XAxis', 'label size')
-        self.absX = cfgPrs.getboolean('XAxis', 'absolute')
-        self.logX = cfgPrs.getboolean('XAxis', 'log')
-        self.rangeX = cfgPrs.get('XAxis', 'xrange')
-
-        self.titleY = cfgPrs.get('YAxis', 'title')
-        self.titleSizeY = cfgPrs.getfloat('YAxis', 'title Size')
-        self.titleOffsetY = cfgPrs.getfloat('YAxis', 'title Offset')
-        self.labelSizeY = cfgPrs.getfloat('YAxis', 'label size')
-        self.absY = cfgPrs.getboolean('YAxis', 'absolute')
-        self.logY = cfgPrs.getboolean('YAxis', 'log')
-        self.rangeY = cfgPrs.get('YAxis', 'yrange')
-
-        self.legendEntry = cfgPrs.get('Legend', 'entry')
-        self.legendPosition = cfgPrs.get('Legend', 'legend position')
-        self.legendTextSize = cfgPrs.getfloat('Legend', 'text Size')
-        self.legendBoxPara = cfgPrs.getfloat('Legend', 'box parameter')
-        
-        self.titleF = cfgPrs.getint('Misc', 'axis title font')
-        self.labelF = cfgPrs.getint('Misc', 'axis label font')
-        self.axisMaxDigits = cfgPrs.getint('Misc', 'axis max digits')
-        self.padBottomMargin = cfgPrs.getfloat('Misc', 'pad bottom margin')
-        self.padLeftMargin = cfgPrs.getfloat('Misc', 'pad left margin')
-        self.markerSize = cfgPrs.getfloat('Misc', 'marker size')
-        self.markerStyle = cfgPrs.getint('Misc', 'marker style')
-        self.markerColor = cfgPrs.getint('Misc', 'marker color')
-
-        self.GraphGroup = cfgPrs.get('More plot options', 'graph group')
-        self.ColorShades = cfgPrs.getboolean('More plot options', 'color shades')
-        self.Normalization = cfgPrs.get('More plot options', 'normalization')
-        self.graphDetails = cfgPrs.get('More plot options', 'graph details')
-
-        return True
-
-
-    def __writeCfg(self, fileName="plot"):
-        """Write new cfg file
-
-        Args:
-            fileName: name of cfg file
-        Return:
-            True
-        """
-        
-        cfgPrs = ConfigParser.ConfigParser()
-
-        if not os.path.exists("cfg"):
-            os.makedirs("cfg")
-
-        #if os.path.isdir(fileName):
-        #    fileName = "cfg/%s.cfg" %(os.path.basename(os.path.normpath(fileName)))
-        #else:
-        #    fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(fileName))[0])
-
-        fileName = "cfg/%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(fileName)))[0])
-
-        print fileName
-
-        with open(fileName,'w') as cfgFile:
-            cfgPrs.add_section('Global')
-            cfgPrs.set('Global', 'Measurement', self.measurement)
-
-            cfgPrs.add_section('Title')
-            cfgPrs.set('Title', 'Title', self.title)
-            cfgPrs.set('Title', 'X0', self.titleX0)
-            cfgPrs.set('Title', 'Y0', self.titleY0)
-            cfgPrs.set('Title', 'Height', self.titleH)            
-
-            cfgPrs.add_section('XAxis')
-            cfgPrs.set('XAxis', 'Title', self.titleX)
-            cfgPrs.set('XAxis', 'Title Offset', self.titleOffsetX)
-            cfgPrs.set('XAxis', 'Title Size', self.titleSizeX)
-            cfgPrs.set('XAxis', 'Label Size', self.labelSizeX)
-            cfgPrs.set('XAxis', 'Absolute', self.absX)
-            cfgPrs.set('XAxis', 'Log', self.logX)
-            cfgPrs.set('XAxis', 'xRange', self.rangeX)
-
-            cfgPrs.add_section('YAxis')
-            cfgPrs.set('YAxis', 'Title', self.titleY)
-            cfgPrs.set('YAxis', 'Title Offset', self.titleOffsetY)
-            cfgPrs.set('YAxis', 'Title Size', self.titleSizeY)
-            cfgPrs.set('YAxis', 'Label Size', self.labelSizeY)
-            cfgPrs.set('YAxis', 'Absolute', self.absY)
-            cfgPrs.set('YAxis', 'Log', self.logY)
-            cfgPrs.set('YAxis', 'yrange', self.rangeY)
-
-            cfgPrs.add_section('Legend')
-            cfgPrs.set('Legend', 'Entry', self.legendEntry)
-            cfgPrs.set('Legend', 'legend position', self.legendPosition)
-            cfgPrs.set('Legend', 'Text Size', self.legendTextSize)
-            cfgPrs.set('Legend', 'box parameter', self.legendBoxPara)
-
-            cfgPrs.add_section('Misc')
-            cfgPrs.set('Misc', 'axis title font', self.titleF)
-            cfgPrs.set('Misc', 'axis label font', self.labelF)
-            cfgPrs.set('Misc', 'axis max digits', self.axisMaxDigits)
-            cfgPrs.set('Misc', 'pad bottom margin', self.padBottomMargin)
-            cfgPrs.set('Misc', 'pad left margin', self.padLeftMargin)
-            cfgPrs.set('Misc', 'marker size', self.markerSize)
-            cfgPrs.set('Misc', 'marker style', self.markerStyle)
-            cfgPrs.set('Misc', 'marker color', self.markerColor)
-            
-            cfgPrs.add_section('More plot options')
-            cfgPrs.set('More plot options', 'graph group', self.GraphGroup)
-            cfgPrs.set('More plot options', 'color shades', self.ColorShades)
-            cfgPrs.set('More plot options','normalization', self.Normalization)
-            cfgPrs.set('More plot options','graph details', self.graphDetails)
-
-            cfgPrs.write(cfgFile)
-
-        print ("Wrote %s" %(fileName))
-        return True
 
 
     def __writeSpecifics(self, fileName, section, title, var):
@@ -634,12 +398,12 @@ class KITPlot(object):
 
             self.__files.append(args[0])
             
-            if self.absX:
+            if self.__cfg.get('XAxis','abs'):
                 x = np.absolute(args[0].getX())
             else:
                 x = args[0].getX()
             
-            if self.absY:
+            if self.__cfg.get('YAxis','abs'):
                 if str(args[1]) == "y":
                     y = np.absolute(args[0].getY())
                 elif str(args[1]) == "z":
@@ -652,12 +416,12 @@ class KITPlot(object):
                 
         elif len(args) == 2 and not isinstance(args[0], KITData.KITData):
             
-            if self.absX:
+            if self.__cfg.get('XAxis','abs'):
                 x = np.absolute(args[0])
             else:
                 x = args[0]
             
-            if self.absY:
+            if self.__cfg.get('YAxis','abs'):
                 y = np.absolute(args[1])
             else:
                 y = args[1]
@@ -680,16 +444,17 @@ class KITPlot(object):
         self.canvas.cd()
 
         # apply scaling and auto title
-        self.__autoScaling()
-        self.MeasurementType()
+        #self.__autoScaling()
+        #self.MeasurementType()
         
-        self.plotStyles(self.titleX, self.titleY, self.title)    
+        #self.plotStyles(self.titleX, self.titleY, self.title)    
+        #self.plotStyles(self.__cfg.get('XAxis','title'), self.__cfg.get('YAxis','title'), self.__cfg.get('Title','title'))    
         
         # set log scale if 
-        if self.logX:
-            self.canvas.SetLogx()
-        if self.logY:
-            self.canvas.SetLogy()
+#        if self.logX:
+#            self.canvas.SetLogx()
+#        if self.logY:
+#            self.canvas.SetLogy()
 
         # Draw plots
         for n,graph in enumerate(self.__graphs):
@@ -699,12 +464,12 @@ class KITPlot(object):
                 graph.Draw(arg.replace("A","") + "SAME")
         
         # Set legend
-        self.setLegendParameters()
-        self.setLegend()
+#        self.setLegendParameters()
+#        self.setLegend()
         
         self.canvas.Update()
         
-        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
+#        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
             
         return True
 
