@@ -34,8 +34,7 @@ class KITPlot(object):
             self.__markerSet = [21,20,22,23,34,25,24,26,32] 
         else:
             pass
-        print dataInput
-        print self.__cfgPresent()
+        print type(dataInput)
 
         # Load parameters and apply default style        
         self.__cfg = ConfigHandler()
@@ -60,7 +59,7 @@ class KITPlot(object):
             self.__initDefaultCfg()
             self.__cfg.write("%s.cfg" %dataInput)
             self.__cfg_exists = False
-            print ("&s.cfg has been created" %dataInput)
+            print ("%s.cfg has been created" %dataInput)
 
         self.__initStyle()
         print self.__cfg.get('General','Measurement')
@@ -245,19 +244,19 @@ class KITPlot(object):
     
     def __initStyle(self):
 
-        print self.__cfg.get('Title','X0')
         # Title options
         ROOT.gStyle.SetTitleX(float(self.__cfg.get('Title','X0')))
         ROOT.gStyle.SetTitleY(float(self.__cfg.get('Title','Y0')))
         ROOT.gStyle.SetTitleH(float(self.__cfg.get('Title','H')))
+        ROOT.gStyle.SetTitleFont(int(self.__cfg.get('Title','Font')), "")
 
         # Axis Options
-        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('XAxis','Size')))
-        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('YAxis','Size')))
-        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('XAxis','Offset')))
-        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('YAxis','Offset')))
+        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('XAxis','Size')), "X")
+        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('YAxis','Size')), "Y")
+        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('XAxis','Offset')), "X")
+        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('YAxis','Offset')), "Y")
         
-        ROOT.gStyle.SetTitleFont(int(self.__cfg.get('Title','Font')), "")
+        
         ROOT.gStyle.SetTitleFont(int(self.__cfg.get('XAxis','Font')), "X")
         ROOT.gStyle.SetTitleFont(int(self.__cfg.get('YAxis','Font')), "Y")
         ROOT.gStyle.SetLabelFont(int(self.__cfg.get('XAxis','Font')),"X")
@@ -482,11 +481,14 @@ class KITPlot(object):
         return True
 
 
-    def convertTF(self, str):
+    def convertTF(self, val):
         
-        if str != 'False' and str != 'True':
+        if type(val) == bool:
+            print "Hey"
+            return val
+        elif val != 'False' and val != 'True':
             sys.exit('Wrong parameter. Use boolean!')
-        elif str == 'False':
+        elif val == 'False':
             return False
         else:
             return True
