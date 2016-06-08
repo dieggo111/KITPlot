@@ -14,11 +14,21 @@ class ConfigHandler(ConfigParser):
             
     def __cfgExists(self):
         return os.path.exists(self.__cfg)
-    
+
+    def __cfgName(self, name='default'):
+
+        if os.path.isdir(name):
+            name = os.path.normpath(name).split("/")[-1] + ".cfg"
+            return name
+        else:
+            name = os.path.splitext(os.path.basename(os.path.normpath(name)))[0] + ".cfg"
+            return name
+
     def __load(self, cfg='default.cfg'):
+        print cfg
+        cfg = self.__cfgName(cfg)
 
         if os.path.exists(self.__dir + cfg):
-            print (self.__dir + cfg)
             fullDict = {}
             
             self.read(self.__dir + cfg)
@@ -27,7 +37,8 @@ class ConfigHandler(ConfigParser):
                 for (key,val) in self.items(sec):
                     tmpDict[key] = val
                 fullDict[sec] = tmpDict
-            self.__prmtr = fullDict                      
+            self.__prmtr = fullDict
+            print fullDict
         else:
             sys.exit("No cfg found!")
 
@@ -63,6 +74,8 @@ class ConfigHandler(ConfigParser):
         
     def write(self, cfg='default.cfg', owrite=True):
         #TODO: Add overwrite part
+        
+        cfg = self.__cfgName(cfg)
         
         if not os.path.isdir(self.__dir):
             os.makedirs(self.__dir)

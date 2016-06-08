@@ -34,11 +34,10 @@ class KITPlot(object):
             self.__markerSet = [21,20,22,23,34,25,24,26,32] 
         else:
             pass
-        print type(dataInput)
 
         # Load parameters and apply default style        
         self.__cfg = ConfigHandler()
-        
+        print os.path.isdir(dataInput)
         if cfgFile is not None: #Load cfg file
             self.__cfg.load(cfgFile)
             self.cfg__exists = True # necessary?
@@ -51,13 +50,14 @@ class KITPlot(object):
             self.__initDefaultCfg()
             self.__cfg.write()
             print ("Created new default.cfg")
-        elif dataInput is not None and self.__cfgPresent(dataInput): # Load default dataInput cfg 
+        elif dataInput is not None and self.__cfgPresent(dataInput): # Load default dataInput cfg
             self.cfg_exists = True
-            self.__cfg.load('%s.cfg' % dataInput)
+            self.__cfg.load(dataInput)
             print ("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
+            # create new cfg for dataInput
             self.__initDefaultCfg()
-            self.__cfg.write("%s.cfg" %dataInput)
+            self.__cfg.write(dataInput)
             self.__cfg_exists = False
             print ("%s.cfg has been created" %dataInput)
 
@@ -79,7 +79,7 @@ class KITPlot(object):
                  'Title'   :{ 'Title'        : 'Title',
                               'X0'           : 0.5,
                               'Y0'           : 0.97,
-                              'H'            : 0.5,
+                              'H'            : 0.05,
                               'Font'         : 62        },
                  'XAxis'   :{ 'Title'        : 'X Value',
                               'Size'         : 0.05,
@@ -255,8 +255,6 @@ class KITPlot(object):
         ROOT.gStyle.SetTitleSize(float(self.__cfg.get('YAxis','Size')), "Y")
         ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('XAxis','Offset')), "X")
         ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('YAxis','Offset')), "Y")
-        
-        
         ROOT.gStyle.SetTitleFont(int(self.__cfg.get('XAxis','Font')), "X")
         ROOT.gStyle.SetTitleFont(int(self.__cfg.get('YAxis','Font')), "Y")
         ROOT.gStyle.SetLabelFont(int(self.__cfg.get('XAxis','Font')),"X")
@@ -278,7 +276,7 @@ class KITPlot(object):
         ROOT.gStyle.SetPadGridX(True)
         ROOT.gStyle.SetPadGridY(True)
 
-        # reading type always seems to be str
+        # when reading cfg its keys are always returned as strings
         self.ColorShades = self.convertTF(self.__cfg.get('Misc','ColorShades'))
         self.absX = self.convertTF(self.__cfg.get('XAxis','Abs'))
         self.absY = self.convertTF(self.__cfg.get('YAxis','Abs'))
@@ -304,7 +302,7 @@ class KITPlot(object):
                 self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
             else:
                 self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
-          
+
         elif isinstance(dataInput, str):
             
             # Load single PID
@@ -314,10 +312,11 @@ class KITPlot(object):
                     print "Ramp measurement"
                     self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
                 else:
-                    self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
-            
+                    self.addNorm()
+
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
+                print "adad!"
                 for inputFile in os.listdir(dataInput):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__files.append(KITData.KITData(dataInput + inputFile))
@@ -359,16 +358,14 @@ class KITPlot(object):
                         elif File.getParaY() is "Signal":
                             self.addGraph(File.getX(), File.getY())
                         else:
-                        # ???? 
                             self.addNorm()
                         
 
                 # singel file
                 else:
                     self.__files.append(KITData.KITData(dataInput))
-                    
-                    #self.changeNames()
 
+                    #self.changeNames()
                     self.addNorm()
 
                     #if "Ramp" in self.__files[-1].getParaY():
@@ -381,7 +378,6 @@ class KITPlot(object):
     def addNorm(self):
 
     # Sends normalized graph values to addGraph
-
         if self.__cfg.get('Misc','Normalization') == "off":
             for i, File in enumerate(self.__files):
                 self.addGraph(self.__files[i].getX(),self.__files[i].getY())
@@ -484,7 +480,6 @@ class KITPlot(object):
     def convertTF(self, val):
         
         if type(val) == bool:
-            print "Hey"
             return val
         elif val != 'False' and val != 'True':
             sys.exit('Wrong parameter. Use boolean!')
@@ -552,11 +547,8 @@ class KITPlot(object):
 
     def checkTitleLenght(self, Title):
 
-        cfgPrs = ConfigParser.ConfigParser()
-        cfgPrs.read(self.cfgPath)
-
         # adapt title size in case it's too long
-        if len(Title) > 30 and cfgPrs.get('Title', 'y0') <= 0.97: 
+        if len(Title) > 30 and self.__cfg.get('Title','Y0') <= 0.97: 
             ROOT.gStyle.SetTitleY(0.99)
             #self.__writeSpecifics(self.cfgPath, "Title", "y0", 0.99)
         else: 
@@ -569,19 +561,19 @@ class KITPlot(object):
         
         if self.__cfg.get('XAxis','Range') == "auto":
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
-        elif ":" in self.rangeX:
-            RangeListX = self.rangeX.split(":")
-            self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0]),float(RangeListX[1]))
+        elif ":" in self.__cfg.get('XAxis','Range'):
+            RangeListX = self.__cfg.get('XAxis','Range').split(":")
+            self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0].replace("[","")),float(RangeListX[1].replace("]","")))
         else:
             sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
         
         if self.__cfg.get('YAxis','Range') == "auto":
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
-        elif ":" in self.rangeY:
-            RangeListY = self.rangeY.split(":")
-            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0]),float(RangeListY[1]))
+        elif ":" in self.__cfg.get('YAxis','Range'):
+            RangeListY = self.__cfg.get('YAxis','Range').split(":")
+            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0].replace("[","")),float(RangeListY[1].replace("]","")))
         else:
-            sys.exit("Invalid Y-axis range! Try 'auto' or 'float:float'!")
+            sys.exit("Invalid Y-axis range! Try 'auto' or '[float:float]'!")
 
 
     def setMarkerStyles(self):
@@ -735,7 +727,7 @@ class KITPlot(object):
             for i,inputFile in enumerate(self.__files):
                 ListX += inputFile.getX()
                 ListY += inputFile.getY()
-
+        
         if self.absX:
             ListX = np.absolute(ListX)
         if self.absY:
@@ -913,7 +905,7 @@ class KITPlot(object):
         self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
         self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
         
-
+        # yellow removed because color 1900 is already taken and it looks shitty
        
 
         KITPlot.__init = True
