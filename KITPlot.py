@@ -2,9 +2,9 @@ import numpy as np
 import ROOT
 import os, sys
 sys.path.append('modules/ConfigHandler/')
-#import ConfigParser
 import KITData 
 from ConfigHandler import ConfigHandler
+from LegHandler import LegHandler
 
 class KITPlot(object):
 
@@ -162,9 +162,9 @@ class KITPlot(object):
         return Names
         
 
-    ##############
-    ### Checks ###
-    ##############
+    ##################
+    ### Auto Title ###
+    ##################
 
     def MeasurementType(self):
 
@@ -701,6 +701,14 @@ class KITPlot(object):
             self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.graphDetails)
             self.graphDetails = self.graphDetails.split(",")
         return True
+
+
+
+######################
+### Legend methods ###
+######################
+
+
 
 
 #######################

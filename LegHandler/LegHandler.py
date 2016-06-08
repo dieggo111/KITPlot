@@ -1,68 +1,53 @@
-######################
-### Legend methods ###
-######################
+import os,sys
+import ROOT
+sys.path.append('modules/LegHandler/')
+import KITData 
 
+class LegHandler():
 
-    def getLegendOrder(self):
-
-        self.EntryPosition = []
-
-        for Name in self.graphDetails:
-            self.EntryPosition.append(Name.replace(" ","")[1])
+    def __init(self, legendEntry, Entry, TextSize, BoxPara, Position, graphList):
         
-        for Name in self.EntryPosition:
-            if self.EntryPosition.count(Name) > 1:
-                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
-            else:
-                pass
-
-
-    def changeOrder(self, counter):
-
-        for j, number in enumerate(self.EntryPosition):
-            
-            if int(number) == counter:
-                return int(j)
-            else:
-                pass
-
-        return 0
-
-
-    def setLegend(self):
-
-        self.legend = ROOT.TLegend(self.LegendParameters[0],self.LegendParameters[1],self.LegendParameters[2],self.LegendParameters[3])
+        self.legend = ROOT.TLegend(self.LegendParas[0],self.LegendParas[1],self.LegendParas[2],self.LegendParas[3])
         self.legend.SetFillColor(0)
+        self.__textSize(TextSize)
+        self.__fillLegend(graphList)
+        self.legend.Draw()
+        canvas.Update()
+    
 
-        
-        if 0.02 <= self.legendTextSize <= 0.03:
-            self.legend.SetTextSize(self.legendTextSize)
+    def __textSize(self, TextSize):
+
+        if 0.02 <= TextSize <= 0.03:
+            self.legend.SetTextSize(TextSize)
         else:
             sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
 
-        for i,graph in enumerate(self.__graphs):
+        return True
+
+
+    def __fillLegend(self, graphList):
+        
+        for i,graph in enumerate(graphList):
             if self.legendEntry == "name":
-                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
+                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "ID" and self.__checkPID == True:
-                self.legend.AddEntry(self.__graphs[i], self.__files[i].getID(), "p")
+                self.legend.AddEntry(graphList[i], self.__files[i].getID(), "p")
             elif self.legendEntry == "list" and self.cfg_exists == False:
-                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
+                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
             elif self.legendEntry == "list" and self.cfg_exists == True:
-                self.legend.AddEntry(self.__graphs[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
+                self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
             else:
                 print "Invalid entry! Using graph details"
-                self.legend.AddEntry(self.__graphs[i], self.__files[i].getName(), "p")
-                
- 
-        self.legend.Draw()
-        self.canvas.Update()
-
+                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
         
+        return True
+        
+
     def setLegendParameters(self):
         # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right or outside
         # Plot is arround 80% of canvas from (0.1,0.15) to (0.9,0.9). 
         
-        self.LegendParameters = []
+        self.LegendParas = []
         para_height = 0
         para_width = 0
         self.TopRight = self.TopLeft = self.BottomRight = True
@@ -144,9 +129,36 @@
             if self.BottomRight == self.TopLeft == self.TopRight == False:
                 print "Couldn't find sufficient space!"
         
-        self.LegendParameters.append(Lxmin)
-        self.LegendParameters.append(Lymin)
-        self.LegendParameters.append(Lxmax)
-        self.LegendParameters.append(Lymax)
+        self.LegendParas.append(Lxmin)
+        self.LegendParas.append(Lymin)
+        self.LegendParas.append(Lxmax)
+        self.LegendParas.append(Lymax)
+
+
+####################################################
+    def getLegendOrder(self):
+
+        self.EntryPosition = []
+
+        for Name in self.graphDetails:
+            self.EntryPosition.append(Name.replace(" ","")[1])
+        
+        for Name in self.EntryPosition:
+            if self.EntryPosition.count(Name) > 1:
+                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
+            else:
+                pass
+
+
+    def changeOrder(self, counter):
+
+        for j, number in enumerate(self.EntryPosition):
+            
+            if int(number) == counter:
+                return int(j)
+            else:
+                pass
+
+        return 0
         
        
