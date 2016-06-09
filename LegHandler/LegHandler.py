@@ -3,20 +3,21 @@ import ROOT
 sys.path.append('modules/LegHandler/')
 import KITData 
 
-class LegHandler():
+class LegHandler(object):
 
-    def __init(self, legendEntry, Entry, TextSize, BoxPara, Position, graphList):
-        
-        self.legend = ROOT.TLegend(self.LegendParas[0],self.LegendParas[1],self.LegendParas[2],self.LegendParas[3])
+    def __init__(self, dic, graphList, fileList):
+
+        #self.legend = ROOT.TLegend(self.LegendParas[0],self.LegendParas[1],self.LegendParas[2],self.LegendParas[3])
+        self.legend = ROOT.TLegend(0.75,0.75,0.9,0.9)
         self.legend.SetFillColor(0)
-        self.__textSize(TextSize)
-        self.__fillLegend(graphList)
-        self.legend.Draw()
-        canvas.Update()
-    
+        self.__textSize(float(dic['TextSize']))
+        self.__fillLegend(dic['SortPara'], graphList, fileList)
+
+    def getLegend(self):
+        return self.legend
 
     def __textSize(self, TextSize):
-
+        
         if 0.02 <= TextSize <= 0.03:
             self.legend.SetTextSize(TextSize)
         else:
@@ -25,20 +26,20 @@ class LegHandler():
         return True
 
 
-    def __fillLegend(self, graphList):
-        
+    def __fillLegend(self, SortPara, graphList, fileList):
+
         for i,graph in enumerate(graphList):
-            if self.legendEntry == "name":
-                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
-            elif self.legendEntry == "ID" and self.__checkPID == True:
-                self.legend.AddEntry(graphList[i], self.__files[i].getID(), "p")
-            elif self.legendEntry == "list" and self.cfg_exists == False:
-                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
-            elif self.legendEntry == "list" and self.cfg_exists == True:
-                self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
+            if SortPara == "name":
+                self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
+            elif SortPara == "ID":
+                self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
+            elif SortPara == "list":
+                #print fileList[i].getName()
+                self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
+            #elif SortPara == "list":
+            #    self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
             else:
-                print "Invalid entry! Using graph details"
-                self.legend.AddEntry(graphList[i], self.__files[i].getName(), "p")
+                sys.exit("Invalid SortPara! Try 'name', 'ID' or 'list'!")
         
         return True
         
@@ -53,7 +54,7 @@ class LegHandler():
         self.TopRight = self.TopLeft = self.BottomRight = True
         
         # para_height contains the number of entries and determines the height of the legend box
-        para_height = len(self.__files)
+        para_height = len(fileList)
 
         # para_width contains the lenght of the longest entry
         for Name in self.graphDetails:
@@ -88,10 +89,10 @@ class LegHandler():
             
             
         # Check if elements are in the top right corner. 
-        for i in range(len(self.__files)):
-            for j in range(len(self.__files[i].getX())):
-                if abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin and self.legendPosition == "auto":
-                    if abs(self.__files[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
+        for i in range(len(fileList)):
+            for j in range(len(fileList[i].getX())):
+                if abs(fileList[i].getX()[j]/(self.xmax*(1.+self.perc)))-0.1 > Lxmin and self.legendPosition == "auto":
+                    if abs(fileList[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin:
                         self.TopRight = False
         
         if self.TopRight == False or self.legendPosition == "TL":
@@ -101,10 +102,10 @@ class LegHandler():
             Lxmax = Lxmin+magic_para*1.05
 
         # Check if elements are in the top left corner.
-        for i in range(len(self.__files)):
-            for j in range(len(self.__files[i].getX())):
-                if Lxmin-0.1 < abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax+0.05:
-                    if abs(self.__files[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.08 and self.legendPosition == "auto":
+        for i in range(len(fileList)):
+            for j in range(len(fileList[i].getX())):
+                if Lxmin-0.1 < abs(fileList[i].getX()[j]/(self.xmax*(1.+self.perc))) < Lxmax+0.05:
+                    if abs(fileList[i].getY()[j]/(self.ymax*(1.+self.perc))) > Lymin+0.08 and self.legendPosition == "auto":
                         self.TopLeft = False
                 
         if self.TopLeft == self.TopRight == False or self.legendPosition == "BR":
@@ -114,10 +115,10 @@ class LegHandler():
             Lymax = Lymin+para_height*0.04
             
         # If the plot is too crowded, create more space on the right.
-        for i in range(len(self.__files)):
-            for j in range(len(self.__files[i].getX())):
-                if abs(self.__files[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
-                    if abs(self.__files[i].getY()[len(self.__files[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
+        for i in range(len(fileList)):
+            for j in range(len(fileList[i].getX())):
+                if abs(fileList[i].getX()[j]/(self.xmax*(1.+self.perc))) > Lxmin:
+                    if abs(fileList[i].getY()[len(fileList[i].getY())-1]/(self.ymax*(1.+self.perc))) < Lymax and self.legendPosition == "auto":
                         self.BottomRight = False
             
             

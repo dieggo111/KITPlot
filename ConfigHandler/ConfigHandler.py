@@ -25,7 +25,7 @@ class ConfigHandler(ConfigParser):
             return name
 
     def __load(self, cfg='default.cfg'):
-        print cfg
+
         cfg = self.__cfgName(cfg)
 
         if os.path.exists(self.__dir + cfg):
@@ -38,17 +38,19 @@ class ConfigHandler(ConfigParser):
                     tmpDict[key] = val
                 fullDict[sec] = tmpDict
             self.__prmtr = fullDict
-            print fullDict
+
         else:
             sys.exit("No cfg found!")
-
         
         return fullDict
 
-    def get(self, sec, par):
+    def get(self, sec, par=None):
         if self.__prmtr is not None:
-            return self.__prmtr[sec][par]
-            
+            if par is not None:
+                return self.__prmtr[sec][par]
+            else:
+                return self.__prmtr[sec]
+
     def getDict(self, sec):
         if self.__prmtr is not None:
         # TODO Try-Except
