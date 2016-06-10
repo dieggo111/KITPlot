@@ -313,7 +313,6 @@ class KITPlot(object):
 
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
-                print "adad!"
                 for inputFile in os.listdir(dataInput):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__files.append(KITData.KITData(dataInput + inputFile))
@@ -445,7 +444,6 @@ class KITPlot(object):
         self.canvas.cd()
 
         # apply scaling and auto title
-        self.__autoScaling()
         self.MeasurementType()
 
         self.plotStyles(self.__cfg.get('XAxis','Title'), self.__cfg.get('YAxis','Title'), self.__cfg.get('Title','Title'))    
@@ -463,8 +461,7 @@ class KITPlot(object):
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
         
-        # Set legend
-
+        # Set legend (always at the very end!)
         self.legend = self.__setLegend()
         self.legend.Draw()
         self.canvas.Update()
@@ -556,19 +553,35 @@ class KITPlot(object):
 
     def setRanges(self):
         
+        # Scale is always filled ROOT oriantated (xmin, ymin, xmax, ymax)
+        self.Scale = []
+        self.__autoScaling()
+
         if self.__cfg.get('XAxis','Range') == "auto":
-            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[1])
+            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[2])
         elif ":" in self.__cfg.get('XAxis','Range'):
-            RangeListX = self.__cfg.get('XAxis','Range').split(":")
-            self.__graphs[0].GetXaxis().SetLimits(float(RangeListX[0].replace("[","")),float(RangeListX[1].replace("]","")))
+            Temp = self.__cfg.get('XAxis','Range').split(":")
+            self.Scale[0] = float(Temp[0].replace("[",""))
+            self.Scale[2] = float(Temp[1].replace("]",""))
+            if self.Scale[0] > self.Scale[2]:
+                sys.exit("Invalid X-axis range! xmin > xmax?!")
+            else:
+                pass
+            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[2])
         else:
-            sys.exit("Invalid X-axis range! Try 'auto' or 'float:float'!")
+            sys.exit("Invalid X-axis range! Try 'auto' or '[float:float]'!")
         
         if self.__cfg.get('YAxis','Range') == "auto":
-            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[2],self.Scale[3])
+            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
         elif ":" in self.__cfg.get('YAxis','Range'):
-            RangeListY = self.__cfg.get('YAxis','Range').split(":")
-            self.__graphs[0].GetYaxis().SetRangeUser(float(RangeListY[0].replace("[","")),float(RangeListY[1].replace("]","")))
+            Temp = self.__cfg.get('YAxis','Range').split(":")
+            self.Scale[1] = float(Temp[0].replace("[",""))
+            self.Scale[3] = float(Temp[1].replace("]",""))
+            if self.Scale[1] > self.Scale[3]:
+                sys.exit("Invalid Y-axis range! ymin > ymax?!")
+            else:
+                pass
+            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
         else:
             sys.exit("Invalid Y-axis range! Try 'auto' or '[float:float]'!")
 
@@ -708,9 +721,7 @@ class KITPlot(object):
 
     def __setLegend(self):
 
-        LegH = LegHandler(self.__cfg.get('Legend'), self.__graphs, self.__files)
-        print type(LegH)
-        print type(LegH.getLegend())
+        LegH = LegHandler(self.__cfg.get('Legend'), self.__graphs, self.__files, self.Scale)
         return LegH.getLegend()
 
 
@@ -720,7 +731,6 @@ class KITPlot(object):
 
     def __autoScaling(self):
         # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
-
 
         self.perc = 0.05
         ListX = [0]
@@ -741,19 +751,17 @@ class KITPlot(object):
         
         if self.absX:
             ListX = np.absolute(ListX)
+        else:
+            pass
         if self.absY:
             ListY = np.absolute(ListY)
+        else:
+            pass
 
-        self.Scale = []
-        self.xmax = max(ListX)
-        self.xmin = min(ListX)
-        self.ymax = max(ListY)
-        self.ymin = min(ListY)
-        
-        self.Scale.append(self.xmin*(1.-self.perc))
-        self.Scale.append(self.xmax*(1.+self.perc))
-        self.Scale.append(self.ymin*(1.-self.perc))
-        self.Scale.append(self.ymax*(1.+self.perc))
+        self.Scale.append(min(ListX)*(1.-self.perc))
+        self.Scale.append(min(ListY)*(1.-self.perc))
+        self.Scale.append(max(ListX)*(1.+self.perc))
+        self.Scale.append(max(ListY)*(1.+self.perc))
         
         #if (self.Scale[2]/self.Scale[3]) > 1e-4:
         #    self.logY = True
