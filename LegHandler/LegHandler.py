@@ -34,7 +34,6 @@ class LegHandler(object):
             elif SortPara == "ID":
                 self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
             elif SortPara == "list":
-                #print fileList[i].getName()
                 self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
             #elif SortPara == "list":
             #    self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
@@ -151,7 +150,7 @@ class LegHandler(object):
 
 
         check = True
-        print Scale
+
         # check if points are inside the legend box
         for File in fileList:
             PercX = []

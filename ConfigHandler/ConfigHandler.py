@@ -65,6 +65,7 @@ class ConfigHandler(ConfigParser):
         #TODO: Check if val of key is dict
             self.__prmtr = fullDict
 
+
     def load(self,cfg='default.cfg'):
         self.__prmtr = self.__load(cfg)
 
@@ -73,7 +74,12 @@ class ConfigHandler(ConfigParser):
 
     def setNoDir(self):
         self.__dir = ""
-        
+    
+    def setParameter(self, sec, key, val):
+        self.__prmtr[sec][key] = val
+        print self.__prmtr[sec][key]
+        return True
+
     def write(self, cfg='default.cfg', owrite=True):
         #TODO: Add overwrite part
         
@@ -91,10 +97,26 @@ class ConfigHandler(ConfigParser):
                     for key in self.__prmtr[sec]:
                         self.set(sec,key,self.__prmtr[sec][key])
             ConfigParser.write(self,cfgFile)
-                        
-    def update(self, cfg='default.cfg'):
-        tmpDict = self.__load(self.__dir + cfg)
 
+    def name(self, cfg='default.cfg'):
+        name = self.__cfgName(cfg)
+        return name
+
+
+
+    def update(self, cfg='default.cfg'):
+        oldDict = self.__load(self.__dir + cfg)
+        for sec in self.__prmtr:
+            for old_sec in oldDict:
+                if sec == old_sec:
+                    for key in self.__prmtr[sec]:
+                        for old_key in oldDict[old_sec]:
+                            if key == old_key:
+                                if self.__prmtr[sec][key] == oldDict[old_sec][old_key]:
+                                    print "same"
+                                else:
+                                    #print self.__prmtr[sec][key]
+                                    print "dif"
         #TODO compare tmpDict with self.__prmtr
 
         

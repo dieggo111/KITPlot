@@ -135,22 +135,22 @@ class KITPlot(object):
 
 
 ###################################################
-    def __writeSpecifics(self, fileName, section, title, var):
-        
-        # after cfg file is created and self.__files is filled, the graph details can be written into the cfg file
-        cfgPrs = ConfigParser.ConfigParser()
-        cfgPrs.read(fileName)
+#    def __writeSpecifics(self, fileName, section, title, var):
+#        
+#        # after cfg file is created and self.__files is filled, the graph details can be written into the cfg file
+#        cfgPrs = ConfigParser.ConfigParser()
+#        cfgPrs.read(fileName)
 
-        with open(fileName,'w') as cfgFile:
-            cfgPrs.set(section, title, var)
-            cfgPrs.write(cfgFile)
-        
-        return True
+#        with open(fileName,'w') as cfgFile:
+#            cfgPrs.set(section, title, var)
+#            cfgPrs.write(cfgFile)
+#        
+#        return True
 ######################################################
 
-    def __getDefaultNames(self):
+    def getDefaultNames(self):
         
-        # write graph details in a string
+        # write legend entries in a string
         Names = ""
         for i, graph in enumerate(self.__files):
             Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
@@ -369,7 +369,12 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-                
+        entry= self.getDefaultNames()
+        cfgName = ConfigHandler().name(dataInput)
+        self.__cfg.setParameter('Legend', 'EntryList', entry)
+        #self.__cfg.update(cfgName)
+        #self.__cfg.write(cfgName)
+
 
     def addNorm(self):
 
@@ -467,7 +472,12 @@ class KITPlot(object):
         self.canvas.Update()
         
 #        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
-            
+
+#####################################
+
+
+#####################################
+
         return True
 
 
