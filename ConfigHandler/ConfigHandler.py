@@ -74,11 +74,6 @@ class ConfigHandler(ConfigParser):
 
     def setNoDir(self):
         self.__dir = ""
-    
-    def setParameter(self, sec, key, val):
-        self.__prmtr[sec][key] = val
-        print self.__prmtr[sec][key]
-        return True
 
     def write(self, cfg='default.cfg', owrite=True):
         #TODO: Add overwrite part
@@ -98,17 +93,30 @@ class ConfigHandler(ConfigParser):
                         self.set(sec,key,self.__prmtr[sec][key])
             ConfigParser.write(self,cfgFile)
 
-    def name(self, cfg='default.cfg'):
-        name = self.__cfgName(cfg)
+    def getCfgName(self, name='default'):
+        name = self.__cfgName(name)
         return name
 
 
+    def setParameter(self, cfg, sec, key, val):
+        #self.__prmtr[sec][key] = val
+        #print self.__prmtr[sec][key]
+        #print self.__prmtr
+
+        self.read(cfg)
+
+        with open(cfg,'w') as cfgFile:
+            self.set(sec, key, val)
+            ConfigParser.write(self,cfgFile)
+
+        return True
 
     def update(self, cfg='default.cfg'):
         oldDict = self.__load(self.__dir + cfg)
+
         for sec in self.__prmtr:
             for old_sec in oldDict:
-                if sec == old_sec:
+                if sec != old_sec:
                     for key in self.__prmtr[sec]:
                         for old_key in oldDict[old_sec]:
                             if key == old_key:

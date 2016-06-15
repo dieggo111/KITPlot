@@ -5,43 +5,62 @@ import KITData
 
 class LegHandler(object):
 
-    def __init__(self, dic, graphList, fileList, Scale):
+    def __init__(self):
 
-        self.setLegendParameters(dic, fileList, Scale)
-        self.legend = ROOT.TLegend(self.LegendParas[0],self.LegendParas[1],self.LegendParas[2],self.LegendParas[3])
-        self.legend.SetFillColor(0)
-        self.__textSize(float(dic['TextSize']))
-        self.__fillLegend(dic['SortPara'], graphList, fileList)
+        self.legend = ROOT.TLegend(.8,.8,.98,.90)
+
 
     def getLegend(self):
         return self.legend
 
-    def __textSize(self, TextSize):
+    def setOptions(self, dic=None):
+
+        if dic is not None:
+            self.textSize(dic['TextSize'])
+            self.legend.SetFillColor(0)
+        else:
+            self.textSize(0.02)
+            self.legend.SetFillColor(0)
+        return True
+
+
+    def textSize(self, TextSize):
         
-        if 0.02 <= TextSize <= 0.03:
-            self.legend.SetTextSize(TextSize)
+        if 0.02 <= float(TextSize) <= 0.03:
+            self.legend.SetTextSize(float(TextSize))
         else:
             sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
 
         return True
 
 
-    def __fillLegend(self, SortPara, graphList, fileList):
+    def fillLegend(self, graphList, nameList=None):
 
         for i,graph in enumerate(graphList):
-            if SortPara == "name":
-                self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
-            elif SortPara == "ID":
-                self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
-            elif SortPara == "list":
-                self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
-            #elif SortPara == "list":
-            #    self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
+            if nameList == None:
+                self.legend.AddEntry(graphList[i], "graph " + str(i), "p")
+            elif nameList is not None and type(nameList) == list and type(nameList[0]) == str:
+                self.legend.AddEntry(graphList[i], nameList[i], "p")
             else:
-                sys.exit("Invalid SortPara! Try 'name', 'ID' or 'list'!")
-        
+                sys.exit("Unexpected name list content. Expected 'str' or 'KITData.KITData'!")
         return True
+
+
+    def fillKITLegend(self, dic, graphList, fileList):
         
+        self.getUserOrder(dic)
+        self.getUserNames(dic)
+        
+        for i, graph in enumerate(graphList):
+            if dic['SortPara'] == "name":
+                self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
+            elif dic['SortPara'] == "ID":
+                self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
+            elif dic['SortPara'] == "list":
+                self.legend.AddEntry(graphList[self.changeOrder(i)], fileList[self.changeOrder(i)].getName(), "p")
+            else:
+                sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
+
 
     def setLegendParameters(self, dic, fileList, Scale):
         # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right
@@ -76,7 +95,7 @@ class LegHandler(object):
         if float(dic['TextSize']) == 0.02:
             magic_para = para_width/100.*float(dic['BoxPara'])
         else:
-            magic_para = (para_width*0.005+0.1)*float(dic['BoxPara'])
+            magic_para = (para_width*0.006+0.1)*float(dic['BoxPara'])
         
 
         # Top right corner is the default/starting position for the legend box
@@ -113,18 +132,18 @@ class LegHandler(object):
             if self.BR == self.TL == self.TR == False:
                 print "Couldn't find sufficient space for legend!"
         
-        self.LegendParas.append(Lxmin)
-        self.LegendParas.append(Lymin)
-        self.LegendParas.append(Lxmax)
-        self.LegendParas.append(Lymax)
+        LegendParas.append(Lxmin)
+        LegendParas.append(Lymin)
+        LegendParas.append(Lxmax)
+        LegendParas.append(Lymax)
 
-        return True
+        return LegendParas
 
 
 
-    def __isInside(self, fileList, Lxmin, Lymin, Lxmax, Lymax, Scale):
+    def isInside(self, fileList, Lxmin, Lymin, Lxmax, Lymax, Scale):
         
-# TLegend needs percentage values from total canvas :(
+# TLegend needs percentage values from total canvas :( For 1280x7
 ######################################################################################### =
 #                       CANVAS                                                          # |
 #                                                                                       # 0.1
@@ -169,31 +188,53 @@ class LegHandler(object):
         return check
 
 
-
-####################################################
-    def getLegendOrder(self):
-
-        self.EntryPosition = []
-
-        for Name in self.graphDetails:
-            self.EntryPosition.append(Name.replace(" ","")[1])
-        
-        for Name in self.EntryPosition:
-            if self.EntryPosition.count(Name) > 1:
-                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
-            else:
-                pass
-
+    def setFillColor(self, val=0):
+        if type(val) == int:
+            self.legend.SetFillColor(val)
+        else:
+            sys.exit("Unexpected parameter type for legend fill color! Try 'int'!")
+        return True
 
     def changeOrder(self, counter):
 
-        for j, number in enumerate(self.EntryPosition):
-            
-            if int(number) == counter:
-                return int(j)
+        for j, element in enumerate(self.UserOrder):
+            if int(element) == counter:
+                return j
             else:
                 pass
-
         return 0
+
+    def getUserOrder(self, dic):
+
+        self.UserOrder = []
+        List = dic['EntryList'].split(",")
         
+        if dic['EntryList'] != "":
+            for Name in List:
+                if Name.replace(" ","")[1].isdigit() == False:
+                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                else:
+                    self.UserOrder.append(int(Name.replace(" ","")[1]))
+
+            for Name in self.UserOrder:
+                if self.UserOrder.count(Name) > 1:
+                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                else:
+                    pass
+        else:
+            pass
+        return True
+
+    def getUserNames(self, dic):
+
+        self.UserNames = []
+        List = dic['EntryList'].split(",")
+        if dic['EntryList'] != "":
+            for Name in List:
+                self.UserNames.append(Name.replace(" ", "")[3:])
+        else:
+            pass
+        return True
+
+
        

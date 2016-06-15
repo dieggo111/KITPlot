@@ -38,6 +38,7 @@ class KITPlot(object):
 
         # Load parameters and apply default style        
         self.__cfg = ConfigHandler()
+        self.cfgPath = "cfg/" + self.__cfg.getCfgName(dataInput)
 
         if cfgFile is not None: #Load cfg file
             self.__cfg.load(cfgFile)
@@ -148,15 +149,7 @@ class KITPlot(object):
 #        return True
 ######################################################
 
-    def getDefaultNames(self):
-        
-        # write legend entries in a string
-        Names = ""
-        for i, graph in enumerate(self.__files):
-            Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
-        Names = Names[:-2]        
-        
-        return Names
+
         
 
     ##################
@@ -370,10 +363,11 @@ class KITPlot(object):
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
         entry= self.getDefaultNames()
-        cfgName = ConfigHandler().name(dataInput)
-        self.__cfg.setParameter('Legend', 'EntryList', entry)
-        #self.__cfg.update(cfgName)
-        #self.__cfg.write(cfgName)
+        self.getUserNames()
+        self.getUserOrder()
+
+        self.readEntryList()
+
 
 
     def addNorm(self):
@@ -445,7 +439,10 @@ class KITPlot(object):
             return False
 
         # init canvas
-        self.canvas = ROOT.TCanvas("c1","c1",1280,768)
+        self.canvasX = int(self.__cfg.get('Canvas','SizeX'))
+        self.canvasY = int(self.__cfg.get('Canvas','SizeY'))
+        self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
+        #self.canvas = ROOT.TCanvas("c1","c1",self.canvasX,self.canvasY)
         self.canvas.cd()
 
         # apply scaling and auto title
@@ -467,30 +464,15 @@ class KITPlot(object):
                 graph.Draw(arg.replace("A","") + "SAME")
         
         # Set legend (always at the very end!)
-        self.legend = self.__setLegend()
+        self.legend = self.setLegend()
         self.legend.Draw()
         self.canvas.Update()
-        
+
 #        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
 
-#####################################
-
-
-#####################################
 
         return True
 
-
-    def convertTF(self, val):
-        
-        if type(val) == bool:
-            return val
-        elif val != 'False' and val != 'True':
-            sys.exit('Wrong parameter type in cfg where only boolean is allowed!')
-        elif val == 'False':
-            return False
-        else:
-            return True
 
     def saveAs(self, fileName):
 
@@ -505,7 +487,7 @@ class KITPlot(object):
             self.canvas.Update()
         except:
             pass
-        
+
 
     def plotStyles(self, XTitle, YTitle, Title):
         
@@ -525,28 +507,131 @@ class KITPlot(object):
                 
         return True
 
+
+#####################
+### Fancy methods ###
+#####################
+
+    def arrangeFileList(self):
+
+        TempList1 = []
+        TempList2 = []
+        IDList = []
+        IndexList = []
+
+        for temp in self.__files:
+            TempList1.append(temp.getName())
+            TempList2.append(temp.getName())
         
-    def setTitles(self):
-
-        # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
+        # if same name appears more than once...
+        for i, Name1 in enumerate(TempList1):
+            if TempList1.count(Name1) > 1:
+                Test = Name1 + "_" + "(" + str(i) + ")"
+                TempList2[i] = Test
+                TempList1[i] = Test
+            else: 
+                pass
+                
+        TempList2.sort()
         
-        if self.__cfg.get('XAxis','Title') == "X Value":
-            self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
-            #self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
-        else:
-            self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
+        for i,Name2 in enumerate(TempList2):
+            if Name2 == TempList1[i]:
+                IndexList.append(i)
+            else:
+                for j, Name in enumerate(TempList1):
+                    if Name == Name2:
+                        IndexList.append(j)
 
-        if self.__cfg.get('YAxis','Title') == "Y Value":
-            self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
-            #self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
-        else:
-            self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
+        TempList1[:] = []
+        
+        for index in IndexList:
+            TempList1.append(self.__files[index])
+        self.__files = TempList1
 
-        if self.__cfg.get('Title','Title') == "Title":
-            self.__graphs[0].SetTitle(self.autotitle)
-            #self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
+
+    def __autoScaling(self):
+        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
+
+        self.perc = 0.05
+        ListX = [0]
+        ListY = [0]
+
+        if self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += self.manipulate(inputFile.getY(),i)
+        elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += self.manipulate(inputFile.getY(),i)
         else:
-            self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
+            for i,inputFile in enumerate(self.__files):
+                ListX += inputFile.getX()
+                ListY += inputFile.getY()
+        
+        if self.absX:
+            ListX = np.absolute(ListX)
+        else:
+            pass
+        if self.absY:
+            ListY = np.absolute(ListY)
+        else:
+            pass
+
+        self.Scale.append(min(ListX)*(1.-self.perc))
+        self.Scale.append(min(ListY)*(1.-self.perc))
+        self.Scale.append(max(ListX)*(1.+self.perc))
+        self.Scale.append(max(ListY)*(1.+self.perc))
+        
+        #if (self.Scale[2]/self.Scale[3]) > 1e-4:
+        #    self.logY = True
+
+        return True
+
+
+    def manipulate(self, ListY, index):
+        
+        FacList = []
+        TempList = []
+                    
+        if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+            for val in ListY:
+                    TempList.append(1/(val*val))
+        else:
+            for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
+                FacList.append(float(char))
+    
+            if len(self.__files) != len(FacList):
+                sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
+            else:
+                for val in ListY:
+                    TempList.append(val/FacList[index])
+                    
+        ListY = TempList
+               
+        return ListY
+
+
+    def changeOrder(self, List):
+
+        TempList = []
+
+        for j in self.UserOrder:
+            TempList.append(List[j])
+
+        return TempList
+
+
+    def convertTF(self, val):
+        
+        if type(val) == bool:
+            return val
+        elif val != 'False' and val != 'True':
+            sys.exit('Wrong parameter type in cfg where only boolean is allowed!')
+        elif val == 'False':
+            return False
+        else:
+            return True
 
 
     def checkTitleLenght(self, Title):
@@ -559,6 +644,114 @@ class KITPlot(object):
             pass
 
         return Title
+
+
+
+    def readEntryList(self):
+
+        if self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
+
+            #if cfg exists, "" can be used to reset the graph details to default
+            if self.__cfg.get('Legend','EntryList') == "":
+                self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
+                print "Entry list is set back to default!"
+
+            #read out all the changes the user made
+            else:
+                if len(self.__files) != len(self.UserNames):
+                    sys.exit("Lenght of entry list is not as expected!")
+                else:
+                    self.EntryList = self.__cfg.get('Legend','EntryList').split(",")
+
+        #when cfg has just been created, this case will send default values
+        else:
+            self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
+
+        return True
+
+
+#####################
+### Legend method ###
+#####################
+
+
+    def setLegend(self):
+
+        LegH = LegHandler()
+
+        #self.legend.SetBBoxX1(0)
+        #self.legend.SetBBoxX2(0)
+        #self.legend.SetBBoxY1(0)
+        #self.legend.SetBBoxY2(0)
+
+        LegH.fillKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files)
+        LegH.setOptions(self.__cfg.get('Legend'))
+
+        #LegendHandler.textSize(float(self.__cfg.get('Legend','TextSize')))
+
+
+
+
+#        elif SortPara == "ID":
+#                    self.legend.AddEntry(graphList[i], nameList[i].getID(), "p")
+#                elif SortPara == "list":
+#                    self.legend.AddEntry(graphList[i], nameList[i].getName(), "p")
+#                #elif SortPara == "list":
+#                #    self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
+
+        return LegH.getLegend()
+
+
+
+
+
+
+#######################
+### Set/get methods ###
+#######################
+
+
+    def getUserOrder(self):
+
+        self.UserOrder = []
+        List = self.__cfg.get('Legend','EntryList').split(",")
+        
+        if self.__cfg.get('Legend','EntryList') != "":
+            for Name in List:
+                if Name.replace(" ","")[1].isdigit() == False:
+                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                else:
+                    self.UserOrder.append(int(Name.replace(" ","")[1]))
+
+            for Name in self.UserOrder:
+                if self.UserOrder.count(Name) > 1:
+                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                else:
+                    pass
+        else:
+            pass
+
+
+    def getUserNames(self):
+
+        self.UserNames = []
+        List = self.__cfg.get('Legend','EntryList').split(",")
+        if self.__cfg.get('Legend','EntryList') != "":
+            for Name in List:
+                self.UserNames.append(Name.replace(" ", "")[3:])
+        else:
+            pass
+
+
+    def getDefaultNames(self):
+        
+        # write legend entries in a string
+        Names = ""
+        for i, graph in enumerate(self.__files):
+            Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
+        Names = Names[:-2]        
+        
+        return Names
 
 
     def setRanges(self):
@@ -594,6 +787,9 @@ class KITPlot(object):
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
         else:
             sys.exit("Invalid Y-axis range! Try 'auto' or '[float:float]'!")
+
+
+
 
 
     def setMarkerStyles(self):
@@ -659,153 +855,29 @@ class KITPlot(object):
                 #sys.exit("Need graph groups for applying shades!")
             
 
-    def arrangeFileList(self):
+    def setTitles(self):
 
-        TempList1 = []
-        TempList2 = []
-        IDList = []
-        IndexList = []
-
-        for temp in self.__files:
-            TempList1.append(temp.getName())
-            TempList2.append(temp.getName())
+        # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
         
-        # if same name appears more than once...
-        for i, Name1 in enumerate(TempList1):
-            if TempList1.count(Name1) > 1:
-                Test = Name1 + "_" + "(" + str(i) + ")"
-                TempList2[i] = Test
-                TempList1[i] = Test
-            else: 
-                pass
-                
-        TempList2.sort()
-        
-        for i,Name2 in enumerate(TempList2):
-            if Name2 == TempList1[i]:
-                IndexList.append(i)
-            else:
-                for j, Name in enumerate(TempList1):
-                    if Name == Name2:
-                        IndexList.append(j)
-
-        TempList1[:] = []
-        
-        for index in IndexList:
-            TempList1.append(self.__files[index])
-        self.__files = TempList1
-        
-
-    #def changeNames(self):
-##################TODO####################
-        #if self.cfg_exists == True and self.__cfg.get('Legend','SortPara') == "list":
-
-            # if cfg exists, "" can be used to reset the graph details to default
-            #if self.__cfg.get('Misc','EntryList') == "":
-                #self.__cfg.get('Misc','EntryList') = self.__getDefaultNames()
-                #self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.__cfg.get('Misc','EntryList'))
-                #print "Graph details are set back to default!"
-                #self.__cfg.get('Misc','EntryList') = self.__cfg.get('Misc','EntryList').split(",")
-
-            # read out all the name changes the user made
-            #elif self.__cfg.get('Misc','EntryList') != cfgPrs.get('More plot options', 'graph details'):
-                #if len(self.__files) != len(self.__cfg.get('Misc','EntryList')):
-                    #sys.exit("Number of graph details in cfg file is not sufficient! You can delete the entry to go back to default values")
-                #else:
-                    #self.__cfg.get('Misc','EntryList') = cfgPrs.get('More plot options', 'graph details')
-                    #self.EntryList = self.EntryList.split(",")
-            #else:
-                #self.EntryList = self.EntryList.split(",")
-        # when cfg has just been created, this command will send default values
-        #else:
-            #self.EntryList = self.__getDefaultNames()
-            #self.__writeSpecifics(self.cfgPath, "More plot options", "graph details", self.EntryList)
-            #self.EntryList = self.EntryList.split(",")
-        #return True
-
-
-
-######################
-### Legend methods ###
-######################
-
-    def __setLegend(self):
-
-        LegH = LegHandler(self.__cfg.get('Legend'), self.__graphs, self.__files, self.Scale)
-        return LegH.getLegend()
-
-
-#######################
-### Automatizations ###
-#######################
-
-    def __autoScaling(self):
-        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
-
-        self.perc = 0.05
-        ListX = [0]
-        ListY = [0]
-
-        if self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += self.manipulate(inputFile.getY(),i)
-        elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += self.manipulate(inputFile.getY(),i)
+        if self.__cfg.get('XAxis','Title') == "X Value":
+            self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
+            #self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
         else:
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += inputFile.getY()
-        
-        if self.absX:
-            ListX = np.absolute(ListX)
+            self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
+
+        if self.__cfg.get('YAxis','Title') == "Y Value":
+            self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
+            #self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
         else:
-            pass
-        if self.absY:
-            ListY = np.absolute(ListY)
+            self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
+
+        if self.__cfg.get('Title','Title') == "Title":
+            self.__graphs[0].SetTitle(self.autotitle)
+            #self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
         else:
-            pass
-
-        self.Scale.append(min(ListX)*(1.-self.perc))
-        self.Scale.append(min(ListY)*(1.-self.perc))
-        self.Scale.append(max(ListX)*(1.+self.perc))
-        self.Scale.append(max(ListY)*(1.+self.perc))
-        
-        #if (self.Scale[2]/self.Scale[3]) > 1e-4:
-        #    self.logY = True
-
-        return True
+            self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
 
 
-    def manipulate(self, ListY, index):
-        
-        FacList = []
-        TempList = []
-                    
-        if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-            for val in ListY:
-                    TempList.append(1/(val*val))
-        else:
-            for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
-                FacList.append(float(char))
-    
-            if len(self.__files) != len(FacList):
-                sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
-            else:
-                for val in ListY:
-                    TempList.append(val/FacList[index])
-                    
-        ListY = TempList
-               
-        return ListY
-    
-    
-    
-###################
-### Set methods ###
-###################
 
     def setAxisTitleSize(self, size):
 
@@ -873,6 +945,11 @@ class KITPlot(object):
                   self.GroupList.append(TempList[i])
 
         return self.GroupList
+
+
+
+
+
 
 
 
