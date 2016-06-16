@@ -7,7 +7,7 @@ class LegHandler(object):
 
     def __init__(self):
 
-        self.legend = ROOT.TLegend(.8,.8,.98,.90)
+        self.legend = ROOT.TLegend(.7,.5,.98,.93)
 
 
     def getLegend(self):
@@ -65,10 +65,10 @@ class LegHandler(object):
     def setLegendParameters(self, dic, fileList, Scale):
         # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right
         
-        self.LegendParas = []
+        LegendParas = []
         para_height = 0
         para_width = 0
-        self.TR = self.TL = self.BR = True
+        TR = TL = BR = True
 
         # para_height contains the number of entries and determines the height of the legend box
         para_height = len(fileList)
@@ -104,10 +104,10 @@ class LegHandler(object):
         Lxmin = Lxmax-magic_para
         Lymin = Lymax-para_height*0.042
 
-        self.TR = self.__isInside(fileList, Lxmin, Lymin, Lxmax, Lymax, Scale)
+        TR = self.__isInside(fileList, Lxmin, Lymin, Lxmax, Lymax, Scale)
 
         
-        if self.TR == False or dic['Position'] == "TL":
+        if TR == False or dic['Position'] == "TL":
             Lxmin = 0.18
             Lymax = 0.88
             Lymin = Lymax-para_height*0.04
@@ -115,21 +115,21 @@ class LegHandler(object):
             
             self.TL = self.__isInside(fileList, Lxmin, Lymin, Lxmax, Lymax, Scale)
 
-        elif self.TL == self.TR == False or dic['Position'] == "BR":
+        elif TL == TR == False or dic['Position'] == "BR":
             Lxmax = 0.89
             Lymin = 0.18
             Lxmin = Lxmax-magic_para
             Lymax = Lymin+para_height*0.04
 
-            self.TB = self.__isInside(fileList, Lxmin, Lymin, Lxmax, Lymax, Scale)
+            TB = self.__isInside(fileList, Lxmin, Lymin, Lxmax, Lymax, Scale)
 
         # TODO: place legend outside of frame, if there's no sufficient space
-        elif dic['Position'] == "TR" or self.BR == self.TL == self.TR == False:
+        elif dic['Position'] == "TR" or BR == TL == TR == False:
             Lxmax = 0.98
             Lymax = 0.93
             Lxmin = Lxmax-magic_para
             Lymin = Lymax-para_height*0.04
-            if self.BR == self.TL == self.TR == False:
+            if BR == TL == TR == False:
                 print "Couldn't find sufficient space for legend!"
         
         LegendParas.append(Lxmin)
@@ -141,7 +141,7 @@ class LegHandler(object):
 
 
 
-    def isInside(self, fileList, Lxmin, Lymin, Lxmax, Lymax, Scale):
+    def __isInside(self, fileList, Lxmin, Lymin, Lxmax, Lymax, Scale):
         
 # TLegend needs percentage values from total canvas :( For 1280x7
 ######################################################################################### =
@@ -237,4 +237,19 @@ class LegHandler(object):
         return True
 
 
-       
+    def moveLegend(self, legend, canvasX, canvasY, dic, fileList, Scale):
+
+        ParaList = self.setLegendParameters(dic, fileList, Scale)
+        print ParaList
+        #legend.SetBBoxY2(100)
+        #legend.SetBBoxX1(int(canvasX*ParaList[0]))      # moves left edge to the left
+        #legend.SetBBoxX2(int(canvasX*ParaList[1]))      # moves right edge to the right
+        #legend.SetBBoxY1(int(canvasY*ParaList[2]))      # moves top edge to the top
+        #legend.SetBBoxY2(int(canvasY*ParaList[3]))      # moves bottom edge to the bottom
+
+        return 
+
+
+
+
+

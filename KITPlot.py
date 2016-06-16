@@ -32,7 +32,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,34,25,24,26,32] 
+            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
         else:
             pass
 
@@ -133,22 +133,6 @@ class KITPlot(object):
                     return True
             else:
                 return False
-
-
-###################################################
-#    def __writeSpecifics(self, fileName, section, title, var):
-#        
-#        # after cfg file is created and self.__files is filled, the graph details can be written into the cfg file
-#        cfgPrs = ConfigParser.ConfigParser()
-#        cfgPrs.read(fileName)
-
-#        with open(fileName,'w') as cfgFile:
-#            cfgPrs.set(section, title, var)
-#            cfgPrs.write(cfgFile)
-#        
-#        return True
-######################################################
-
 
         
 
@@ -347,7 +331,7 @@ class KITPlot(object):
                         elif File.getParaY() is "Signal":
                             self.addGraph(File.getX(), File.getY())
                         else:
-                            self.addNorm()
+                            self.addNorm(False, i)
                         
 
                 # singel file
@@ -369,28 +353,34 @@ class KITPlot(object):
         self.readEntryList()
 
 
-
-    def addNorm(self):
+    def addNorm(self, loop=True, j=0):
 
     # Sends normalized graph values to addGraph
-        if self.__cfg.get('Misc','Normalization') == "off":
+        if loop == True:
             for i, File in enumerate(self.__files):
-                self.addGraph(self.__files[i].getX(),self.__files[i].getY())
-        elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-            for i, File in enumerate(self.__files):
-                self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
-        elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
-            for i, File in enumerate(self.__files):
-                self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                if self.__cfg.get('Misc','Normalization') == "off":
+                    self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+                elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+                    self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
+                elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                    self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                else:
+                    sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
         else:
-            sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
-
+            if self.__cfg.get('Misc','Normalization') == "off":
+                self.addGraph(self.__files[j].getX(),self.__files[j].getY())
+            elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+                self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
+            elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                self.addGraph(File.getX(),self.manipulate(File.getY(),j))
+            else:
+                sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
         return True
 
 
 
     def addGraph(self, *args):
-        
+
         # args: x, y or KITData
 
         if isinstance(args[0], KITData.KITData):
@@ -439,10 +429,8 @@ class KITPlot(object):
             return False
 
         # init canvas
-        self.canvasX = int(self.__cfg.get('Canvas','SizeX'))
-        self.canvasY = int(self.__cfg.get('Canvas','SizeY'))
-        self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
-        #self.canvas = ROOT.TCanvas("c1","c1",self.canvasX,self.canvasY)
+        #self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
+        self.canvas = ROOT.TCanvas("c1","c1", int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')))
         self.canvas.cd()
 
         # apply scaling and auto title
@@ -465,6 +453,7 @@ class KITPlot(object):
         
         # Set legend (always at the very end!)
         self.legend = self.setLegend()
+        LegHandler().moveLegend(self.legend, int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')), self.__cfg.get('Legend'), self.__files, self.Scale)
         self.legend.Draw()
         self.canvas.Update()
 
@@ -612,14 +601,14 @@ class KITPlot(object):
         return ListY
 
 
-    def changeOrder(self, List):
+    def changeOrder(self, counter):
 
-        TempList = []
-
-        for j in self.UserOrder:
-            TempList.append(List[j])
-
-        return TempList
+        for j, element in enumerate(self.UserOrder):
+            if int(element) == counter:
+                return j
+            else:
+                pass
+        return 0
 
 
     def convertTF(self, val):
@@ -644,7 +633,6 @@ class KITPlot(object):
             pass
 
         return Title
-
 
 
     def readEntryList(self):
@@ -679,30 +667,10 @@ class KITPlot(object):
 
         LegH = LegHandler()
 
-        #self.legend.SetBBoxX1(0)
-        #self.legend.SetBBoxX2(0)
-        #self.legend.SetBBoxY1(0)
-        #self.legend.SetBBoxY2(0)
-
         LegH.fillKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files)
         LegH.setOptions(self.__cfg.get('Legend'))
 
-        #LegendHandler.textSize(float(self.__cfg.get('Legend','TextSize')))
-
-
-
-
-#        elif SortPara == "ID":
-#                    self.legend.AddEntry(graphList[i], nameList[i].getID(), "p")
-#                elif SortPara == "list":
-#                    self.legend.AddEntry(graphList[i], nameList[i].getName(), "p")
-#                #elif SortPara == "list":
-#                #    self.legend.AddEntry(graphList[self.changeOrder(i)], self.graphDetails[self.changeOrder(i)].replace(" ","")[3:], "p")
-
         return LegH.getLegend()
-
-
-
 
 
 
@@ -790,26 +758,23 @@ class KITPlot(object):
 
 
 
-
-
     def setMarkerStyles(self):
 
         for i, graph in enumerate(self.__graphs):
-            self.__graphs[i].SetMarkerStyle(self.getMarkerStyle(i))
-            #if self.__cfg.get('Misc','GraphGroup') == "off":
-                #self.__graphs[i].SetMarkerStyle(self.getMarkerStyle(i))
-            #elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
-                #self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
-            #elif self.__cfg.get('Misc','GraphGroup') != "off" and self.__cfg.get('Misc','GraphGroup') != "name" and self.__cfg.get('Misc','GraphGroup') != "fluence" and self.__cfg.get('Misc','GraphGroup')[0] != "[":
-                #sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
-            #elif self.__cfg.get('Misc','GraphGroup') != "off" and self.ColorShades == False:
-                #for j, Element in enumerate(self.getGroupList()):
-                    #if self.__cfg.get('Misc','GraphGroup') == "name" and self.__files[i].getName()[:5] == Element:
-                        #self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
-                    #if self.__cfg.get('Misc','GraphGroup') == "fluence" and self.__files[i].getFluenceP() == Element:
-                        #self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
-            #else:
-                #sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
+            if self.__cfg.get('Misc','GraphGroup') == "off":
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
+            elif self.__cfg.get('Misc','GraphGroup') == "name":
+                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
+
+
+#            elif self.__cfg.get('Misc','GraphGroup') != "off" and self.ColorShades == False:
+#                for j, Element in enumerate(self.getGroupList()):
+#                    if self.__cfg.get('Misc','GraphGroup') == "name" and self.__files[i].getName()[:5] == Element:
+#                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
+#                    if self.__cfg.get('Misc','GraphGroup') == "fluence" and self.__files[i].getFluenceP() == Element:
+#                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
+            else:
+                sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
 
         self.counter = 0
         marker_counter = 0
@@ -831,28 +796,26 @@ class KITPlot(object):
     def setGraphColor(self):
 
         for i, graph in enumerate(self.__graphs):
-            self.__graphs[i].SetMarkerColor(self.getColor(i))
-            self.__graphs[i].SetLineColor(self.getColor(i))
-            #if self.__cfg.get('Misc','GraphGroup') == "off" :
-                #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-            #elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
-                #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-            #elif self.__cfg.get('Misc','GraphGroup') == "fluence" and self.ColorShades == False:
-                #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-            #elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
-                #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
-                #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
+            if self.__cfg.get('Misc','GraphGroup') == "off" :
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+            elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
+                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+#            elif self.__cfg.get('Misc','GraphGroup') == "fluence" and self.ColorShades == False:
+#                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+#                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+            elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
+                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
+                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
             #elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == False:
                 #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
             # UNDER CONSTRUCTION: shades for user groups
-            #elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
-                #sys.exit("User groups dont work with shades, yet!")
-            #if self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
-                #sys.exit("Need graph groups for applying shades!")
+            elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
+                sys.exit("User groups dont work with shades, yet!")
+            if self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
+                sys.exit("Need graph groups for applying shades!")
             
 
     def setTitles(self):
@@ -947,21 +910,13 @@ class KITPlot(object):
         return self.GroupList
 
 
-
-
-
-
-
-
-
-
 #####################
 ### Color methods ###
 #####################
 
     def __initColor(self):
     
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800,1900]
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
@@ -1049,9 +1004,6 @@ class KITPlot(object):
         self.getShadeList()
         return self.ShadeList[index]
         
-        
-
-
 
 ###################
 ### Get methods ###
