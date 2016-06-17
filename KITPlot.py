@@ -33,6 +33,7 @@ class KITPlot(object):
         if self.__init == False:
             self.__initColor()
             self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+            self.cfg_initialized = False
         else:
             pass
 
@@ -54,6 +55,7 @@ class KITPlot(object):
             print ("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
             # create new cfg for dataInput
+            self.cfg_initialized = True
             self.__initDefaultCfg()
             self.__cfg.write(dataInput)
             print ("%s.cfg has been created" %dataInput)
@@ -202,6 +204,8 @@ class KITPlot(object):
             if self.__files[0].getParaY() != self.__files[1].getParaY():
                 sys.exit("Measurement types are not equal!")
 
+        return True
+
     def checkPID(self, dataInput):
         # checks if PIDs are listed in the file
         if os.path.isfile(dataInput):
@@ -346,11 +350,12 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-        entry= self.getDefaultNames()
         self.getUserNames()
         self.getUserOrder()
-
+        self.MeasurementType()
         self.readEntryList()
+
+        return True
 
 
     def addNorm(self, loop=True, j=0):
@@ -433,9 +438,7 @@ class KITPlot(object):
         self.canvas = ROOT.TCanvas("c1","c1", int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')))
         self.canvas.cd()
 
-        # apply scaling and auto title
-        self.MeasurementType()
-
+        # apply plot styles
         self.plotStyles(self.__cfg.get('XAxis','Title'), self.__cfg.get('YAxis','Title'), self.__cfg.get('Title','Title'))    
         
         # set log scale if 
@@ -452,9 +455,11 @@ class KITPlot(object):
                 graph.Draw(arg.replace("A","") + "SAME")
         
         # Set legend (always at the very end!)
-        self.legend = self.setLegend()
-        LegHandler().moveLegend(self.legend, int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')), self.__cfg.get('Legend'), self.__files, self.Scale)
-        self.legend.Draw()
+
+        LegH = LegHandler()
+        LegH.setKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files, self.__cfg.get('Canvas','SizeX'), self.__cfg.get('Canvas','SizeY'), self.Scale)
+        self.leg = LegH.getLegend()
+        self.leg.Draw()
         self.canvas.Update()
 
 #        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
@@ -635,9 +640,16 @@ class KITPlot(object):
         return Title
 
 
+
     def readEntryList(self):
 
-        if self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
+        if self.cfg_initialized == True:
+            self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
+            self.__cfg.setParameter(self.cfgPath, 'Title','Title', self.autotitle)
+            self.__cfg.setParameter(self.cfgPath, 'XAxis','Title', self.autotitleX)
+            self.__cfg.setParameter(self.cfgPath, 'YAxis','Title', self.autotitleY)
+
+        elif self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
 
             #if cfg exists, "" can be used to reset the graph details to default
             if self.__cfg.get('Legend','EntryList') == "":
@@ -653,7 +665,7 @@ class KITPlot(object):
 
         #when cfg has just been created, this case will send default values
         else:
-            self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
+            sys.exit("Unkown error with cfg file!")
 
         return True
 
@@ -669,6 +681,7 @@ class KITPlot(object):
 
         LegH.fillKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files)
         LegH.setOptions(self.__cfg.get('Legend'))
+        LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')), self.__cfg.get('Legend'), self.__files, self.Scale)
 
         return LegH.getLegend()
 
