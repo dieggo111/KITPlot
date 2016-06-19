@@ -94,8 +94,7 @@ class ConfigHandler(ConfigParser):
             ConfigParser.write(self,cfgFile)
 
     def getCfgName(self, name='default'):
-        name = self.__cfgName(name)
-        return name
+        return self.__cfgName(name)
 
 
     def setParameter(self, cfg, sec, key, val):
