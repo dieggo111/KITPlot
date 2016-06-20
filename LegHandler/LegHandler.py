@@ -50,14 +50,17 @@ class LegHandler(object):
         
         self.getUserOrder(dic)
         self.getUserNames(dic)
-        
+        print self.UserNames
         for i, graph in enumerate(graphList):
             if dic['SortPara'] == "name":
                 self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
             elif dic['SortPara'] == "ID":
                 self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
             elif dic['SortPara'] == "list":
-                self.legend.AddEntry(graphList[self.changeOrder(i)], fileList[self.changeOrder(i)].getName(), "p")
+                if self.UserNames == []:
+                    self.legend.AddEntry(graphList[self.changeOrder(i)], fileList[i].getName(), "p")
+                else:
+                    self.legend.AddEntry(graphList[self.changeOrder(i)], self.UserNames[self.changeOrder(i)], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
 
@@ -246,6 +249,7 @@ class LegHandler(object):
                 self.UserNames.append(Name.replace(" ", "")[3:])
         else:
             pass
+
         return True
 
 

@@ -351,10 +351,7 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-        self.getUserNames()
-        self.getUserOrder()
-        self.MeasurementType()
-        self.readEntryList()
+
 
         return True
 
@@ -433,6 +430,12 @@ class KITPlot(object):
         if len(self.__graphs) == 0:
             print "No graphs to draw"
             return False
+
+                # functions 
+        self.getUserNames()
+        self.getUserOrder()
+        self.MeasurementType()
+        self.readEntryList()
 
         # init canvas
         #self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
@@ -728,6 +731,7 @@ class KITPlot(object):
                 self.UserNames.append(Name.replace(" ", "")[3:])
         else:
             pass
+        return True
 
 
     def getDefaultNames(self):
