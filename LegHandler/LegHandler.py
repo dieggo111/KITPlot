@@ -66,24 +66,17 @@ class LegHandler(object):
         # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right
         
         LegendParas = []
-        para_height = 0
-        para_width = 0
         TR = TL = BR = False
 
         # para_height contains the number of entries and determines the height of the legend box
         para_height = len(fileList)
 
-        # para_width contains the lenght of the longest entry
-        for File in fileList:
-        #for Name in self.graphDetails:
-            if len(File.getName()) > para_width:
-                para_width = len(File.getName())
-            else:
-                pass
-
+        # para_width determines the width of the legend box based on the longest entry
+        para_width = self.getWidth(fileList)
+        print para_width
         # consider some ugly stuff
         if para_width > 30:
-                sys.exit("Legend name too long! Reduce the number of characters!")
+            sys.exit("Legend name too long! Reduce the number of characters!")
         elif not 0.5 <= float(dic['BoxPara']) <= 1.5:
             sys.exit("Invalid box parameter! Value must be between 0.5 and 1.5!")
         elif dic['Position'] != "auto" and dic['Position'] != "TR" and dic['Position'] != "TL" and dic['Position'] != "BR":
@@ -95,7 +88,7 @@ class LegHandler(object):
         if float(dic['TextSize']) == 0.02:
             magic_para = para_width/100.*float(dic['BoxPara'])
         else:
-            magic_para = (para_width*0.006+0.1)*float(dic['BoxPara'])
+            magic_para = (0.03+para_width*0.014)*float(dic['BoxPara'])
         
 
         # Default/starting position for the legend box
@@ -124,6 +117,7 @@ class LegHandler(object):
         TL = self.__isInside(fileList, TLxmin, TLymin, TLxmax, TLymax, Scale)
         BR = self.__isInside(fileList, BRxmin, BRymin, BRxmax, BRymax, Scale)
 
+        # apply legend parameters
         if dic['Position'] in ["TR", "BR", "TL"]:
             TR = TL = BR = False
         else:
@@ -212,11 +206,14 @@ class LegHandler(object):
 
     def changeOrder(self, counter):
 
-        for j, element in enumerate(self.UserOrder):
-            if int(element) == counter:
-                return j
-            else:
-                pass
+        if self.UserOrder == []:
+            return counter
+        else:
+            for j, element in enumerate(self.UserOrder):
+                if int(element) == counter:
+                    return j
+                else:
+                    pass
         return 0
 
     def getUserOrder(self, dic):
@@ -274,7 +271,25 @@ class LegHandler(object):
         
         return True
 
+    def getWidth(self, fileList):
 
+        para = 0
+
+        for File in fileList:
+            if len(File.getName()) > para:
+                Long = len(File.getName())
+                Short = len(File.getName().replace("i","").replace("I","").replace("j","").replace("r","").replace("l","").replace("t","")) 
+                if Short > para:
+                    para = Short            # number of wide chars
+                    dif = Long-Short        # number of narrow chars
+                else:
+                    pass
+            else:
+                pass
+
+        para = int(para + 0.5*dif)
+
+        return para
 
 
 

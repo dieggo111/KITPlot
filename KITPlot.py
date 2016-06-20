@@ -54,6 +54,7 @@ class KITPlot(object):
             self.__cfg.load(dataInput)
             print ("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
         else:
+            print (self.__cfgPresent())
             # create new cfg for dataInput
             self.cfg_initialized = True
             self.__initDefaultCfg()
@@ -608,11 +609,14 @@ class KITPlot(object):
 
     def changeOrder(self, counter):
 
-        for j, element in enumerate(self.UserOrder):
-            if int(element) == counter:
-                return j
-            else:
-                pass
+        if self.UserOrder == []:
+            return counter
+        else:
+            for j, element in enumerate(self.UserOrder):
+                if int(element) == counter:
+                    return j
+                else:
+                    pass
         return 0
 
 
@@ -711,6 +715,8 @@ class KITPlot(object):
                     pass
         else:
             pass
+
+        return True
 
 
     def getUserNames(self):

@@ -44,10 +44,13 @@ class ConfigHandler(ConfigParser):
         
         return fullDict
 
-    def get(self, sec, par=None):
+    def get(self, sec, par=None, dataType = 'string'):
         if self.__prmtr is not None:
             if par is not None:
-                return self.__prmtr[sec][par]
+                if dataType == ('int' or 'integer'):
+                    return int(self.__prmtr[sec][par])
+                else:
+                    return self.__prmtr[sec][par]
             else:
                 return self.__prmtr[sec]
 
@@ -94,8 +97,7 @@ class ConfigHandler(ConfigParser):
             ConfigParser.write(self,cfgFile)
 
     def getCfgName(self, name='default'):
-        name = self.__cfgName(name)
-        return name
+        return self.__cfgName(name)
 
 
     def setParameter(self, cfg, sec, key, val):
@@ -128,7 +130,23 @@ class ConfigHandler(ConfigParser):
         #TODO compare tmpDict with self.__prmtr
 
         
+    def setType(self,func):
+      
+        for sec in self.__prmtr:
+            for key in self.__prmtr[sec]:
+                if callable(func):
+                    self.__prmtr[sec][key] = func(self.__prmtr[sec][key])
+        return True
+        
 if __name__ == '__main__':        
+
+#    Input = sys.argv[1]
+#    if os.path.isdir(Input, Path):
+#        self.update(Input, Path)
+#    elif Input.splitext() == ".cfg":
+#        self.update(Input, File)
+#    else:
+#        sys.exit("Unkown input type. Only fodlers or cfg-files can be updated!")
 
     write = True
     
