@@ -2,6 +2,7 @@ import os,sys
 import numpy as np
 import mysql.connector
 import ConfigParser
+import collections
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
@@ -13,7 +14,7 @@ class KITData(object):
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, input=None, measurement="probe"):
+    def __init__(self, input=None, measurement="probe", misc=None):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
@@ -35,7 +36,7 @@ class KITData(object):
         self.__pz = None
         self.__t0 = None
         self.__h0 = None
-
+        self.DataDic = None
 
         if input is None:
             return False
@@ -83,6 +84,31 @@ class KITData(object):
                     if len(splited) > 2:
                         self.__z.append(float(splited[2]))
 
+                # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
+                if self.checkRpunch(self.__x) == True:
+                    dic = {}
+
+                    sec = float(0.0)
+                    ix = []
+                    iy = []
+                    for i, valX in enumerate(self.__x):
+                        if i == 0:
+                            sec = self.__x[0]
+                            ix.append(self.__y[0])
+                            iy.append(self.__z[0])
+                        elif sec == valX: 
+                            ix.append(self.__y[i])
+                            iy.append(self.__z[i])
+                        else:
+                            dic[sec] = zip(ix,iy)
+                            sec = valX
+                            ix = [self.__y[i]]
+                            iy = [self.__z[i]]
+
+                    dic[sec] = zip(ix,iy)
+
+                    self.DataDic = collections.OrderedDict(sorted(dic.items()))
+
                 self.__name = os.path.basename(input).split(".")[0]
                 for char in os.path.basename(input):
                     if char == "-":
@@ -97,7 +123,7 @@ class KITData(object):
         #    self.__init_db_connection() # Establish database connection
 
         elif isinstance(input,list) and all(isinstance(i, KITData) for i in input):
-            
+
             self.__px = input[0].getParaX()
             self.__py = input[0].getParaY()
             self.__pz = input[0].getParaZ()
@@ -110,11 +136,29 @@ class KITData(object):
                 self.__z.append(kitFile.getZ()[0])
                 self.__dy.append(kitFile.getdY()[0])
                 
+        # Rpunch
+        elif isinstance(input, list) and isinstance(measurement, list) and isinstance(misc, str) and len(input) == len(measurement):
+
+                self.__x = input
+                self.__y = measurement
+                self.__name = misc
+                self.__px = "Voltage"
+                self.__py = "Rpunch"
 
         else:
             raise OSError("Input could not be identified (Input: %s)" %(input))
 
+    def getDic(self):
+        return self.DataDic
 
+    def checkRpunch(self, List):
+
+        for val in List:
+            if List.count(val) > 2:
+                return True
+            else:
+                pass
+        return False
 
     def __init_db_connection(self, filename='db.cfg', section='database'):
         """Initialize db_connection and set static connection and curser
@@ -529,7 +573,6 @@ class KITData(object):
             list or array of x dataset
 
         """
-
         if asarray:
             return np.asarray(self.__x)
         else:

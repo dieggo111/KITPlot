@@ -8,6 +8,7 @@ class ConfigHandler(ConfigParser):
         ConfigParser.__init__(self)
         self.optionxform = str
         self.__dir = "cfg/"
+        #self.__dir = "/home/metzler/KITPlot/cfgSave/"
         self.__prmtr = None     
         if parDict is not None:
             self.init(parDict)
@@ -30,7 +31,7 @@ class ConfigHandler(ConfigParser):
 
         if os.path.exists(self.__dir + cfg):
             fullDict = {}
-            
+
             self.read(self.__dir + cfg)
             for sec in self.sections():
                 tmpDict = {}
@@ -101,9 +102,6 @@ class ConfigHandler(ConfigParser):
 
 
     def setParameter(self, cfg, sec, key, val):
-        #self.__prmtr[sec][key] = val
-        #print self.__prmtr[sec][key]
-        #print self.__prmtr
 
         self.read(cfg)
 
@@ -113,23 +111,53 @@ class ConfigHandler(ConfigParser):
 
         return True
 
-    def update(self, cfg='default.cfg'):
-        oldDict = self.__load(self.__dir + cfg)
+    def update(self, Input, InputType, refFile='default.cfg'):
 
-        for sec in self.__prmtr:
-            for old_sec in oldDict:
-                if sec != old_sec:
-                    for key in self.__prmtr[sec]:
-                        for old_key in oldDict[old_sec]:
-                            if key == old_key:
-                                if self.__prmtr[sec][key] == oldDict[old_sec][old_key]:
-                                    print "same"
-                                else:
-                                    #print self.__prmtr[sec][key]
-                                    print "dif"
+        print "###############################################\n"+"### ConfigHandler update method initialized ###\n"+"###############################################"
+               
+        if InputType == "File":
+            File = os.path.basename(Input)
+            print "1 File is ready to be updated according to '" + refFile + "': \n" + str(File)
+        elif InputType == "Folder":
+            Folder = Input.split("/")[-2] + "/"
+            print str(len(self.getFilesInFolder(Input, cfg))) + " file(s) are ready to be updated according to '" + refFile + "':"
+            for Name in self.getFilesInFolder(Input, cfg):
+               print Name
+        print os.path.basename(Input)
+        
+        refDict = self.__load(self.__dir + refFile)
+        oldDict = {}
+        config = ConfigParser()
+        config.read(self.__dir + File)
+
+#        for sec in ConfigParser().sections():
+#            tmpDict = {}
+#            for (key,val) in ConfigParser().items(sec):
+#                tmpDict[key] = val
+#            oldDict[sec] = tmpDict
+
+
+#        print (oldDict, len(oldDict))
+#                    for key in self.__prmtr[sec]:
+#                        for old_key in oldDict[old_sec]:
+#                            if key == old_key:
+#                                if self.__prmtr[sec][key] == oldDict[old_sec][old_key]:
+#                                    print "same"
+#                                else:
+#                                    #print self.__prmtr[sec][key]
+#                                    print "dif"
         #TODO compare tmpDict with self.__prmtr
 
-        
+    def getFilesInFolder(self, path, cfg):
+
+        List = []
+        for Name in os.listdir(path):
+            if "~" in Name or Name == cfg:
+                pass
+            else:
+                List.append(Name)
+        return List
+
     def setType(self,func):
       
         for sec in self.__prmtr:
@@ -140,34 +168,39 @@ class ConfigHandler(ConfigParser):
         
 if __name__ == '__main__':        
 
-#    Input = sys.argv[1]
-#    if os.path.isdir(Input, Path):
-#        self.update(Input, Path)
-#    elif Input.splitext() == ".cfg":
-#        self.update(Input, File)
-#    else:
-#        sys.exit("Unkown input type. Only fodlers or cfg-files can be updated!")
-
-    write = True
-    
-    pDict = {'General':{'vad_file':'VAD',
-                        'vdd_file':'VDD',
-                        't_file':'temperature',
-                        'path':'/mnt/1-wire/honeywell/'},
-             'Special':{'d':4,
-                        'e':5,
-                        'f':6},
-             'More':{'g':7,
-                     'h':8,
-                     'i':9}}
-
-    cfg = ConfigHandler()
-    
-    if write:
-        cfg.init(pDict)        
-        cfg.write()
+    Input = sys.argv[1]
+    if len(sys.argv) < 2:
+        pass
     else:
-        cfg.load("default.cfg")
+        refFile = os.path.basename(sys.argv[2])
+
+    if os.path.isdir(Input):
+        ConfigHandler().update(Input, "Folder", refFile)
+    elif Input[-4:] == ".cfg":
+        ConfigHandler().update(Input, "File", refFile)
+    else:
+        sys.exit("Unkown input type. Only fodlers or cfg-files can be updated!")
+
+#    write = True
+#    
+#    pDict = {'General':{'vad_file':'VAD',
+#                        'vdd_file':'VDD',
+#                        't_file':'temperature',
+#                        'path':'/mnt/1-wire/honeywell/'},
+#             'Special':{'d':4,
+#                        'e':5,
+#                        'f':6},
+#             'More':{'g':7,
+#                     'h':8,
+#                     'i':9}}
+
+#    cfg = ConfigHandler()
+#    
+#    if write:
+#        cfg.init(pDict)        
+#        cfg.write()
+#    else:
+#        cfg.load("default.cfg")
         
-    print cfg.get("General","path")
-    print cfg.get("Special","d")
+#    print cfg.get("General","path")
+#    print cfg.get("Special","d")

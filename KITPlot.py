@@ -105,8 +105,8 @@ class KITPlot(object):
                  'Marker'  :{ 'Size'         : 1.5,
                               'Style'        : 22,
                               'Color'        : 1100      }, 
-                 'Canvas'  :{ 'SizeX'        : 800,
-                              'SizeY'        : 600,
+                 'Canvas'  :{ 'SizeX'        : 1280,
+                              'SizeY'        : 768,
                               'PadBMargin'   : 0.15,
                               'PadLMargin'   : 0.15,
                               'MaxDigits'    : 4         },
@@ -194,6 +194,10 @@ class KITPlot(object):
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "I_leak_dc_Ramp":
                 self.autotitle = "Interstrip Current Leakage" 
+                self.autotitleY = "Current (A)"
+                self.autotitleX = "Voltage (V)"
+            elif self.MT == "Rpunch":
+                self.autotitle = "R_{Edge}" 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             else:
@@ -338,6 +342,20 @@ class KITPlot(object):
                         else:
                             self.addNorm(False, i)
                         
+                # Rpunch Ramp file
+                elif "REdge" in dataInput:
+
+                    data = KITData.KITData(dataInput).getDic()
+
+                    x = []
+                    y = []
+                    labels = []
+
+                    for i, bias in enumerate(data):
+                        xi, yi = zip(*data[bias])
+                        self.__files.append(KITData.KITData(list(xi),list(yi),str(data.keys()[i])))
+
+                    self.addNorm()
 
                 # singel file
                 else:
@@ -351,7 +369,10 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-
+        self.getUserNames()
+        self.getUserOrder()
+        self.MeasurementType()
+        self.readEntryList()
 
         return True
 
@@ -387,25 +408,30 @@ class KITPlot(object):
         # args: x, y or KITData
 
         if isinstance(args[0], KITData.KITData):
+            if KITData.KITData.getDic() == None:
+                self.__files.append(args[0])
+            
+                if self.absX:
+                    x = np.absolute(args[0].getX())
+                else:
+                    x = args[0].getX()
+            
+                if self.absY:
+                    if str(args[1]) == "y":
+                        y = np.absolute(args[0].getY())
+                    elif str(args[1]) == "z":
+                        y = np.absolute(args[0].getZ())
+                else:
+                    if args[1] == "y":
+                        y = args[0].getY()
+                    elif args[1] == "z":
+                        y = args[0].getZ()
+            # Rpunch
+            else:
+                sys.exit("Dictinary error")
 
-            self.__files.append(args[0])
-            
-            if self.absX:
-                x = np.absolute(args[0].getX())
-            else:
-                x = args[0].getX()
-            
-            if self.absY:
-                if str(args[1]) == "y":
-                    y = np.absolute(args[0].getY())
-                elif str(args[1]) == "z":
-                    y = np.absolute(args[0].getZ())
-            else:
-                if args[1] == "y":
-                    y = args[0].getY()
-                elif args[1] == "z":
-                    y = args[0].getZ()
-                
+
+
         elif len(args) == 2 and not isinstance(args[0], KITData.KITData):
             
             if self.absX:
@@ -417,25 +443,22 @@ class KITPlot(object):
                 y = np.absolute(args[1])
             else:
                 y = args[1]
+
         else:
             sys.exit("Cant add graph")
         
         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
 
         return True
-            
-                        
+
+
     def draw(self, arg="AP"):
 
         if len(self.__graphs) == 0:
             print "No graphs to draw"
             return False
 
-                # functions 
-        self.getUserNames()
-        self.getUserOrder()
-        self.MeasurementType()
-        self.readEntryList()
+
 
         # init canvas
         #self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
@@ -466,7 +489,7 @@ class KITPlot(object):
         self.leg.Draw()
         self.canvas.Update()
 
-#        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
+        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
 
 
         return True
