@@ -50,7 +50,7 @@ class LegHandler(object):
         
         self.getUserOrder(dic)
         self.getUserNames(dic)
-        print self.UserNames
+
         for i, graph in enumerate(graphList):
             if dic['SortPara'] == "name":
                 self.legend.AddEntry(graphList[i], fileList[i].getName(), "p")
@@ -76,7 +76,7 @@ class LegHandler(object):
 
         # para_width determines the width of the legend box based on the longest entry
         para_width = self.getWidth(fileList)
-        print para_width
+
         # consider some ugly stuff
         if para_width > 30:
             sys.exit("Legend name too long! Reduce the number of characters!")

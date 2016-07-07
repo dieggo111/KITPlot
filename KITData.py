@@ -139,9 +139,9 @@ class KITData(object):
         # Rpunch
         elif isinstance(input, list) and isinstance(measurement, list) and isinstance(misc, str) and len(input) == len(measurement):
 
-                self.__x = input
-                self.__y = measurement
-                self.__name = misc
+                self.__x = input        # x
+                self.__y = measurement  # y
+                self.__name = misc      # bias labels
                 self.__px = "Voltage"
                 self.__py = "Rpunch"
 

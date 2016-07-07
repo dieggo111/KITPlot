@@ -511,7 +511,7 @@ class KITPlot(object):
 
 
     def plotStyles(self, XTitle, YTitle, Title):
-        
+
         self.__graphs[0].GetXaxis().SetTitle(XTitle)
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
@@ -699,6 +699,19 @@ class KITPlot(object):
 
         return True
 
+    def interpolate(self):
+
+        x = []
+        y = []
+        R = []
+        for File in self.__files:
+            x = File.getX()
+            y = File.getY()
+            name = File.getName()
+            m, b = np.polyfit(x, y, 1)
+            R.append((name, abs(1/m)))
+
+        return R
 
 #####################
 ### Legend method ###
