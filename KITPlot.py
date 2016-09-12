@@ -197,7 +197,7 @@ class KITPlot(object):
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "Rpunch":
-                self.autotitle = "R_{Edge}" 
+                self.autotitle = "R_{Edge} of " + self.cfgPath.replace("cfg/","").replace(".cfg","").replace("for_","for ").replace("rev_","rev ").replace("m20C","(T = -20#circC)").replace("20C","(T = 20#circC)")[15:] 
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             else:
@@ -265,7 +265,7 @@ class KITPlot(object):
         self.absY = self.convertTF(self.__cfg.get('YAxis','Abs'))
         self.logX = self.convertTF(self.__cfg.get('XAxis','Log'))
         self.logY = self.convertTF(self.__cfg.get('YAxis','Log'))
-        
+
         KITPlot.__init = True
         return True
 
@@ -599,10 +599,17 @@ class KITPlot(object):
         else:
             pass
 
-        self.Scale.append(min(ListX)*(1.-self.perc))
-        self.Scale.append(min(ListY)*(1.-self.perc))
-        self.Scale.append(max(ListX)*(1.+self.perc))
-        self.Scale.append(max(ListY)*(1.+self.perc))
+        if self.absX:
+            self.Scale.append(min(ListX)*(1.-self.perc))
+            self.Scale.append(min(ListY)*(1.-self.perc))
+            self.Scale.append(max(ListX)*(1.+self.perc))
+            self.Scale.append(max(ListY)*(1.+self.perc))
+
+        if not self.absX:
+            self.Scale.append(min(ListX)*(1.+self.perc))
+            self.Scale.append(min(ListY)*(1.-self.perc))
+            self.Scale.append(max(ListX)*(1.+self.perc))
+            self.Scale.append(max(ListY)*(1.+self.perc))
         
         #if (self.Scale[2]/self.Scale[3]) > 1e-4:
         #    self.logY = True
@@ -699,19 +706,27 @@ class KITPlot(object):
 
         return True
 
-    def interpolate(self):
+    def interpolate(self, x=None, y=None):
 
-        x = []
-        y = []
-        R = []
-        for File in self.__files:
-            x = File.getX()
-            y = File.getY()
-            name = File.getName()
-            m, b = np.polyfit(x, y, 1)
-            R.append((name, abs(1/m)))
+        v = []
 
-        return R
+        if x is not None and y is not None:
+            for File in self.__files:
+                m, b = np.polyfit(x, y, 1)
+                v.append((m, b))
+
+        else:
+            x = []
+            y = []
+
+            for File in self.__files:
+                x = File.getX()
+                y = File.getY()
+                name = File.getName()
+                m, b = np.polyfit(x, y, 1)
+                v.append((name, abs(m)))
+
+        return v
 
 #####################
 ### Legend method ###
@@ -745,11 +760,16 @@ class KITPlot(object):
                 if Name.replace(" ","")[1].isdigit() == False:
                     sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
                 else:
-                    self.UserOrder.append(int(Name.replace(" ","")[1]))
+                    if Name.replace(" ","")[2] == ")":
+                        self.UserOrder.append(int(Name.replace(" ","")[1]))
+                    elif Name.replace(" ","")[2].isdigit() == True:
+                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                    else:
+                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
 
             for Name in self.UserOrder:
                 if self.UserOrder.count(Name) > 1:
-                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
                 else:
                     pass
         else:
@@ -1108,4 +1128,15 @@ class KITPlot(object):
     def getCanvas(self):
         return self.canvas
 
+    def getX(self):
+        X = []
+        for List in self.__files:
+            X.append(List.getX())
+        return X
+
+    def getY(self):
+        Y = []
+        for List in self.__files:
+            Y.append(List.getY())
+        return Y
         

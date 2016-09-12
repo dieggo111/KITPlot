@@ -95,8 +95,8 @@ class LegHandler(object):
         
 
         # Default/starting position for the legend box
-        TRxmax = 0.98
-        TRymax = 0.93
+        TRxmax = 0.89
+        TRymax = 0.88
         TRxmin = TRxmax-magic_para
         TRymin = TRymax-para_height*0.042
 
@@ -110,10 +110,10 @@ class LegHandler(object):
         BRxmin = BRxmax-magic_para
         BRymax = BRymin+para_height*0.04
 
-        Lxmax = 0.98
-        Lymax = 0.93
-        Lxmin = Lxmax-magic_para
-        Lymin = Lymax-para_height*0.04
+        Oxmax = 0.98
+        Oymax = 0.93
+        Oxmin = Oxmax-magic_para
+        Oymin = Oymax-para_height*0.042
 
         # check if graphs are in box
         TR = self.__isInside(fileList, TRxmin, TRymin, TRxmax, TRymax, Scale)
@@ -143,10 +143,10 @@ class LegHandler(object):
             LegendParas.append(BRymax)
         else:
             # TODO: place legend outside of frame, if there's no sufficient space
-            LegendParas.append(TRxmin)
-            LegendParas.append(TRymin)
-            LegendParas.append(TRxmax) 
-            LegendParas.append(TRymax)
+            LegendParas.append(Oxmin)
+            LegendParas.append(Oymin)
+            LegendParas.append(Oxmax) 
+            LegendParas.append(Oymax)
             print "Couldn't find sufficient space for legend!"
 
         return LegendParas
@@ -186,9 +186,11 @@ class LegHandler(object):
         for File in fileList:
             PercX = []
             PercY = []
+
             for i, valX in enumerate(File.getX()):
                 PercX.append(0.15+abs(0.75*valX/(Scale[2]-Scale[0])))
                 PercY.append(0.15+abs(0.75*File.getY()[i]/(Scale[3]-Scale[1])))
+
             for i, x in enumerate(PercX):
                 if Lxmin < x < Lxmax:
                     if Lymin < PercY[i] < Lymax:
@@ -229,7 +231,12 @@ class LegHandler(object):
                 if Name.replace(" ","")[1].isdigit() == False:
                     sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
                 else:
-                    self.UserOrder.append(int(Name.replace(" ","")[1]))
+                    if Name.replace(" ","")[2] == ")":
+                        self.UserOrder.append(int(Name.replace(" ","")[1]))
+                    elif Name.replace(" ","")[2].isdigit() == True:
+                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                    else:
+                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
 
             for Name in self.UserOrder:
                 if self.UserOrder.count(Name) > 1:
