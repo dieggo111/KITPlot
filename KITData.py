@@ -24,9 +24,11 @@ class KITData(object):
         """
 
         self.__x = []
+        self.__dx = []
         self.__y = []
         self.__dy = []
         self.__z = []
+        self.__dz = []
         self.__temp = []
         self.__humid = []
         self.__name = None
@@ -81,9 +83,19 @@ class KITData(object):
                     self.__x.append(float(splited[0]))
                     self.__y.append(float(splited[1]))
 
-                    if len(splited) > 2:
+                    if len(splited) == 3:
                         self.__z.append(float(splited[2]))
-
+                    elif len(splited) == 4:
+                        self.__dx.append(float(splited[2]))
+                        self.__dy.append(float(splited[3]))
+                    elif len(splited) == 6:
+                        self.__z.append(float(splited[2]))
+                        self.__dx.append(float(splited[3]))
+                        self.__dy.append(float(splited[4]))
+                        self.__dz.append(float(splited[5]))
+                    else:
+                        sys.exit("Cannot handle length of data set. Length: %s" %len(splited))
+                        
                 # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                 if self.checkRpunch(self.__x) == True:
                     dic = {}
@@ -611,6 +623,21 @@ class KITData(object):
         else:
             return self.__z
 
+    def getdX(self, asarray=False):
+        """Returns dx dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        if asarray:
+            return np.asarray(self.__dx)
+        else:
+            return self.__dx
+        
 
     def getdY(self, asarray=False):
         """Returns dy dataset as list or array
@@ -627,6 +654,22 @@ class KITData(object):
         else:
             return self.__dy
 
+
+    def getdZ(self, asarray=False):
+        """Returns dz dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        if asarray:
+            return np.asarray(self.__dz)
+        else:
+            return self.__dz
+        
 
     def getSize(self):
         """Returns size of dataset
