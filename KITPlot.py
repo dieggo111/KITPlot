@@ -382,21 +382,32 @@ class KITPlot(object):
     # Sends normalized graph values to addGraph
         if loop == True:
             for i, File in enumerate(self.__files):
-                if self.__cfg.get('Misc','Normalization') == "off":
-                    self.addGraph(self.__files[i].getX(),self.__files[i].getY())
-                elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                    self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
-                elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
-                    self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                if self.__files[i].includesErrors():
+                     if self.__cfg.get('Misc','Normalization') == "off":
+                         self.addGraph(self.__files[i].getX(),self.__files[i].getY(),self.__files[i].getdX(),self.__files[i].getdY())
+                     elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+                         self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i),self.__files[i].getdX(),self.manipulate(self.__files[i].getdY(),i))
+                     elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                         self.addGraph(File.getX(),self.manipulate(File.getY(),i),File.getdX(),self.manipulate(File.getdY(),i))
+                     else:
+                         sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
                 else:
-                    sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+                                  
+                    if self.__cfg.get('Misc','Normalization') == "off":
+                        self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+                    elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+                        self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
+                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                        self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+                    else:
+                        sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
         else:
             if self.__cfg.get('Misc','Normalization') == "off":
                 self.addGraph(self.__files[j].getX(),self.__files[j].getY())
             elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
                 self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
-                self.addGraph(File.getX(),self.manipulate(File.getY(),j))
+                self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             else:
                 sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
         return True
@@ -444,15 +455,35 @@ class KITPlot(object):
             else:
                 y = args[1]
 
+        elif len(args) == 4 and not isinstance(args[0], KITData.KITData):
+             
+            if self.absX:
+                x = np.absolute(args[0])
+            else:
+                x = args[0]
+            
+            if self.absY:
+                y = np.absolute(args[1])
+            else:
+                y = args[1]
+
+            dx = args[2]
+            dy = args[3]
+                
+            
         else:
             sys.exit("Cant add graph")
-        
-        self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
 
+            
+        if len(args) == 2:
+            self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+        elif len(args) == 4:
+            self.__graphs.append(ROOT.TGraphErrors(len(x),np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
+            
         return True
 
 
-    def draw(self, arg="AP"):
+    def draw(self, arg="APE"):
 
         if len(self.__graphs) == 0:
             print "No graphs to draw"
@@ -686,7 +717,8 @@ class KITPlot(object):
             self.__cfg.setParameter(self.cfgPath, 'XAxis','Title', self.autotitleX)
             self.__cfg.setParameter(self.cfgPath, 'YAxis','Title', self.autotitleY)
 
-        elif self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
+        #elif self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
+        elif self.__cfg.get('Legend','SortPara') == "list":
 
             #if cfg exists, "" can be used to reset the graph details to default
             if self.__cfg.get('Legend','EntryList') == "":
@@ -702,7 +734,7 @@ class KITPlot(object):
 
         #when cfg has just been created, this case will send default values
         else:
-            sys.exit("Unkown error with cfg file!")
+            sys.exit("Unknown error with cfg file!")
 
         return True
 

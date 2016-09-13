@@ -431,6 +431,9 @@ class KITData(object):
             self.dropYHigher(high)
             
         return True
+
+    def includesErrors(self):
+        return True if len(self.__dx) != 0 else False
         
 
     ###################
