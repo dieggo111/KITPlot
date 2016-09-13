@@ -237,7 +237,7 @@ class LegHandler(object):
                         self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
                     else:
                         sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-
+            print List
             for Name in self.UserOrder:
                 if self.UserOrder.count(Name) > 1:
                         sys.exit("Entry positions must have different values! At least two numbers are equal!")
@@ -253,7 +253,10 @@ class LegHandler(object):
         List = dic['EntryList'].split(",")
         if dic['EntryList'] != "":
             for Name in List:
-                self.UserNames.append(Name.replace(" ", "")[3:])
+                if Name.replace(" ","")[2] == ")":
+                    self.UserNames.append(Name.replace(" ", "")[3:])
+                elif Name.replace(" ","")[2].isdigit() == True:
+                    self.UserNames.append(Name.replace(" ", "")[4:])
         else:
             pass
 
