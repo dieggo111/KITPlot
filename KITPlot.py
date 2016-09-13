@@ -396,7 +396,7 @@ class KITPlot(object):
             elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
                 self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
-                self.addGraph(File.getX(),self.manipulate(File.getY(),j))
+                self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             else:
                 sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
         return True
