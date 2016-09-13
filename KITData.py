@@ -93,8 +93,10 @@ class KITData(object):
                         self.__dx.append(float(splited[3]))
                         self.__dy.append(float(splited[4]))
                         self.__dz.append(float(splited[5]))
-                    else:
+                    elif len(splited) > 6:
                         sys.exit("Cannot handle length of data set. Length: %s" %len(splited))
+                    else:
+                        pass
                         
                 # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                 if self.checkRpunch(self.__x) == True:
