@@ -43,6 +43,7 @@ class KITData(object):
         self.__seed = None
         self.__seederr = None
 
+
         if input is None:
             return False
 
@@ -305,6 +306,7 @@ class KITData(object):
             self.__gain = gain
             self.__seed = SeedSig_MPV
             self.__seederr = SeedSig_MPV_err
+
             tmpID = id
             tmpDate = date
 

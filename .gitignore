@@ -1,0 +1,11 @@
+*.pyc
+*.png
+*.jpg
+*.pdf
+*~
+*#
+*.cfg
+main.py
+resistivity.py
+*.txt
+analysis/
