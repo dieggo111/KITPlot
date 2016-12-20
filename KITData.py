@@ -295,9 +295,12 @@ class KITData(object):
         tmpID = None
         tmpDate = None
         annealing = 0
-
+        
         qryRunData = ("SELECT voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date FROM alibava WHERE run=%s" %(run))
-        KITData.__dbCrs.execute(qryRunData)
+        try:
+            KITData.__dbCrs.execute(qryRunData)
+        except mysql.connector.errors.ProgrammingError:
+            sys.exit("Couldn't find run " + run + "in Database")
 
         for (voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
             self.__x.append(voltage)
@@ -310,9 +313,11 @@ class KITData(object):
             tmpID = id
             tmpDate = date
 
-
         qryAnnealing = ("SELECT equiv FROM annealing WHERE id=%s and DATE(date)<='%s'" %(tmpID,tmpDate))
-        KITData.__dbCrs.execute(qryAnnealing)
+        try:
+            KITData.__dbCrs.execute(qryAnnealing)
+        except mysql.connector.errors.ProgrammingError:
+            sys.exit("Couldn't find run " + run + "in Database")
 
         for equiv in KITData.__dbCrs:
             annealing += equiv[0]
