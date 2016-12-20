@@ -137,7 +137,7 @@ class KITPlot(object):
             else:
                 return False
 
-        
+
 
     ##################
     ### Auto Title ###
@@ -246,6 +246,7 @@ class KITPlot(object):
         ROOT.gStyle.SetLabelSize(float(self.__cfg.get('YAxis','Size')),"Y")
         ROOT.TGaxis.SetMaxDigits(int(self.__cfg.get('Canvas','MaxDigits')))
         
+        
         # Canvas Options
         ROOT.gStyle.SetPadBottomMargin(float(self.__cfg.get('Canvas','PadBMargin')))
         ROOT.gStyle.SetPadLeftMargin(float(self.__cfg.get('Canvas','PadLMargin')))
@@ -254,6 +255,7 @@ class KITPlot(object):
         ROOT.gStyle.SetMarkerSize(float(self.__cfg.get('Marker','Size')))
         ROOT.gStyle.SetMarkerStyle(int(self.__cfg.get('Marker','Style')))
         ROOT.gStyle.SetMarkerColor(int(self.__cfg.get('Marker','Color')))
+        self.LineWidth = 2
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
@@ -760,6 +762,7 @@ class KITPlot(object):
 
         return v
 
+
 #####################
 ### Legend method ###
 #####################
@@ -798,10 +801,12 @@ class KITPlot(object):
                         self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
                     else:
                         sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-
+            
             for Name in self.UserOrder:
                 if self.UserOrder.count(Name) > 1:
                     sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                elif max(self.UserOrder) > len(self.UserOrder)-1:
+                    sys.exit("Unexpected entry positions! Check for skipped numbers...")
                 else:
                     pass
         else:
@@ -872,36 +877,35 @@ class KITPlot(object):
     def setMarkerStyles(self):
 
         for i, graph in enumerate(self.__graphs):
-            if self.__cfg.get('Misc','GraphGroup') == "off":
+            if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
+                break
+            elif self.__cfg.get('Misc','GraphGroup') == "off":
                 self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
             elif self.__cfg.get('Misc','GraphGroup') == "name":
                 self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
 
 
-#            elif self.__cfg.get('Misc','GraphGroup') != "off" and self.ColorShades == False:
-#                for j, Element in enumerate(self.getGroupList()):
-#                    if self.__cfg.get('Misc','GraphGroup') == "name" and self.__files[i].getName()[:5] == Element:
-#                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
-#                    if self.__cfg.get('Misc','GraphGroup') == "fluence" and self.__files[i].getFluenceP() == Element:
-#                        self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.__markerSet[0+j])
             else:
-                sys.exit("Invalid group parameter! Try 'off', 'name', 'fluence' or define user groups with '[...],[...],...'!")
+                sys.exit("Invalid group parameter! Try 'off', 'name' or define user groups with '[...],[...],...'!")
 
-        self.counter = 0
-        marker_counter = 0
-        color_counter = 0
-        # UNDER CONSTRUCTION: getFluenceP() method
-        if self.__files[0].getParaY() == None and self.__cfg.get('Misc','GraphGroup') == "fluence":
-            sys.exit("Fluence groups can only works with ID inputs!")
-        
-        # set markers for user groups
-        if self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]":
-                for i,element in enumerate(self.getGroupList()):
-                    if i < len(self.__cfg.get('Misc','GraphGroup'))-1:
-                        if element != 666:
-                            self.__graphs[element].SetMarkerStyle(self.__markerSet[0+marker_counter])
-                        else:
-                            marker_counter += 1
+        # User Groups
+        if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
+            self.getGroupList()
+            j = 0
+
+            if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
+                sys.exit("Insufficient UserGroup. Numbers do not match!")
+            else:
+                pass
+            for elem in self.GroupList:
+                if elem == 666:
+                    j = 0
+                else:
+                    self.__graphs[elem].SetMarkerStyle(self.getMarkerStyle(j))
+                    j += 1
+        else:
+            pass
+
 
 
     def setGraphColor(self):
@@ -910,24 +914,48 @@ class KITPlot(object):
             if self.__cfg.get('Misc','GraphGroup') == "off" :
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-#            elif self.__cfg.get('Misc','GraphGroup') == "fluence" and self.ColorShades == False:
-#                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-#                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+                self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
                  self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
                  self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
-            #elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == False:
-                #self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                #self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-            # UNDER CONSTRUCTION: shades for user groups
+                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
             elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
-                sys.exit("User groups dont work with shades, yet!")
-            if self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
-                sys.exit("Need graph groups for applying shades!")
-            
+                break
+            elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
+                sys.exit("Need GraphGroups for applying shades!")
+
+        # User Groups
+        if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
+            self.getGroupList()
+            colorcount = 0
+            shadecount = 0
+            print self.GroupList
+            if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
+                sys.exit("Insufficient UserGroup. Numbers do not match!")
+            else:
+                pass
+            for elem in self.GroupList:
+                if elem == 666:
+                    colorcount += 1
+                    shadecount = 0
+                elif self.__cfg.get('Misc','ColorShades') == "True":
+                        self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
+                        self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
+                        self.__graphs[elem].SetLineWidth(self.LineWidth)
+                        shadecount += 1
+                elif self.__cfg.get('Misc','ColorShades') == "False":
+                        self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
+                        self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
+                        self.__graphs[elem].SetLineWidth(self.LineWidth)
+                else:
+                    pass
+        else:
+            pass
+
 
     def setTitles(self):
 

@@ -253,7 +253,10 @@ class LegHandler(object):
         List = dic['EntryList'].split(",")
         if dic['EntryList'] != "":
             for Name in List:
-                self.UserNames.append(Name.replace(" ", "")[3:])
+                if Name.replace(" ","")[2] == ")":
+                    self.UserNames.append(Name.replace(" ", "")[3:])
+                elif Name.replace(" ","")[2].isdigit() == True:
+                    self.UserNames.append(Name.replace(" ", "")[4:])
         else:
             pass
 

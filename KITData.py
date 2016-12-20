@@ -3,6 +3,7 @@ import numpy as np
 import mysql.connector
 import ConfigParser
 import collections
+import datetime
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
@@ -39,6 +40,10 @@ class KITData(object):
         self.__t0 = None
         self.__h0 = None
         self.DataDic = None
+        self.__gain = None
+        self.__seed = None
+        self.__seederr = None
+
 
         if input is None:
             return False
@@ -93,11 +98,13 @@ class KITData(object):
                         self.__dx.append(float(splited[3]))
                         self.__dy.append(float(splited[4]))
                         self.__dz.append(float(splited[5]))
-                    elif len(splited) > 6:
+                    elif len(splited) > 6 and "REdge" in input:
+                        self.__z.append(float(splited[2]))
+                    elif len(splited) > 6 :
                         sys.exit("Cannot handle length of data set. Length: %s" %len(splited))
                     else:
                         pass
-                        
+                
                 # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                 if self.checkRpunch(self.__x) == True:
                     dic = {}
@@ -285,27 +292,34 @@ class KITData(object):
         self.__py = "Signal"
         self.__pz = "Annealing"
         self.__name = "ALiBaVa"
-        
+
         tmpID = None
         tmpDate = None
         annealing = 0
-
-        qryRunData = ("SELECT voltage, current, electron_sig, signal_e_err, id, date FROM alibava WHERE run=%s" %(run))
+        
+        qryRunData = ("SELECT voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date FROM alibava WHERE run=%s" %(run))
         KITData.__dbCrs.execute(qryRunData)
 
-        for (voltage, current, electron_sig, signal_e_err, id, date) in KITData.__dbCrs:
+        for (voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
             self.__x.append(voltage)
             self.__y.append(electron_sig)
             self.__dy.append(signal_e_err)
+            self.__gain = gain
+            self.__seed = SeedSig_MPV
+            self.__seederr = SeedSig_MPV_err
+
             tmpID = id
             tmpDate = date
 
 
-        qryAnnealing = ("SELECT equiv FROM annealing WHERE id=%s and DATE(date)<='%s'" %(tmpID,tmpDate))
-        KITData.__dbCrs.execute(qryAnnealing)
+        qryAnnealing = ("SELECT date,equiv FROM annealing WHERE id=%s and TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
+        try:
+            KITData.__dbCrs.execute(qryAnnealing)
+        except mysql.connector.errors.ProgrammingError:
+            sys.exit("Couldn't find run " + run + " in Database")
 
-        for equiv in KITData.__dbCrs:
-            annealing += equiv[0]
+        for (date,equiv) in KITData.__dbCrs:
+            annealing += equiv
         self.__z.append(annealing)
 
         qrySensorName = ("SELECT name, F_p_aim_n_cm2 FROM info WHERE id=%s" %(tmpID))
@@ -314,7 +328,6 @@ class KITData(object):
         for (name, Fp) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
-        
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow
@@ -627,6 +640,43 @@ class KITData(object):
             return np.asarray(self.__z)
         else:
             return self.__z
+
+    def getSeed(self):
+        """Returns dx dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        return self.__seed
+
+    def getSeederr(self):
+        """Returns dx dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        return self.__seederr
+
+    def getGain(self):
+        """Returns dx dataset as list or array
+        
+        Args:
+            asarray (True|False): dataset will be returned as array(True) or list(false)
+
+        Returns:
+            list or array of dy dataset
+
+        """
+        return self.__gain
+
 
     def getdX(self, asarray=False):
         """Returns dx dataset as list or array
