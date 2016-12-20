@@ -3,6 +3,7 @@ import numpy as np
 import mysql.connector
 import ConfigParser
 import collections
+import datetime
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
@@ -297,10 +298,7 @@ class KITData(object):
         annealing = 0
         
         qryRunData = ("SELECT voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date FROM alibava WHERE run=%s" %(run))
-        try:
-            KITData.__dbCrs.execute(qryRunData)
-        except mysql.connector.errors.ProgrammingError:
-            sys.exit("Couldn't find run " + run + "in Database")
+        KITData.__dbCrs.execute(qryRunData)
 
         for (voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
             self.__x.append(voltage)
@@ -313,14 +311,15 @@ class KITData(object):
             tmpID = id
             tmpDate = date
 
-        qryAnnealing = ("SELECT equiv FROM annealing WHERE id=%s and DATE(date)<='%s'" %(tmpID,tmpDate))
+
+        qryAnnealing = ("SELECT date,equiv FROM annealing WHERE id=%s and TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
         try:
             KITData.__dbCrs.execute(qryAnnealing)
         except mysql.connector.errors.ProgrammingError:
-            sys.exit("Couldn't find run " + run + "in Database")
+            sys.exit("Couldn't find run " + run + " in Database")
 
-        for equiv in KITData.__dbCrs:
-            annealing += equiv[0]
+        for (date,equiv) in KITData.__dbCrs:
+            annealing += equiv
         self.__z.append(annealing)
 
         qrySensorName = ("SELECT name, F_p_aim_n_cm2 FROM info WHERE id=%s" %(tmpID))
@@ -329,7 +328,6 @@ class KITData(object):
         for (name, Fp) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
-        
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow
