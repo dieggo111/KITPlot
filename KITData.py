@@ -15,7 +15,7 @@ class KITData(object):
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, input=None, measurement="probe", misc=None):
+    def __init__(self, input=None, measurement="probe", misc=None, db=None):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
@@ -23,7 +23,6 @@ class KITData(object):
             information automatically
 
         """
-
         self.__x = []
         self.__dx = []
         self.__y = []
@@ -43,6 +42,7 @@ class KITData(object):
         self.__gain = None
         self.__seed = None
         self.__seederr = None
+        self.__dbPath = db
 
 
         if input is None:
@@ -189,33 +189,64 @@ class KITData(object):
             section: config section where login data can be found
 
         """
+
+        if self.__dbPath is None:
+            print "None"
+            try:
+                cnxConf = ConfigParser.ConfigParser()
+
+                cnxConf.read(filename)
+
+                db_config = {}
         
-        if not os.path.isfile(filename):            
-            self.__createCfg()        
-            sys.exit("Please add database parameters to 'db.cfg' ")
+                if cnxConf.has_section(section):
+
+                    for item in cnxConf.items(section):
+                        db_config[item[0]] = item[1]
+
+                else:
+                    raise Exception('{0} not found in the {1} file'.format(section, filename))
+
+                KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
+
+                if KITData.__dbCnx.is_connected():
+                    print "Database connection established"
+                else:
+                    sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
+                
+                KITData.__dbCrs = KITData.__dbCnx.cursor()
+        
+            except:
+                self.__createCfg()        
+                raise ValueError("Please add correct database parameters to 'db.cfg' ")
 
         else:
-        
-            cnxConf = ConfigParser.ConfigParser()
-            cnxConf.read(filename)
+            print os.path.isfile(self.__dbPath + filename),self.__dbPath + filename
+            try:
+                cnxConf = ConfigParser.ConfigParser()
+                cnxConf.read(self.__dbPath + filename)
             
-            db_config = {}
+                db_config = {}
         
-            if cnxConf.has_section(section):
-                for item in cnxConf.items(section):
-                    db_config[item[0]] = item[1]
-            else:
-                raise Exception('{0} not found in the {1} file'.format(section, filename))
- 
-            KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
-        
-            if KITData.__dbCnx.is_connected():
-                print "Database connection established"
-            else:
-                sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
+                if cnxConf.has_section(section):
+                    for item in cnxConf.items(section):
+                        db_config[item[0]] = item[1]
+                else:
+                    raise Exception('{0} not found in the {1} file'.format(section, self.__dbPath + filename))
+    
+                KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
+
+                if KITData.__dbCnx.is_connected():
+                    print "Database connection established"
+                else:
+                    sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
                 
-            KITData.__dbCrs = KITData.__dbCnx.cursor()
+                KITData.__dbCrs = KITData.__dbCnx.cursor()
         
+            except:
+                raise ValueError("Can't find 'db.cfg' in '%s'" %self.__dbPath) 
+
+
        
     def __createCfg(self):
         """Create empty config file dummy that has to be filled

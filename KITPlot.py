@@ -255,7 +255,7 @@ class KITPlot(object):
         ROOT.gStyle.SetMarkerSize(float(self.__cfg.get('Marker','Size')))
         ROOT.gStyle.SetMarkerStyle(int(self.__cfg.get('Marker','Style')))
         ROOT.gStyle.SetMarkerColor(int(self.__cfg.get('Marker','Color')))
-        self.LineWidth = 2
+        self.LineWidth = 3
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
@@ -933,7 +933,7 @@ class KITPlot(object):
             self.getGroupList()
             colorcount = 0
             shadecount = 0
-            print self.GroupList
+
             if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
                 sys.exit("Insufficient UserGroup. Numbers do not match!")
             else:
@@ -946,11 +946,13 @@ class KITPlot(object):
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
+                        self.__graphs[elem].SetLineStyle(7)
                         shadecount += 1
                 elif self.__cfg.get('Misc','ColorShades') == "False":
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
+                        self.__graphs[elem].SetLineStyle(7)
                 else:
                     pass
         else:
@@ -1055,7 +1057,8 @@ class KITPlot(object):
 
     def __initColor(self):
     
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+#        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
