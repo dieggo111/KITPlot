@@ -915,6 +915,7 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
+                self.__graphs[self.changeOrder(i)].SetLineStyle(7)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))

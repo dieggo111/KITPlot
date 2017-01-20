@@ -15,7 +15,7 @@ class KITData(object):
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, input=None, measurement="probe", misc=None, db=None):
+    def __init__(self, input=None, measurement="probe", misc=None, db=None, show_input=None):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
@@ -44,7 +44,6 @@ class KITData(object):
         self.__seederr = None
         self.__dbPath = db
 
-
         if input is None:
             return False
 
@@ -57,11 +56,17 @@ class KITData(object):
                 pass
 
             if measurement == "alibava":
-                print "Input: ALiBaVa run number"
-                self.__allo_db_alibava(input)
+                if show_input is not "False":
+                    print "Input: ALiBaVa run number"
+                    self.__allo_db_alibava(input)
+                else:
+                    self.__allo_db_alibava(input)
             elif measurement == "probe":
-                print "Input: PID"
-                self.__allo_db(input)
+                if show_input is not "False":
+                    print "Input: PID"
+                    self.__allo_db(input)
+                else:
+                    self.__allo_db(input)
 
         elif isinstance(input, str) and input.isdigit():
             self.__id = input
@@ -191,7 +196,6 @@ class KITData(object):
         """
 
         if self.__dbPath is None:
-            print "None"
             try:
                 cnxConf = ConfigParser.ConfigParser()
 
@@ -221,7 +225,6 @@ class KITData(object):
                 raise ValueError("Please add correct database parameters to 'db.cfg' ")
 
         else:
-            print os.path.isfile(self.__dbPath + filename),self.__dbPath + filename
             try:
                 cnxConf = ConfigParser.ConfigParser()
                 cnxConf.read(self.__dbPath + filename)
