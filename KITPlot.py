@@ -74,7 +74,6 @@ The script consists of 4 modules:
 
     ####################################################
 
-    
     If no errors are being raised, the plot will show up on your screen. You can now start to edit plot with the related cfg file in your cfg folder.
 
 5) cfg file:
@@ -101,9 +100,6 @@ The script consists of 4 modules:
     - 'SortPara = list': Pronounces the parameter that determines the order of all legend element.
     - 'EntryList = (0)a, (1)b, (3)c, (2)d': The legend elements are naturally ordered by ROOT. This original order (here: a = 0, b = 1, c = 2, d = 3) can be edited by 
         changing the number in the brackets. However, other options will always refere to the original order. 
-
-
-
 
 """
 
