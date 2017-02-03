@@ -7,6 +7,102 @@ import KITData
 from ConfigHandler import ConfigHandler
 from LegHandler import LegHandler
 
+"""
+1) Synopsis:
+Hello World! Welcome to the KITPlot script. This script was created by Daniel Schell (daniel.schell@kit.edu) and Marius Metzler (marius.metzler@kit.edu). This script is about creating distinctive, well-arranged plots especially for bachelor/master students at IEKP, who find common, commercially availible plotting software as lame and unconvinient as we do. The greatest benifit of KITPlot is that it is able to directly communicate with the IEKP database. It also automatizes standard operations and procedures as well as making plots easily editable and reproducible via distinctive config files.
+
+2) Structure:
+The script consists of 4 modules:
+    a) The KITData module determines the input type of the data you want to plot. It accepts: 
+        - single .txt file that contains a data table (x-value, y-value, x-error, y-error seperated by tabs or spaces) 
+        - folder that houses several .txt files
+        - single ID ('probe ID' for probe station measurements, 'Run' for alibava measurements)
+        - single .txt file that contains a list of IDs
+
+        KITData then creates a KITData object for every graph, which contains the data table and provides convenient methods for handling all sensor parameters.
+
+    b) The KITPlot module handles the conversion of a given input type into ROOT objects via pyROOT. It then handles all the plotting and drawing by using parameters from
+        a .cfg file. Eventually, the output contains:
+        - 2 plot graphics (.png and .pdf file) that will be automatically stored in your output folder (will be created in your main folder if necessary)
+        - and a .cfg file that will be automatically stored in your cfg folder (will be created in your main folder if necessary)
+
+    c) The LegHandler module handles the arrangement, position and style of the legend box and its elements. It also uses a very rudimentary algorithm to search for 
+        the most convinient spot inside the canvas (one of the 4 corners), so that the legend doesn't cover any data points.
+
+    d) The ConfigHandler module writes/reads/edits a plot-specific .cfg file. Since KITPlot is console-based and has no graphical interface, the config file solution
+        makes up for it.
+
+3) Installation:
+    a) Create a main folder and give it a nice name (f.e. 'KITPlot')
+    b) Clone the KITPlot repository from 'https://github.com/SchellDa/KITPlot', put its content inside an extra folder within your main folder and name it 'modules'. If
+        you feel the need to name it otherwise you will have to append its path the sys.path list). 
+    c) Download and install python 2.7 on your system (https://www.python.org/downloads/).
+    d) The most recent version of python 2 contains 'pip', a download manager/installer for python modules, which should be used to download the following modules: 
+        'numpy', 'mysql.connector, 'ConfigParser' and 'collections' (the rest should be standard python modules... there's nothing fancy here!').
+    e) Download and build ROOT v5.34/36 on your system. When building ROOT, make sure you enable the use of pyROOT. This is easy on Linux. However, doing this on Windows 
+        or Mac is a different story... although it's generally possible to do this on every system.
+    f) For security reasons the login
+
+4) Let's get started:
+    Before creating your first plot you need to write a few lines of code for yourself. Create a 'main.py' file import KITPlot and KITData as well as sys or other modules 
+    you need. KITPlot needs at least 1 arguement to do its magic. A second argument is optional. 
+        - First argument: data input. As described earlier, this can be a path of a file, folder or a run number from the database.
+        - Second argument: cfg file. If this is not given (None), then the script will search the cfg folder for a cfg file with the same name as the input. If you want to 
+            use a cfg file from another plot then this argument should be the path of this cfg file. Bottom line: names are important! Do not try to plot two folders that 
+            happen to have the same name. The former output will be overwritten with the new plot. 
+
+    A basic example of a main file could look like this:
+
+    ####################################################
+
+    import sys
+    import numpy as np
+    import ROOT 
+    sys.path.append('modules/')
+    from KITData import KITData
+    from KITPlot import KITPlot
+
+    if len(sys.argv) > 2:
+        kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
+    else:
+        kPlot1 = KITPlot(sys.argv[1])
+
+
+    kPlot1.draw("APL")
+
+    raw_input()
+
+    ####################################################
+
+    If no errors are being raised, the plot will show up on your screen. You can now start to edit plot with the related cfg file in your cfg folder.
+
+5) cfg file:
+    Most parameters in our cfg file are self-explanatory. Some have a special syntax that needs be considered or need some explanation:
+
+    - 'Range = [200:1000]': sets axis range from 200 to 1000 units. Mind the brackets!
+    - 'Font = 62': 62 is standard arial, bulky and ideal for presentations. See ROOT documention for other options.
+    - 'Log = False': This needs to be a boolean value. Remember that having a 0 in your data table may raise errors.
+    - 'Abs = True': This needs to be a boolean value.
+    - 'Title = Voltage (V)': You can announce special characters here with an '#' like '#circ', '#sigma' or super/subscript by '_{i}' and '^{2}'.
+    - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'. Sometimes you might want to visualize that certain graphs belong together by giving them a similar 
+        color. 'off' will just alter marker color and style for every graph. By choosing 'name', all graphs that share the first 5 letters of their name will be drawn in 
+        the same color but with altering markers (f.e. sensors of the same type but from different wafers). If 'fluence' is choosen then then sensors with equal fluences 
+        will be drawn in the same color (the flunces are retreived from the database). Lastly, you can make your own 'GraphGroup' by using the original sensor order and 
+        put them into brackets like '[1,2][6][3,4,5]'.
+    - 'ColorShades = False': This needs to be a boolean value. If you use GraphGroups, you might as well want to use ColorShades. Let's say you have 3 red graphs and set 
+        this to True, then you will get 3 different kinds of red instead of one to make the graphs more distinctive and reconizable.
+    - 'Normalization = off': When ploting quantities like currents or resistances you might want to normalize them. This can be done by inserting the normalization factors 
+        (denominators) like '[7.590296,7.590296,1.277161,1.277161]' in respect of the original sensor order. In this case, every y-value of graph 1 and 2 (original sensor 
+        order) would be divided (normalized) by 7.590296.
+    - 'Position = auto': If this is set to auto then the scripts will search all 4 corners for the best spot to place the legend. You might wanna adjust this by using 'TR'
+        (top right corner), 'TL', 'BR' (bottom right corner) or 'BL'.
+    - 'BoxPara = 1': If you change the name of a legend element you might want to adjust the legend box width by changing this factor in between 0.5 and 1.5.
+    - 'SortPara = list': Pronounces the parameter that determines the order of all legend element.
+    - 'EntryList = (0)a, (1)b, (3)c, (2)d': The legend elements are naturally ordered by ROOT. This original order (here: a = 0, b = 1, c = 2, d = 3) can be edited by 
+        changing the number in the brackets. However, other options will always refere to the original order. 
+
+"""
+
 class KITPlot(object):
 
     __kitGreen = []
@@ -915,6 +1011,7 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
+#                self.__graphs[self.changeOrder(i)].SetLineStyle(7)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
@@ -933,7 +1030,7 @@ class KITPlot(object):
             self.getGroupList()
             colorcount = 0
             shadecount = 0
-            print self.GroupList
+
             if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
                 sys.exit("Insufficient UserGroup. Numbers do not match!")
             else:
@@ -946,11 +1043,13 @@ class KITPlot(object):
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
+#                        self.__graphs[elem].SetLineStyle(7)
                         shadecount += 1
                 elif self.__cfg.get('Misc','ColorShades') == "False":
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
+#                        self.__graphs[elem].SetLineStyle(7)
                 else:
                     pass
         else:
@@ -1056,6 +1155,7 @@ class KITPlot(object):
     def __initColor(self):
     
         self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+#        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))

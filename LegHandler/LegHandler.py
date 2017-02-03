@@ -26,7 +26,7 @@ class LegHandler(object):
 
     def textSize(self, TextSize):
         
-        if 0.02 <= float(TextSize) <= 0.03:
+        if 0.02 <= float(TextSize) <= 0.05:
             self.legend.SetTextSize(float(TextSize))
         else:
             sys.exit("Invalid legend text size! Need value between 0.02 and 0.03!")
@@ -245,6 +245,7 @@ class LegHandler(object):
                     pass
         else:
             pass
+
         return True
 
     def getUserNames(self, dic):
