@@ -7,6 +7,44 @@ import KITData
 from ConfigHandler import ConfigHandler
 from LegHandler import LegHandler
 
+"""
+1) Synopsis:
+Hello World! Welcome to the KITPlot script. This script was created by Daniel Schell (daniel.schell@kit.edu) and Marius Metzler (marius.metzler@kit.edu). This script is about creating distinctive, well-arranged plots especially for bachelor/master students at IEKP, who find common, commercially availible plotting software as lame and unconvinient as we do. The greatest benifit of KITPlot is that it is able to directly communicate with the IEKP database. It also automatizes standard operations and procedures as well as making plots easily editable and reproducible via distinctive config files.
+
+2) Structure:
+The script consists of 4 modules:
+    a) The KITData module determines the input type of the data you want to plot. It accepts: 
+        - single .txt file that contains a data table (x-value, y-value, x-error, y-error seperated by tabs or spaces) 
+        - folder that houses several .txt files
+        - single ID ('probe ID' for probe station measurements, 'Run' for alibava measurements)
+        - single .txt file that contains a list of IDs
+
+        KITData then creates a KITData object for every graph, which contains the data table and provides convenient methods for handling all sensor parameters.
+
+    b) The KITPlot module handles the conversion of a given input type into ROOT objects via pyROOT. It then handles all the plotting and drawing by using parameters from
+        a .cfg file. Eventually, the output contains:
+        - 2 plot graphics (.png and .pdf file) that will be automatically stored in your output folder (will be created in your main folder if necessary)
+        - and a .cfg file that will be automatically stored in your cfg folder (will be created in your main folder if necessary)
+
+    c) The LegHandler module handles the arrangement, position and style of the legend box and its elements. It also uses a very rudimentary algorithm to search for 
+        the most convinient spot inside the canvas (one of the 4 corners), so that the legend doesn't cover any data points.
+
+    d) The ConfigHandler module writes/reads/edits a plot-specific .cfg file. Since KITPlot is console-based and has no graphical interface, the config file solution
+        makes up for it.
+
+2) Installation:
+    a) Create a main folder and give it a nice name (f.e. 'KITPlot')
+    b) Clone the KITPlot repository from 'https://github.com/SchellDa/KITPlot', put its content inside an extra folder within your main folder and name it 'modules'. If
+        you feel the need to name it otherwise you will have to append its path the sys.path list). 
+    c) Download and install python 2.7 on your system (https://www.python.org/downloads/).
+    d) The most recent version contains 'pip', a download manager/installer for python modules, which should be used to download the following modules: 'numpy', 
+        'mysql.connector, 'ConfigParser' and 'collections' (the rest should be standard python modules... there's nothing fancy here!').
+    e) Download and build ROOT v5.34/36 on your system. When building ROOT, make sure you enable the use of pyROOT. This is easy on Linux. However, doing this on Windows 
+        is a different story...
+
+
+"""
+
 class KITPlot(object):
 
     __kitGreen = []
@@ -255,7 +293,7 @@ class KITPlot(object):
         ROOT.gStyle.SetMarkerSize(float(self.__cfg.get('Marker','Size')))
         ROOT.gStyle.SetMarkerStyle(int(self.__cfg.get('Marker','Style')))
         ROOT.gStyle.SetMarkerColor(int(self.__cfg.get('Marker','Color')))
-        self.LineWidth = 3
+        self.LineWidth = 2
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
@@ -915,7 +953,7 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
-                self.__graphs[self.changeOrder(i)].SetLineStyle(7)
+#                self.__graphs[self.changeOrder(i)].SetLineStyle(7)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
@@ -947,13 +985,13 @@ class KITPlot(object):
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
-                        self.__graphs[elem].SetLineStyle(7)
+#                        self.__graphs[elem].SetLineStyle(7)
                         shadecount += 1
                 elif self.__cfg.get('Misc','ColorShades') == "False":
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
-                        self.__graphs[elem].SetLineStyle(7)
+#                        self.__graphs[elem].SetLineStyle(7)
                 else:
                     pass
         else:
@@ -1058,8 +1096,8 @@ class KITPlot(object):
 
     def __initColor(self):
     
-#        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
-        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+#        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
