@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os,sys
 import numpy as np
 import mysql.connector
@@ -15,7 +17,8 @@ class KITData(object):
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, input=None, measurement="probe", misc=None, db=None, show_input=None):
+    def __init__(self, dataInput=None, measurement="probe", misc=None,
+                 db=None, show_input=None):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
@@ -44,10 +47,10 @@ class KITData(object):
         self.__seederr = None
         self.__dbPath = db
 
-        if input is None:
+        if dataInput is None:
             return False
 
-        elif isinstance(input, int):
+        elif isinstance(dataInput, int):
             self.__id = input
 
             if KITData.__dbCrs is None:
@@ -57,19 +60,19 @@ class KITData(object):
 
             if measurement == "alibava":
                 if show_input is not "False":
-                    print "Input: ALiBaVa run number"
-                    self.__allo_db_alibava(input)
+                    print("Input: ALiBaVa run number")
+                    self.__allo_db_alibava(dataInput)
                 else:
-                    self.__allo_db_alibava(input)
+                    self.__allo_db_alibava(dataInput)
             elif measurement == "probe":
                 if show_input is not "False":
-                    print "Input: PID"
-                    self.__allo_db(input)
+                    print("Input: PID")
+                    self.__allo_db(dataInput)
                 else:
-                    self.__allo_db(input)
+                    self.__allo_db(dataInput)
 
-        elif isinstance(input, str) and input.isdigit():
-            self.__id = input
+        elif isinstance(dataInput, str) and dataInput.isdigit():
+            self.__id = dataInput
 
             if KITData.__dbCrs is None:
                 self.__init_db_connection() 
@@ -77,17 +80,17 @@ class KITData(object):
                 pass
 
             if measurement == "alibava":
-                print "Input: ALiBaVa run number"
-                self.__allo_db_alibava(input)
+                print("Input: ALiBaVa run number")
+                self.__allo_db_alibava(dataInput)
             elif measurement == "probe":
-                print "Input: PID"
-                self.__allo_db(input)
+                print("Input: PID")
+                self.__allo_db(dataInput)
 
-        elif isinstance(input, str) and os.path.isfile(input):
+        elif isinstance(dataInput, str) and os.path.isfile(dataInput):
 
-            print "Input: File: " + input
+            print("Input: File: " + dataInput)
 
-            with open(input, 'r') as inputFile:
+            with open(dataInput, 'r') as inputFile:
                 for line in inputFile:
                     splited = line.split();
                     self.__x.append(float(splited[0]))
@@ -103,10 +106,11 @@ class KITData(object):
                         self.__dx.append(float(splited[3]))
                         self.__dy.append(float(splited[4]))
                         self.__dz.append(float(splited[5]))
-                    elif len(splited) > 6 and "REdge" in input:
+                    elif len(splited) > 6 and "REdge" in dataInput:
                         self.__z.append(float(splited[2]))
                     elif len(splited) > 6 :
-                        sys.exit("Cannot handle length of data set. Length: %s" %len(splited))
+                        sys.exit("Cannot handle length of data set. Length: %s"
+                                 %len(splited))
                     else:
                         pass
                 
@@ -135,10 +139,10 @@ class KITData(object):
 
                     self.DataDic = collections.OrderedDict(sorted(dic.items()))
 
-                self.__name = os.path.basename(input).split(".")[0]
-                for char in os.path.basename(input):
+                self.__name = os.path.basename(dataInput).split(".")[0]
+                for char in os.path.basename(dataInput):
                     if char == "-":
-                        self.__name = os.path.basename(input).split("-")[0]
+                        self.__name = os.path.basename(dataInput).split("-")[0]
                     else:
                         pass
 
@@ -148,31 +152,34 @@ class KITData(object):
         #    print "Input: Folder"
         #    self.__init_db_connection() # Establish database connection
 
-        elif isinstance(input,list) and all(isinstance(i, KITData) for i in input):
+        elif isinstance(dataInput,list) and all(isinstance(i, KITData)
+                                                for i in dataIinput):
 
-            self.__px = input[0].getParaX()
-            self.__py = input[0].getParaY()
-            self.__pz = input[0].getParaZ()
-            self.__name = input[0].getName()
-            self.__Fp = input[0].getFluenceP()
+            self.__px = dataInput[0].getParaX()
+            self.__py = dataInput[0].getParaY()
+            self.__pz = dataInput[0].getParaZ()
+            self.__name = dataInput[0].getName()
+            self.__Fp = dataInput[0].getFluenceP()
 
-            for kitFile in input:
+            for kitFile in dataInput:
                 self.__x.append(kitFile.getX()[0])
                 self.__y.append(kitFile.getY()[0])
                 self.__z.append(kitFile.getZ()[0])
                 self.__dy.append(kitFile.getdY()[0])
                 
         # Rpunch
-        elif isinstance(input, list) and isinstance(measurement, list) and isinstance(misc, str) and len(input) == len(measurement):
+        elif (isinstance(dataInput, list) and isinstance(measurement, list)
+              and isinstance(misc, str) and len(dataInput) == len(measurement)):
 
-                self.__x = input                # x
+                self.__x = dataInput                # x
                 self.__y = measurement          # y
                 self.__name = misc + " V"       # bias labels
                 self.__px = "Voltage"
                 self.__py = "Rpunch"
 
         else:
-            raise OSError("Input could not be identified (Input: %s)" %(input))
+            raise OSError("Input could not be identified (Input: %s)"
+                          %(dataInput))
 
     def getDic(self):
         return self.DataDic
@@ -209,20 +216,23 @@ class KITData(object):
                         db_config[item[0]] = item[1]
 
                 else:
-                    raise Exception('{0} not found in the {1} file'.format(section, filename))
+                    raise Exception('{0} not found in the {1} file'
+                                    .format(section, filename))
 
                 KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
 
                 if KITData.__dbCnx.is_connected():
-                    print "Database connection established"
+                    print("Database connection established")
                 else:
-                    sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
+                    sys.exit("Connection failed! Did you changed "
+                             "the database parameters in 'db.cfg'? ")
                 
                 KITData.__dbCrs = KITData.__dbCnx.cursor()
         
             except:
                 self.__createCfg()        
-                raise ValueError("Please add correct database parameters to 'db.cfg' ")
+                raise ValueError("Please add correct database parameters"
+                                 "to 'db.cfg' ")
 
         else:
             try:
@@ -235,14 +245,16 @@ class KITData(object):
                     for item in cnxConf.items(section):
                         db_config[item[0]] = item[1]
                 else:
-                    raise Exception('{0} not found in the {1} file'.format(section, self.__dbPath + filename))
+                    raise Exception('{0} not found in the {1} file'
+                                    .format(section, self.__dbPath + filename))
     
                 KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
 
                 if KITData.__dbCnx.is_connected():
-                    print "Database connection established"
+                    print("Database connection established")
                 else:
-                    sys.exit("Connection failed! Did you changed the database parameters in 'db.cfg'? ")
+                    sys.exit("Connection failed! Did you changed the "
+                             "database parameters in 'db.cfg'? ")
                 
                 KITData.__dbCrs = KITData.__dbCnx.cursor()
         
@@ -305,8 +317,10 @@ class KITData(object):
         qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
         KITData.__dbCrs.execute(qryProbe)
 
-        for (pid, sid, pX, pY, pZ, date, op, t, h, stat, f, com, flag, cernt, guard, aLCR, 
+        for (pid, sid, pX, pY, pZ, date, op, t, h,
+             stat, f, com, flag, cernt, guard, aLCR,
              mLCR, n, start, stop, bias, vdep, fmode) in KITData.__dbCrs:
+
             self.__px = pX
             self.__py = pY
             self.__t0 = t
@@ -315,8 +329,10 @@ class KITData(object):
             
         qrySensorName = ("SELECT * FROM info WHERE id=%s" %(name))
         KITData.__dbCrs.execute(qrySensorName)
-        for (sid,name,project,man,cls,stype,spec,thick,width,length,strips,
-             pitch,coupling,date,op,inst,stat,bname,Fp,Fn,par,defect) in KITData.__dbCrs:
+        for (sid,name,project,man,cls,stype,spec,
+             thick,width,length,strips,pitch,coupling,
+             date,op,inst,stat,bname,Fp,Fn,par,defect) in KITData.__dbCrs:
+
             self.__name = name
             self.__Fp = Fp
 
@@ -331,10 +347,13 @@ class KITData(object):
         tmpDate = None
         annealing = 0
         
-        qryRunData = ("SELECT voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date FROM alibava WHERE run=%s" %(run))
+        qryRunData = ("SELECT voltage, current, gain, electron_sig, " 
+                      "signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date "
+                      "FROM alibava WHERE run=%s" %(run))
         KITData.__dbCrs.execute(qryRunData)
 
-        for (voltage, current, gain, electron_sig, signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
+        for (voltage, current, gain, electron_sig, signal_e_err,
+             SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
             self.__x.append(voltage)
             self.__y.append(electron_sig)
             self.__dy.append(signal_e_err)
@@ -346,7 +365,10 @@ class KITData(object):
             tmpDate = date
 
 
-        qryAnnealing = ("SELECT date,equiv FROM annealing WHERE id=%s and TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
+        qryAnnealing = ("SELECT date,equiv FROM annealing "
+                        "WHERE id=%s and "
+                        "TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
+
         try:
             KITData.__dbCrs.execute(qryAnnealing)
         except mysql.connector.errors.ProgrammingError:
@@ -356,7 +378,9 @@ class KITData(object):
             annealing += equiv
         self.__z.append(annealing)
 
-        qrySensorName = ("SELECT name, F_p_aim_n_cm2 FROM info WHERE id=%s" %(tmpID))
+        qrySensorName = ("SELECT name, F_p_aim_n_cm2 "
+                         "FROM info WHERE id=%s" %(tmpID))
+        
         KITData.__dbCrs.execute(qrySensorName)
 
         for (name, Fp) in KITData.__dbCrs:
@@ -505,7 +529,7 @@ class KITData(object):
                 self.__x = inputArray
                 return True
             except:
-                print "Cannot set x: wrong format"
+                print("Cannot set x: wrong format")
                 return False
     
     def setY(self, inputArray=None):
@@ -524,7 +548,7 @@ class KITData(object):
                 self.__y = inputArray
                 return True
             except:
-                print "Cannot set y: wrong format"
+                print("Cannot set y: wrong format")
                 return False
 
     def setZ(self, inputArray=None):
@@ -544,7 +568,7 @@ class KITData(object):
                 self.__z = inputArray
                 return True
             except:
-                print "Cannot set z: wrong format"
+                print("Cannot set z: wrong format")
                 return False
     
     def setData(self, **kwargs):
@@ -631,7 +655,8 @@ class KITData(object):
         """Returns x dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of x dataset
@@ -647,7 +672,8 @@ class KITData(object):
         """Returns y dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of y dataset
@@ -663,7 +689,8 @@ class KITData(object):
         """Returns z dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of z dataset
@@ -679,7 +706,8 @@ class KITData(object):
         """Returns dx dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -691,7 +719,8 @@ class KITData(object):
         """Returns dx dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -703,7 +732,8 @@ class KITData(object):
         """Returns dx dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -716,7 +746,8 @@ class KITData(object):
         """Returns dx dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -732,7 +763,8 @@ class KITData(object):
         """Returns dy dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -748,7 +780,8 @@ class KITData(object):
         """Returns dz dataset as list or array
         
         Args:
-            asarray (True|False): dataset will be returned as array(True) or list(false)
+            asarray (True|False): dataset will be returned as 
+                array(True) or list(false)
 
         Returns:
             list or array of dy dataset
@@ -862,3 +895,7 @@ class KITData(object):
     def getScaleY(self):
 
         return 0, 1.3*max(__y)
+
+if __name__ == '__main__':
+    print("Done")
+    
