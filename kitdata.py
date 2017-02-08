@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import os,sys
+print(sys.path)
 import numpy as np
 import mysql.connector
-import ConfigParser
+from . import ConfigHandler
 import collections
 import datetime
 
@@ -12,13 +13,13 @@ class KITData(object):
     to connect to the IEKP database to read and store all relevant data
     into private member variables. 
 
-    """
-
+    """        
+    
     __dbCnx = None
     __dbCrs = None
 
     def __init__(self, dataInput=None, measurement="probe", misc=None,
-                 db=None, show_input=None):
+                 db=None):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
@@ -26,66 +27,58 @@ class KITData(object):
             information automatically
 
         """
+        self.__id = None        
+        self.__name = None
+
         self.__x = []
-        self.__dx = []
         self.__y = []
-        self.__dy = []
         self.__z = []
+
+        self.__dx = []
+        self.__dy = []
         self.__dz = []
+
         self.__temp = []
         self.__humid = []
-        self.__name = None
-        self.__id = None        
+        
         self.__px = None
         self.__py = None
         self.__pz = None
+
         self.__t0 = None
         self.__h0 = None
-        self.DataDic = None
+
+        self.__RPunchDict = None
+        self.__dbPath = db
+        
+        # ALiBaVa specific
         self.__gain = None
         self.__seed = None
         self.__seederr = None
-        self.__dbPath = db
-
+        
+        # Empty object
         if dataInput is None:
             return False
 
-        elif isinstance(dataInput, int):
-            self.__id = input
-
-            if KITData.__dbCrs is None:
-                self.__init_db_connection() # Establish database connection
-            else:
-                pass
-
-            if measurement == "alibava":
-                if show_input is not "False":
-                    print("Input: ALiBaVa run number")
-                    self.__allo_db_alibava(dataInput)
-                else:
-                    self.__allo_db_alibava(dataInput)
-            elif measurement == "probe":
-                if show_input is not "False":
-                    print("Input: PID")
-                    self.__allo_db(dataInput)
-                else:
-                    self.__allo_db(dataInput)
-
-        elif isinstance(dataInput, str) and dataInput.isdigit():
+        # A single PID for either a probe station or ALiBaVa measurement
+        # Sometimes integers are interpreted as strings, therefore
+        # isdigit() is called to check for missinterpreted integers
+        elif isinstance(dataInput, int) or dataInput.isdigit():
             self.__id = dataInput
 
+            # Establish database connection if its no already established
             if KITData.__dbCrs is None:
                 self.__init_db_connection() 
-            else:
-                pass
 
-            if measurement == "alibava":
-                print("Input: ALiBaVa run number")
+            # Distinguish between probe station and ALiBaVa ID
+            if measurement is "alibava":
+                print("Input: ALiBaVa run")
                 self.__allo_db_alibava(dataInput)
-            elif measurement == "probe":
-                print("Input: PID")
+            elif measurement is "probe":
+                print("Input: Probe station PID")
                 self.__allo_db(dataInput)
 
+        # Check if dataInput is a file
         elif isinstance(dataInput, str) and os.path.isfile(dataInput):
 
             print("Input: File: " + dataInput)
@@ -93,67 +86,62 @@ class KITData(object):
             with open(dataInput, 'r') as inputFile:
                 for line in inputFile:
                     splited = line.split();
+
+                    # First two columns are always interpreted as x and y
                     self.__x.append(float(splited[0]))
                     self.__y.append(float(splited[1]))
 
+                    # Three columns are seen as x,y,z
                     if len(splited) == 3:
                         self.__z.append(float(splited[2]))
+                    # Four columns represent x,y and their errors dx,dy
                     elif len(splited) == 4:
                         self.__dx.append(float(splited[2]))
                         self.__dy.append(float(splited[3]))
+                    # Six column are seen as x,y,z and their errors dx,dy,dz
                     elif len(splited) == 6:
                         self.__z.append(float(splited[2]))
                         self.__dx.append(float(splited[3]))
                         self.__dy.append(float(splited[4]))
                         self.__dz.append(float(splited[5]))
+                    # DEBRICATED Rpunch measurement from file
                     elif len(splited) > 6 and "REdge" in dataInput:
                         self.__z.append(float(splited[2]))
-                    elif len(splited) > 6 :
-                        sys.exit("Cannot handle length of data set. Length: %s"
-                                 %len(splited))
-                    else:
-                        pass
-                
-                # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
-                if self.checkRpunch(self.__x) == True:
-                    dic = {}
 
-                    sec = float(0.0)
+                # DEBRICATED Reorder variables if file
+                # contains a RPunch measurement
+                if self.__checkRpunch(self.__x):
+
+                    dic = {}
+                    sec = self.__x[0]
                     ix = []
                     iy = []
-                    for i, valX in enumerate(self.__x):
-                        if i == 0:
-                            sec = self.__x[0]
-                            ix.append(self.__y[0])
-                            iy.append(self.__z[0])
-                        elif sec == valX: 
-                            ix.append(self.__y[i])
-                            iy.append(self.__z[i])
+                    
+                    # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
+                    for (valX, valY, valZ) in zip(self.__x, self.__y, self.__z):
+                        if sec == valX: 
+                            ix.append(valY)
+                            iy.append(valZ)
                         else:
                             dic[sec] = zip(ix,iy)
                             sec = valX
-                            ix = [self.__y[i]]
-                            iy = [self.__z[i]]
+                            ix = [valY]
+                            iy = [valZ]
 
                     dic[sec] = zip(ix,iy)
 
-                    self.DataDic = collections.OrderedDict(sorted(dic.items()))
+                    self.__RPunchDict = collections.OrderedDict(sorted(dic
+                                                                      .items()))
 
                 self.__name = os.path.basename(dataInput).split(".")[0]
                 for char in os.path.basename(dataInput):
                     if char == "-":
                         self.__name = os.path.basename(dataInput).split("-")[0]
-                    else:
-                        pass
 
-        #  elif isinstance(input, file): 
-
-        #elif self.__check_if_folder_pid(input):
-        #    print "Input: Folder"
-        #    self.__init_db_connection() # Establish database connection
-
+        # Data input contains list of KITData objects
+        # TODO 
         elif isinstance(dataInput,list) and all(isinstance(i, KITData)
-                                                for i in dataIinput):
+                                                for i in dataInput):
 
             self.__px = dataInput[0].getParaX()
             self.__py = dataInput[0].getParaY()
@@ -171,9 +159,9 @@ class KITData(object):
         elif (isinstance(dataInput, list) and isinstance(measurement, list)
               and isinstance(misc, str) and len(dataInput) == len(measurement)):
 
-                self.__x = dataInput                # x
-                self.__y = measurement          # y
-                self.__name = misc + " V"       # bias labels
+                self.__x = dataInput            
+                self.__y = measurement          
+                self.__name = misc + " V" # bias labels
                 self.__px = "Voltage"
                 self.__py = "Rpunch"
 
@@ -181,19 +169,18 @@ class KITData(object):
             raise OSError("Input could not be identified (Input: %s)"
                           %(dataInput))
 
-    def getDic(self):
-        return self.DataDic
+    def getRPunchDict(self):
+        return self.__RPunchDict
 
-    def checkRpunch(self, List):
+    def __checkRpunch(self, List):
 
         for val in List:
             if List.count(val) > 2:
                 return True
             else:
-                pass
-        return False
+                return False
 
-    def __init_db_connection(self, filename='db.cfg', section='database'):
+    def __init_db_connection(self, credentials='db.cfg', section='database'):
         """Initialize db_connection and set static connection and curser
         
         Args:
@@ -204,20 +191,21 @@ class KITData(object):
 
         if self.__dbPath is None:
             try:
-                cnxConf = ConfigParser.ConfigParser()
-
-                cnxConf.read(filename)
+                cnxConf = ConfigHandler.ConfigHandler()
+                
+                cnxConf.load(credentials)
 
                 db_config = {}
         
-                if cnxConf.has_section(section):
+                #if cnxConf.has_section(section):
 
-                    for item in cnxConf.items(section):
-                        db_config[item[0]] = item[1]
+                for item in cnxConf.items(section):
+                    print(item)
+                    db_config[item[0]] = item[1]
 
-                else:
-                    raise Exception('{0} not found in the {1} file'
-                                    .format(section, filename))
+                #else:
+                #    raise Exception('{0} not found in the {1} file'
+                #                    .format(section, filename))
 
                 KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
 
@@ -268,13 +256,23 @@ class KITData(object):
 
         """
         
-        with open('db.cfg','w') as cfg:
-            cfg.write("[database]\n")
-            cfg.write("hostname=\n")
-            cfg.write("database=\n")
-            cfg.write("user=\n")
-            cfg.write("passwd=")
+        #with open('db.cfg','w') as cfg:
+        #    cfg.write("[database]\n")
+        #    cfg.write("hostname=\n")
+        #    cfg.write("database=\n")
+        #    cfg.write("user=\n")
+        #    cfg.write("passwd=")
 
+        dic = { "database":
+                {
+                    "hostname": "",
+                    "database": "",
+                    "user": "",
+                    "passwd": ""}}
+        
+        cfg = ConfigHandler()
+        cfg.setDict(dic)
+        cfg.write("db.cfg")
 
     def __check_if_folder_pid(self, fileName):
         """Check if file contains PIDs or datasets
@@ -896,6 +894,7 @@ class KITData(object):
 
         return 0, 1.3*max(__y)
 
-if __name__ == '__main__':
-    print("Done")
+def test():
+    data = KITData(38268)
+    print(data.getX())
     

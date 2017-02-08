@@ -9,3 +9,4 @@ main.py
 resistivity.py
 *.txt
 analysis/
+__pycache__
