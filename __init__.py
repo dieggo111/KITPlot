@@ -4,6 +4,6 @@ BENIS
 
 """
 
-from .ConfigHandler import ConfigHandler
-from .kitplot import KITPlot
+from .ConfigHandler.confighandler import ConfigHandler
 from .kitdata import KITData
+from .kitplot import KITPlot

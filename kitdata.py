@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
 import os,sys
-print(sys.path)
 import numpy as np
 import mysql.connector
-from . import ConfigHandler
+from .ConfigHandler import ConfigHandler
 import collections
 import datetime
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
-    to connect to the IEKP database to read and store all relevant data
-    into private member variables. 
+    to connect to the IEKP database in order to read and store all relevant 
+    data into private member variables. 
 
     """        
     
@@ -19,13 +18,18 @@ class KITData(object):
     __dbCrs = None
 
     def __init__(self, dataInput=None, measurement="probe", misc=None,
-                 db=None):
+                 credentials='db.cfg'):
         """ Initialize KITData object based on the input that is passed.
         
         Args:
-            input (None|pid|file): Only pid inputs will fill all additional 
-            information automatically
-
+            dataInput (None|pid|file): Only pid inputs will fill all additional 
+                information automatically
+            measurement (probe|alibava): Specify if PID belongs to a probe 
+                station or alibava measurement
+            credentials (str): Specify the credentials file for the database if 
+                the file is not located in the current working directory
+            misc : IDK... ask Marius
+        
         """
         self.__id = None        
         self.__name = None
@@ -49,7 +53,7 @@ class KITData(object):
         self.__h0 = None
 
         self.__RPunchDict = None
-        self.__dbPath = db
+        self.__credentials = credentials
         
         # ALiBaVa specific
         self.__gain = None
@@ -189,83 +193,38 @@ class KITData(object):
 
         """
 
-        if self.__dbPath is None:
-            try:
-                cnxConf = ConfigHandler.ConfigHandler()
-                
-                cnxConf.load(credentials)
+     
+        try:
+            cnxConf = ConfigHandler()
 
-                db_config = {}
-        
-                #if cnxConf.has_section(section):
+            cnxConf.load(credentials)                                    
+            db_config = cnxConf[section]
 
-                for item in cnxConf.items(section):
-                    print(item)
-                    db_config[item[0]] = item[1]
+            KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
 
-                #else:
-                #    raise Exception('{0} not found in the {1} file'
-                #                    .format(section, filename))
+            if KITData.__dbCnx.is_connected():
+                print("Database connection established")
+            else:
+                sys.exit("Connection failed! Did you changed "
+                         "the database parameters in 'db.cfg'? ")
 
-                KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
+            KITData.__dbCrs = KITData.__dbCnx.cursor()
 
-                if KITData.__dbCnx.is_connected():
-                    print("Database connection established")
-                else:
-                    sys.exit("Connection failed! Did you changed "
-                             "the database parameters in 'db.cfg'? ")
-                
-                KITData.__dbCrs = KITData.__dbCnx.cursor()
-        
-            except:
-                self.__createCfg()        
-                raise ValueError("Please add correct database parameters"
-                                 "to 'db.cfg' ")
-
-        else:
-            try:
-                cnxConf = ConfigParser.ConfigParser()
-                cnxConf.read(self.__dbPath + filename)
-            
-                db_config = {}
-        
-                if cnxConf.has_section(section):
-                    for item in cnxConf.items(section):
-                        db_config[item[0]] = item[1]
-                else:
-                    raise Exception('{0} not found in the {1} file'
-                                    .format(section, self.__dbPath + filename))
-    
-                KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
-
-                if KITData.__dbCnx.is_connected():
-                    print("Database connection established")
-                else:
-                    sys.exit("Connection failed! Did you changed the "
-                             "database parameters in 'db.cfg'? ")
-                
-                KITData.__dbCrs = KITData.__dbCnx.cursor()
-        
-            except:
-                raise ValueError("Can't find 'db.cfg' in '%s'" %self.__dbPath) 
-
+        except:
+            self.__createCfg()        
+            raise ValueError("No credentials file found."
+                             "Please add correct database parameters"
+                             "to 'db.cfg'")
 
        
     def __createCfg(self):
         """Create empty config file dummy that has to be filled
 
         """
-        
-        #with open('db.cfg','w') as cfg:
-        #    cfg.write("[database]\n")
-        #    cfg.write("hostname=\n")
-        #    cfg.write("database=\n")
-        #    cfg.write("user=\n")
-        #    cfg.write("passwd=")
 
         dic = { "database":
                 {
-                    "hostname": "",
+                    "host": "",
                     "database": "",
                     "user": "",
                     "passwd": ""}}
@@ -273,7 +232,7 @@ class KITData(object):
         cfg = ConfigHandler()
         cfg.setDict(dic)
         cfg.write("db.cfg")
-
+        
     def __check_if_folder_pid(self, fileName):
         """Check if file contains PIDs or datasets
         
@@ -385,6 +344,7 @@ class KITData(object):
             self.__name = name
             self.__Fp = Fp
 
+            
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow
 
@@ -894,7 +854,9 @@ class KITData(object):
 
         return 0, 1.3*max(__y)
 
-def test():
+    
+if __name__ == '__main__':
+    
     data = KITData(38268)
     print(data.getX())
     

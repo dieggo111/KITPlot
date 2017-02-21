@@ -1,3 +1,4 @@
+import os
 import json
 
 class ConfigHandler(object):
@@ -20,12 +21,17 @@ class ConfigHandler(object):
 
         """
         self.__dir = ""
+        self.name = cfg
         if cfg is not None:
             self.__cfg = self.__load(cfg)
         
     def __load(self,cfg='default.cfg'):
-        with open(self.__dir+cfg) as cfgFile:
-            return json.load(cfgFile)
+        try:
+            with open(self.__dir+str(cfg)) as cfgFile:
+                return json.load(cfgFile)
+        except:
+            raise OSError("No file found")
+            
 
     def get(self,sec=None,par=None):      
         """ Get the value of (par)ameter in the given (sec)tion
@@ -50,6 +56,7 @@ class ConfigHandler(object):
                 return self.__cfg[sec][par]
             except:
                 raise IOError("Section and/or parameter not found")
+
             
     def setDir(self,directory='cfg/'):
         """ Set the working directory
@@ -80,23 +87,49 @@ class ConfigHandler(object):
         """
         self.__setInDict(self.__cfg,mapList,value)
         
-    # Get a given data from a dictionary with position provided as a list
+    # Get data from a dictionary with position provided as a list
     def __getFromDict(self, dataDict, mapList):    
         for k in mapList: dataDict = dataDict[k]
         return dataDict
     
-    # Set a given data in a dictionary with position provided as a list
+    # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value): 
         for k in mapList[:-1]: dataDict = dataDict[k]
         dataDict[mapList[-1]] = value
 
     def write(self, cfg='default.cfg'):
-        with open(self.__dir + cfg,'w') as cfgFile:
-            json.dump(self.__cfg, cfgFile, indent=4, sort_keys=True)
+        with open(self.__dir + str(cfg),'w') as cfgFile:
+            json.dump(self.__cfg, cfgFile, indent=4, sort_keys=False)
 
     def setDict(self, dictionary):
         self.__cfg = dictionary 
-            
+        
+    def __getitem__(self,keys):
+        try:
+            return self.__cfg[keys]   
+        except(KeyError):
+            raise KeyError("Key not found")
+
+        try:
+            return __getFormDict(self.__cfg,keys)
+        except:
+            raise KeyError("Key not found")
+        
+    # Old API
+        
+    def init(self, dictionary):
+        self.setDict(dictionary)
+
+    def getCfgName(self, name='default'):
+        if os.path.isdir(name):
+            return os.path.normpath(name).split("/")[-1] + ".cfg"
+        else:
+            return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
+        
+    def setParameter(self, cfg, sec, key, val):
+        self.__cfg[sec][key] = val
+        self.write(cfg)
+        
 if __name__ == '__main__':
 
     
@@ -109,5 +142,4 @@ if __name__ == '__main__':
     cfg = ConfigHandler()
     cfg.setDict(testDict)
     cfg.write()
-                     
                  

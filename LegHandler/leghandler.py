@@ -1,7 +1,6 @@
 import os,sys
 import ROOT
-sys.path.append('modules/LegHandler/')
-import KITData 
+from ..kitdata import KITData
 
 class LegHandler(object):
 
@@ -147,7 +146,7 @@ class LegHandler(object):
             LegendParas.append(Oymin)
             LegendParas.append(Oxmax) 
             LegendParas.append(Oymax)
-            print "Couldn't find sufficient space for legend!"
+            print("Couldn't find sufficient space for legend!")
 
         return LegendParas
 
