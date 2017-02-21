@@ -21,6 +21,7 @@ class LegHandler(object):
         else:
             self.textSize(0.02)
             self.legend.SetFillColor(0)
+
         return True
 
 
@@ -37,12 +38,14 @@ class LegHandler(object):
     def fillLegend(self, graphList, nameList=None):
 
         for i,graph in enumerate(graphList):
+            
             if nameList == None:
                 self.legend.AddEntry(graphList[i], "graph " + str(i), "p")
             elif nameList is not None and type(nameList) == list and type(nameList[0]) == str:
                 self.legend.AddEntry(graphList[i], nameList[i], "p")
             else:
                 sys.exit("Unexpected name list content. Expected 'str' or 'KITData.KITData'!")
+
         return True
 
 
@@ -63,6 +66,10 @@ class LegHandler(object):
                     self.legend.AddEntry(graphList[self.changeOrder(i)], self.UserNames[self.changeOrder(i)], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
+        
+#        self.legend.SetHeader("f1")
+
+        return True
 
 
     def setLegendParameters(self, dic, fileList, Scale):
@@ -207,7 +214,9 @@ class LegHandler(object):
             self.legend.SetFillColor(val)
         else:
             sys.exit("Unexpected parameter type for legend fill color! Try 'int'!")
+
         return True
+
 
     def changeOrder(self, counter):
 
@@ -221,45 +230,97 @@ class LegHandler(object):
                     pass
         return 0
 
+
     def getUserOrder(self, dic):
+        """ Method extracts user-defined entry order form cfg file. The entries must
+        be again extracted from a single string. They are usually seprated by an ','
+        but can also be seperated by an ';', in case the user wants to use ',' in his entries.
+
+        """
 
         self.UserOrder = []
-        List = dic['EntryList'].split(",")
+        if ";" in dic['EntryList']:
+            List = dic['EntryList'].split(";")
         
-        if dic['EntryList'] != "":
-            for Name in List:
-                if Name.replace(" ","")[1].isdigit() == False:
-                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-                else:
-                    if Name.replace(" ","")[2] == ")":
-                        self.UserOrder.append(int(Name.replace(" ","")[1]))
-                    elif Name.replace(" ","")[2].isdigit() == True:
-                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
-                    else:
+            if dic['EntryList'] != "":
+                for Name in List:
+                    if Name.replace(" ","")[1].isdigit() == False:
                         sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                    else:
+                        if Name.replace(" ","")[2] == ")":
+                            self.UserOrder.append(int(Name.replace(" ","")[1]))
+                        elif Name.replace(" ","")[2].isdigit() == True:
+                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                        else:
+                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
 
-            for Name in self.UserOrder:
-                if self.UserOrder.count(Name) > 1:
-                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
-                else:
-                    pass
+                for Name in self.UserOrder:
+                    if self.UserOrder.count(Name) > 1:
+                            sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    else:
+                        pass
+            else:
+                pass
         else:
-            pass
+            List = dic['EntryList'].split(",")
+        
+            if dic['EntryList'] != "":
+                for Name in List:
+                    if Name.replace(" ","")[1].isdigit() == False:
+                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                    else:
+                        if Name.replace(" ","")[2] == ")":
+                            self.UserOrder.append(int(Name.replace(" ","")[1]))
+                        elif Name.replace(" ","")[2].isdigit() == True:
+                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                        else:
+                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+
+                for Name in self.UserOrder:
+                    if self.UserOrder.count(Name) > 1:
+                            sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    else:
+                        pass
+            else:
+                pass
+
+
 
         return True
 
+
     def getUserNames(self, dic):
+        """ Method extracts user-defined entry names form cfg file. The entries must
+        be again extracted from a single string. They are usually seprated by an ','
+        but can also be seperated by an ';', in case the user wants to use ',' in his entries.
+
+        """
 
         self.UserNames = []
-        List = dic['EntryList'].split(",")
-        if dic['EntryList'] != "":
-            for Name in List:
-                if Name.replace(" ","")[2] == ")":
-                    self.UserNames.append(Name.replace(" ", "")[3:])
-                elif Name.replace(" ","")[2].isdigit() == True:
-                    self.UserNames.append(Name.replace(" ", "")[4:])
+        if ";" in dic['EntryList']:
+            List = dic['EntryList'].split(";")
+            print List
+            if dic['EntryList'] != "":
+                for Name in List:
+                    if Name.replace(" ","")[2] == ")":
+#                        self.UserNames.append(Name.replace(" ", "")[3:])
+                        self.UserNames.append(Name[4:])
+                    elif Name.replace(" ","")[2].isdigit() == True:
+#                        self.UserNames.append(Name.replace(" ", "")[4:])
+                        self.UserNames.append(Name[5:])
+            else:
+                pass
+
         else:
-            pass
+            List = dic['EntryList'].split(",")
+            if dic['EntryList'] != "":
+                for Name in List:
+                    if Name.replace(" ","")[2] == ")":
+                        self.UserNames.append(Name.replace(" ", "")[3:])
+                    elif Name.replace(" ","")[2].isdigit() == True:
+                        self.UserNames.append(Name.replace(" ", "")[4:])
+            else:
+                pass
 
         return True
 

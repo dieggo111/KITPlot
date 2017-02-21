@@ -128,7 +128,8 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+#            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+            self.__markerSet = [21,20,20,20,20,20,22,23,25,24,26,32,34]
             self.cfg_initialized = False
         else:
             pass
@@ -615,6 +616,7 @@ class KITPlot(object):
         LegH = LegHandler()
         LegH.setKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files, self.__cfg.get('Canvas','SizeX'), self.__cfg.get('Canvas','SizeY'), self.Scale)
         self.leg = LegH.getLegend()
+#        self.leg.SetHeader("n-in-p FZ, 240#mum")
         self.leg.Draw()
         self.canvas.Update()
 
@@ -882,44 +884,89 @@ class KITPlot(object):
 
 
     def getUserOrder(self):
+        """ Method extracts user-defined entry order form cfg file. The entries must
+        be again extracted from a single string. They are usually seprated by an ','
+        but can also be seperated by an ';', in case the user wants to use ',' in his entries.
+
+        """
 
         self.UserOrder = []
-        List = self.__cfg.get('Legend','EntryList').split(",")
+        if ";" in self.__cfg.get('Legend','EntryList'):
+            List = self.__cfg.get('Legend','EntryList').split(";")
         
-        if self.__cfg.get('Legend','EntryList') != "":
-            for Name in List:
-                if Name.replace(" ","")[1].isdigit() == False:
-                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-                else:
-                    if Name.replace(" ","")[2] == ")":
-                        self.UserOrder.append(int(Name.replace(" ","")[1]))
-                    elif Name.replace(" ","")[2].isdigit() == True:
-                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
-                    else:
+            if self.__cfg.get('Legend','EntryList') != "":
+                for Name in List:
+                    if Name.replace(" ","")[1].isdigit() == False:
                         sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                    else:
+                        if Name.replace(" ","")[2] == ")":
+                            self.UserOrder.append(int(Name.replace(" ","")[1]))
+                        elif Name.replace(" ","")[2].isdigit() == True:
+                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                        else:
+                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
             
-            for Name in self.UserOrder:
-                if self.UserOrder.count(Name) > 1:
-                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
-                elif max(self.UserOrder) > len(self.UserOrder)-1:
-                    sys.exit("Unexpected entry positions! Check for skipped numbers...")
-                else:
-                    pass
+                for Name in self.UserOrder:
+                    if self.UserOrder.count(Name) > 1:
+                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    elif max(self.UserOrder) > len(self.UserOrder)-1:
+                        sys.exit("Unexpected entry positions! Check for skipped numbers...")
+                    else:
+                        pass
+            else:
+                pass
+
         else:
-            pass
+            List = self.__cfg.get('Legend','EntryList').split(",")
+        
+            if self.__cfg.get('Legend','EntryList') != "":
+                for Name in List:
+                    if Name.replace(" ","")[1].isdigit() == False:
+                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                    else:
+                        if Name.replace(" ","")[2] == ")":
+                            self.UserOrder.append(int(Name.replace(" ","")[1]))
+                        elif Name.replace(" ","")[2].isdigit() == True:
+                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                        else:
+                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+            
+                for Name in self.UserOrder:
+                    if self.UserOrder.count(Name) > 1:
+                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    elif max(self.UserOrder) > len(self.UserOrder)-1:
+                        sys.exit("Unexpected entry positions! Check for skipped numbers...")
+                    else:
+                        pass
+            else:
+                pass
 
         return True
 
 
     def getUserNames(self):
+        """ Method extracts user-defined entry names form cfg file. The entries must
+        be again extracted from a single string. They are usually seprated by an ','
+        but can also be seperated by an ';', in case the user wants to use ',' in his entries.
+
+        """
 
         self.UserNames = []
-        List = self.__cfg.get('Legend','EntryList').split(",")
-        if self.__cfg.get('Legend','EntryList') != "":
-            for Name in List:
-                self.UserNames.append(Name.replace(" ", "")[3:])
+        if ";" in self.__cfg.get('Legend','EntryList'):
+            List = self.__cfg.get('Legend','EntryList').split(";")
+            if self.__cfg.get('Legend','EntryList') != "":
+                for Name in List:
+                    self.UserNames.append(Name.replace(" ", "")[3:])
+            else:
+                pass
         else:
-            pass
+            List = self.__cfg.get('Legend','EntryList').split(",")
+            if self.__cfg.get('Legend','EntryList') != "":
+                for Name in List:
+                    self.UserNames.append(Name.replace(" ", "")[3:])
+            else:
+                pass
+
         return True
 
 
@@ -1154,8 +1201,9 @@ class KITPlot(object):
 
     def __initColor(self):
     
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+#        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
 #        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+        self.colorSet = [1100,1200,1200,1200,1200,1200]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
