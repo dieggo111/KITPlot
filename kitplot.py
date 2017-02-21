@@ -210,7 +210,8 @@ class KITPlot(object):
 
         # Load parameters and apply default style        
         self.__cfg = ConfigHandler()
-        self.cfgPath = "cfg/" + self.__cfg.getCfgName(dataInput)
+        self.__cfg.setDir("cfg/")
+        self.cfgPath = self.__cfg.getCfgName(dataInput)
 
         if cfgFile is not None: #Load cfg file
             self.__cfg.load(cfgFile)
@@ -885,17 +886,17 @@ class KITPlot(object):
     def readEntryList(self):
 
         if self.cfg_initialized == True:
-            self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
-            self.__cfg.setParameter(self.cfgPath, 'Title','Title', self.autotitle)
-            self.__cfg.setParameter(self.cfgPath, 'XAxis','Title', self.autotitleX)
-            self.__cfg.setParameter(self.cfgPath, 'YAxis','Title', self.autotitleY)
+            self.__cfg['Legend','EntryList'] = self.getDefaultNames()
+            self.__cfg['Title','Title'] =  self.autotitle
+            self.__cfg['XAxis','Title'] = self.autotitleX
+            self.__cfg['YAxis','Title'] = self.autotitleY
 
         #elif self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
         elif self.__cfg.get('Legend','SortPara') == "list":
 
             #if cfg exists, "" can be used to reset the graph details to default
             if self.__cfg.get('Legend','EntryList') == "":
-                self.__cfg.setParameter(self.cfgPath, 'Legend','EntryList', self.getDefaultNames())
+                self.__cfg['Legend','EntryList'] = self.getDefaultNames()
                 print("Entry list is set back to default!")
 
             #read out all the changes the user made
