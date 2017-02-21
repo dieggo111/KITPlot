@@ -224,7 +224,7 @@ class KITPlot(object):
             print("Created new default.cfg")
         elif dataInput is not None and self.__cfgPresent(dataInput): # Load default dataInput cfg
             self.__cfg.load(dataInput)
-            print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(dataInput)))[0]))
+            print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
         else:
             print (self.__cfgPresent())
             # create new cfg for dataInput
