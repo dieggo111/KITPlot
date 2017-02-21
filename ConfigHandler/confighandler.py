@@ -66,6 +66,9 @@ class ConfigHandler(object):
                 located
         
         """
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        
         self.__dir = directory
 
     def load(self,cfg='default.cfg'):
@@ -114,6 +117,10 @@ class ConfigHandler(object):
             return __getFormDict(self.__cfg,keys)
         except:
             raise KeyError("Key not found")
+
+    def __setitem__(self, key, value):
+        self.__setInDict(self.__cfg,key,value)
+        self.write()
         
     # Old API
         
@@ -133,13 +140,16 @@ class ConfigHandler(object):
 if __name__ == '__main__':
 
     
-    testDict = { "a": "1",
-                 "b": "2",
+    testDict = { "a": 1,
+                 "b": 2,
                  "c":
-                 { "d": "3",
-                   "e": "4"}}
+                 { "d": 3,
+                   "e": 4 }}
 
     cfg = ConfigHandler()
     cfg.setDict(testDict)
     cfg.write()
+
+    cfg["c","d"]=5
+    
                  
