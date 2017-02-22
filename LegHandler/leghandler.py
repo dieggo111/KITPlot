@@ -47,8 +47,7 @@ class LegHandler(object):
 
     def fillKITLegend(self, dic, graphList, fileList):
         
-        self.getUserOrder(dic)
-        self.getUserNames(dic)
+        self.getEL(dic)
 
         for i, graph in enumerate(graphList):
             if dic['SortPara'] == "name":
@@ -56,10 +55,7 @@ class LegHandler(object):
             elif dic['SortPara'] == "ID":
                 self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
             elif dic['SortPara'] == "list":
-                if self.UserNames == []:
-                    self.legend.AddEntry(graphList[self.changeOrder(i)], fileList[i].getName(), "p")
-                else:
-                    self.legend.AddEntry(graphList[self.changeOrder(i)], self.UserNames[self.changeOrder(i)], "p")
+                self.legend.AddEntry(graphList[self.changeOrder(i)], self.EL[str(self.changeOrder(i))], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
 
@@ -210,58 +206,23 @@ class LegHandler(object):
 
     def changeOrder(self, counter):
 
-        if self.UserOrder == []:
-            return counter
-        else:
-            for j, element in enumerate(self.UserOrder):
-                if int(element) == counter:
-                    return j
-                else:
-                    pass
+        for i, key in enumerate(self.EL):
+            if int(key) == counter:
+                return i
+            else:
+                pass
+
         return 0
 
-    def getUserOrder(self, dic):
 
-        self.UserOrder = []
-        List = dic['EntryList'].split(",")
-        
-        if dic['EntryList'] != "":
-            for Name in List:
-                if Name.replace(" ","")[1].isdigit() == False:
-                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-                else:
-                    if Name.replace(" ","")[2] == ")":
-                        self.UserOrder.append(int(Name.replace(" ","")[1]))
-                    elif Name.replace(" ","")[2].isdigit() == True:
-                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
-                    else:
-                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
 
-            for Name in self.UserOrder:
-                if self.UserOrder.count(Name) > 1:
-                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
-                else:
-                    pass
-        else:
-            pass
+
+
+    def getEL(self,dic):
+
+        self.EL = dic['EntryList']
 
         return True
-
-    def getUserNames(self, dic):
-
-        self.UserNames = []
-        List = dic['EntryList'].split(",")
-        if dic['EntryList'] != "":
-            for Name in List:
-                if Name.replace(" ","")[2] == ")":
-                    self.UserNames.append(Name.replace(" ", "")[3:])
-                elif Name.replace(" ","")[2].isdigit() == True:
-                    self.UserNames.append(Name.replace(" ", "")[4:])
-        else:
-            pass
-
-        return True
-
 
 #    def moveLegend(self, canvasX, canvasY, dic, fileList, Scale):
 

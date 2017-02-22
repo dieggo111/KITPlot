@@ -93,25 +93,29 @@ class ConfigHandler(object):
     def write(self, cfg='default.cfg'):
         self.name = self.getCfgName(cfg)
         with open(self.__dir + self.name,'w') as cfgFile:
-            json.dump(self.__cfg, cfgFile, indent=4, sort_keys=False)
+            json.dump(self.__cfg, cfgFile, indent=4, sort_keys=True)
+
 
     def setDict(self, dictionary):
         self.__cfg = dictionary 
         
+
     def __getitem__(self,keys):
         try:
-            return self.__cfg[keys]   
+            return self.__cfg[keys] 
         except(KeyError):
-            raise KeyError("Key not found")
+            pass
 
         try:
-            return __getFormDict(self.__cfg,keys)
+            return self.__getFromDict(self.__cfg,keys)
         except:
             raise KeyError("Key not found")
+
 
     def __setitem__(self, key, value):
         self.__setInDict(self.__cfg,key,value)
         self.write(self.name)
+
 
     def getCfgName(self, name='default'):
         if os.path.isdir(str(name)):

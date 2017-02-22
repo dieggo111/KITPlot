@@ -202,17 +202,19 @@ class KITData(object):
 
             KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
 
-            if KITData.__dbCnx.is_connected():
-                print("Database connection established")
-            else:
-                sys.exit("Connection failed! Did you changed "
-                         "the database parameters in 'db.cfg'? ")
+#            if KITData.__dbCnx.is_connected():
+            print("Database connection established")
+#            else:
+#                sys.exit("Connection failed! Did you changed "
+#                         "the database parameters in 'db.cfg'? ")
 
             KITData.__dbCrs = KITData.__dbCnx.cursor()
-
+# TODO: except case for calling a none-existend probeID
         except:
-            self.__createCfg()        
-            raise ValueError("No credentials file found."
+            if "db.cfg" not in os.listdir(os.getcwd()):
+                self.__createCfg()
+            else:
+                raise ValueError("No credentials file found."
                              "Please add correct database parameters"
                              "to 'db.cfg'")
 

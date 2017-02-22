@@ -213,20 +213,23 @@ class KITPlot(object):
         self.__cfg.setDir("cfg/")
         self.cfgPath = self.__cfg.getCfgName(dataInput)
 
-        if cfgFile is not None: #Load cfg file
+        # Load cfg file
+        if cfgFile is not None: 
             self.__cfg.load(cfgFile)
-        elif dataInput is None and self.__cfgPresent(): # Empty KITPlot with existing default cfg
+        # Empty KITPlot with existing default cfg
+        elif dataInput is None and self.__cfgPresent(): 
             self.__cfg.load('default.cfg')
             print("Initialized default.cfg")
-        elif dataInput is None and self.__cfgPresent() is not True: # Empty KITPlot / create new default cfg
+        # Empty KITPlot / create new default cfg
+        elif dataInput is None and self.__cfgPresent() is not True: 
             self.__initDefaultCfg()
             self.__cfg.write()
             print("Created new default.cfg")
-        elif dataInput is not None and self.__cfgPresent(dataInput): # Load default dataInput cfg
+        # Load default dataInput cfg
+        elif dataInput is not None and self.__cfgPresent(dataInput): 
             self.__cfg.load(dataInput)
             print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
         else:
-            print (self.__cfgPresent())
             # create new cfg for dataInput
             self.cfg_initialized = True
             self.__initDefaultCfg()
@@ -234,10 +237,12 @@ class KITPlot(object):
             print("%s.cfg has been created" %dataInput)
 
         self.__initStyle()
-        print(self.__cfg.get('General','Measurement'))
+#        a = self.__cfg['General','Measurement']
+        a = "probe"
         # add files
+        # TODO: 'probe' is hard-coded ??? wtf???
         if dataInput is not None:
-            self.add(dataInput, self.__cfg.get('General','Measurement'))
+            self.add(dataInput, a)
         else:
             pass
         
@@ -316,6 +321,11 @@ class KITPlot(object):
     ##################
 
     def MeasurementType(self):
+        """If KITPlot is initialized with probe IDs it is able to determine the 
+        measurement type by checking database information. The default axis 
+        labels and titles are then set according to this information as soon as 
+        the respective cfg file is created.
+        """
 
         if self.__files[0].getParaY() == None:
             self.autotitle = "Title" 
@@ -446,6 +456,7 @@ class KITPlot(object):
 
     def add(self, dataInput=None, measurement="probe"):
 
+        print(measurement)
         # Load KITData
         if isinstance(dataInput, KITData):
             self.__files.append(dataInput)
@@ -461,7 +472,6 @@ class KITPlot(object):
                 self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
 
         elif isinstance(dataInput, str):
-            
             # Load single PID
             if dataInput.isdigit():
                 self.__files.append(KITData(dataInput))
@@ -492,19 +502,22 @@ class KITPlot(object):
 
             # Load file
             elif os.path.isfile(dataInput):
+                print("awdawdaw!")
                 # multiple PIDs
                 if self.checkPID(dataInput) == True:
+                    print(type(measurement))
                     with open(dataInput) as inputFile:
                         fileList = []
                         for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
                                 fileList.append(KITData(entry[0],measurement))
-                        if measurement == "probe":
+                        print(measurement == "probe")
+                        if measurement is "probe":
                             self.__files = fileList
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
-                    
+
                     self.arrangeFileList()
                     #self.changeNames()
 
@@ -543,10 +556,17 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-        self.getUserNames()
-        self.getUserOrder()
-        self.MeasurementType()
+        self.getEL()
+        self.getELOrder()
+        if self.cfg_initialized == True:
+            self.MeasurementType()
+            self.setAutoTitles()
+        else:
+            pass
         self.readEntryList()
+
+
+
 
         return True
 
@@ -666,7 +686,6 @@ class KITPlot(object):
 
 
         # init canvas
-        #self.canvas = ROOT.TCanvas("c1","c1", 1280,768)
         self.canvas = ROOT.TCanvas("c1","c1", int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')))
         self.canvas.cd()
 
@@ -739,19 +758,23 @@ class KITPlot(object):
 #####################
 
     def arrangeFileList(self):
+        """ The KITData files in 'self.__files' are somewhat arbitrarily 
+        ordered at first. This method pre-orders them in respect of their names.
 
+        """
         TempList1 = []
         TempList2 = []
         IDList = []
         IndexList = []
-
+        print(self.__files[0].getName())
         for temp in self.__files:
             TempList1.append(temp.getName())
             TempList2.append(temp.getName())
-        
+        print(TempList1)
         # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
+                
                 Test = Name1 + "_" + "(" + str(i) + ")"
                 TempList2[i] = Test
                 TempList1[i] = Test
@@ -845,19 +868,6 @@ class KITPlot(object):
         return ListY
 
 
-    def changeOrder(self, counter):
-
-        if self.UserOrder == []:
-            return counter
-        else:
-            for j, element in enumerate(self.UserOrder):
-                if int(element) == counter:
-                    return j
-                else:
-                    pass
-        return 0
-
-
     def convertTF(self, val):
         
         if type(val) == bool:
@@ -882,35 +892,59 @@ class KITPlot(object):
         return Title
 
 
+    def setAutoTitles(self):
+        """When cfg was just created and the measurement type was identified 
+        (which gets checked by 'self.cfg_initialized()' and 
+        'self.MeasurementType()') these labels are written into cfg.
 
-    def readEntryList(self):
+        """
 
-        if self.cfg_initialized == True:
-            self.__cfg['Legend','EntryList'] = self.getDefaultNames()
-            self.__cfg['Title','Title'] =  self.autotitle
-            self.__cfg['XAxis','Title'] = self.autotitleX
-            self.__cfg['YAxis','Title'] = self.autotitleY
-
-        #elif self.__cfgPresent() == True and self.__cfg.get('Legend','SortPara') == "list":
-        elif self.__cfg.get('Legend','SortPara') == "list":
-
-            #if cfg exists, "" can be used to reset the graph details to default
-            if self.__cfg.get('Legend','EntryList') == "":
-                self.__cfg['Legend','EntryList'] = self.getDefaultNames()
-                print("Entry list is set back to default!")
-
-            #read out all the changes the user made
-            else:
-                if len(self.__files) != len(self.UserNames):
-                    sys.exit("Lenght of entry list is not as expected!")
-                else:
-                    self.EntryList = self.__cfg.get('Legend','EntryList').split(",")
-
-        #when cfg has just been created, this case will send default values
-        else:
-            sys.exit("Unknown error with cfg file!")
+        self.__cfg['Legend','EntryList'] = self.getDefaultEL()
+        self.__cfg['Title','Title'] = self.autotitle
+        self.__cfg['XAxis','Title'] = self.autotitleX
+        self.__cfg['YAxis','Title'] = self.autotitleY
 
         return True
+
+
+    def readEntryList(self):
+        """'EntryList' makes all graphs, their names and order accessible. This 
+        entry is read every time KITPlot is executed. An empty value ' ' can be 
+        used to reset the entry to its default value (the original order and 
+        names given by the file list).
+
+        """
+
+        # sets entry to default
+        if self.__cfg['Legend','EntryList'] == "":
+            self.__cfg['Legend','EntryList'] = self.getDefaultEL()
+            print("Entry list was set back to default!")
+            self.EL = self.getDefaultEL()
+        #read out all the changes the user made
+        else:
+#            if len(self.__files) != len(self.EL):
+#                raise ValueError("Lenght of entry list is not as expected!")
+#            else:
+            self.EL = self.__cfg['Legend','EntryList']
+
+        return True
+
+
+    def changeOrder(self, counter):
+        print(123, self.EL)
+        if self.EL == {}:
+            print(678)
+            return counter
+        else:
+            for i, key in enumerate(self.EL):
+                if int(key) == counter:
+                    return i
+                else:
+                    pass
+
+        return 0
+
+
 
     def interpolate(self, x=None, y=None):
 
@@ -957,56 +991,42 @@ class KITPlot(object):
 #######################
 
 
-    def getUserOrder(self):
+    def getELOrder(self):
 
-        self.UserOrder = []
-        List = self.__cfg.get('Legend','EntryList').split(",")
+        self.ELOrder = []
         
-        if self.__cfg.get('Legend','EntryList') != "":
-            for Name in List:
-                if Name.replace(" ","")[1].isdigit() == False:
-                    sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-                else:
-                    if Name.replace(" ","")[2] == ")":
-                        self.UserOrder.append(int(Name.replace(" ","")[1]))
-                    elif Name.replace(" ","")[2].isdigit() == True:
-                        self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
-                    else:
-                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-            
-            for Name in self.UserOrder:
-                if self.UserOrder.count(Name) > 1:
-                    sys.exit("Entry positions must have different values! At least two numbers are equal!")
-                elif max(self.UserOrder) > len(self.UserOrder)-1:
-                    sys.exit("Unexpected entry positions! Check for skipped numbers...")
-                else:
-                    pass
-        else:
-            pass
+        dic = self.__cfg['Legend','EntryList']
+        for key in dic:
+            self.ELOrder.append(key)
 
         return True
 
 
-    def getUserNames(self):
+    def getEL(self):
 
-        self.UserNames = []
-        List = self.__cfg.get('Legend','EntryList').split(",")
-        if self.__cfg.get('Legend','EntryList') != "":
-            for Name in List:
-                self.UserNames.append(Name.replace(" ", "")[3:])
-        else:
-            pass
+        self.EL = self.__cfg['Legend','EntryList']
+        
+        List = []
+
+        for key in self.EL:
+            List.append(int(key))
+        
+#        if len(self.EL)-1 != max(List):
+#            raise KeyError("Unexpected entry positions! First element starts "
+#                        "with '0'. Also check for skipped numbers...")
+#        else:
+#            pass
+
         return True
 
 
-    def getDefaultNames(self):
+    def getDefaultEL(self):
         
-        # write legend entries in a string
-        Names = ""
+        Names = {}
+        # write legend entries in a dict
         for i, graph in enumerate(self.__files):
-            Names += "(" + str(i) + ")" + str(graph.getName()) + ", "
-        Names = Names[:-2]        
-        
+            Names[i] = str(graph.getName())
+
         return Names
 
 
@@ -1134,26 +1154,9 @@ class KITPlot(object):
 
     def setTitles(self):
 
-        # when the cfg has been created check for autotitle and write it into the cfg. only read out the cfg values afterwards.
-        
-        if self.__cfg.get('XAxis','Title') == "X Value":
-            self.__graphs[0].GetXaxis().SetTitle(self.autotitleX)
-            #self.__writeSpecifics(self.cfgPath, "XAxis", "title", self.autotitleX)
-        else:
-            self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
-
-        if self.__cfg.get('YAxis','Title') == "Y Value":
-            self.__graphs[0].GetYaxis().SetTitle(self.autotitleY)
-            #self.__writeSpecifics(self.cfgPath, "YAxis", "title", self.autotitleY)
-        else:
-            self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
-
-        if self.__cfg.get('Title','Title') == "Title":
-            self.__graphs[0].SetTitle(self.autotitle)
-            #self.__writeSpecifics(self.cfgPath, "Title", "title", self.autotitle)
-        else:
-            self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
-
+        self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
+        self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
+        self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
 
 
     def setAxisTitleSize(self, size):
