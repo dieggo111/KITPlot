@@ -6,6 +6,7 @@ import os, sys
 from .kitdata import KITData 
 from .ConfigHandler import ConfigHandler
 from .LegHandler import LegHandler 
+from collections import OrderedDict
 
 """ A simple ROOT based python plot script 
 
@@ -443,20 +444,27 @@ class KITPlot(object):
         ROOT.gStyle.SetPadGridX(True)
         ROOT.gStyle.SetPadGridY(True)
 
-        # when reading cfg its keys are always returned as strings
-        self.ColorShades = self.convertTF(self.__cfg.get('Misc','ColorShades'))
-        self.absX = self.convertTF(self.__cfg.get('XAxis','Abs'))
-        self.absY = self.convertTF(self.__cfg.get('YAxis','Abs'))
-        self.logX = self.convertTF(self.__cfg.get('XAxis','Log'))
-        self.logY = self.convertTF(self.__cfg.get('YAxis','Log'))
-
+        self.ColorShades = self.__cfg['Misc','ColorShades']
+        self.absX = self.__cfg['XAxis','Abs']
+        self.absY = self.__cfg['YAxis','Abs']
+        self.logX = self.__cfg['XAxis','Log']
+        self.logY = self.__cfg['YAxis','Log']
         KITPlot.__init = True
         return True
 
 
     def add(self, dataInput=None, measurement="probe"):
+        """ Depending on the type, the 'self.__files' list is filled with 
+        KITData objects. An integer represents a single probe ID. A string 
+        represents a .txt file or a folder path.
 
-        print(measurement)
+        Args:
+            dataInput(None|int|str): Determines the way the 'self.__files' 
+                is filled.
+            measurement(str): probe station and ALiBaVa measurements must be 
+                handled differently due to different database paramters
+        """
+
         # Load KITData
         if isinstance(dataInput, KITData):
             self.__files.append(dataInput)
@@ -502,17 +510,17 @@ class KITPlot(object):
 
             # Load file
             elif os.path.isfile(dataInput):
-                print("awdawdaw!")
+
                 # multiple PIDs
                 if self.checkPID(dataInput) == True:
-                    print(type(measurement))
+
                     with open(dataInput) as inputFile:
                         fileList = []
                         for line in inputFile:
                             entry = line.split()
                             if entry[0].isdigit():
                                 fileList.append(KITData(entry[0],measurement))
-                        print(measurement == "probe")
+
                         if measurement is "probe":
                             self.__files = fileList
                         elif measurement == "alibava":
@@ -556,8 +564,7 @@ class KITPlot(object):
                     #else:
                     #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
 
-        self.getEL()
-        self.getELOrder()
+
         if self.cfg_initialized == True:
             self.MeasurementType()
             self.setAutoTitles()
@@ -572,29 +579,54 @@ class KITPlot(object):
 
 
     def addNorm(self, loop=True, j=0):
+        """ This method enables normalizations of data tables. It is has the 
+        same function as 'addGraph' but with more options. If the user wants to 
+        take advantage of normalization options then the data from the KITData 
+        objects needs to be manipulated while creating the ROOT graphs.
+        
+        Args:
+            loop(bool), j(integer): ???
+
+        """
 
     # Sends normalized graph values to addGraph
         if loop == True:
             for i, File in enumerate(self.__files):
+                # if data points have error bars
                 if self.__files[i].includesErrors():
                      if self.__cfg.get('Misc','Normalization') == "off":
-                         self.addGraph(self.__files[i].getX(),self.__files[i].getY(),self.__files[i].getdX(),self.__files[i].getdY())
+                         self.addGraph(self.__files[i].getX(),
+                                       self.__files[i].getY(),
+                                       self.__files[i].getdX(),
+                                       self.__files[i].getdY())
                      elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                         self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i),self.__files[i].getdX(),self.manipulate(self.__files[i].getdY(),i))
+                         self.addGraph(self.__files[i].getX(),
+                                       self.manipulate(self.__files[i].getY(),i),
+                                       self.__files[i].getdX(),
+                                       self.manipulate(self.__files[i].getdY(),i))
                      elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
-                         self.addGraph(File.getX(),self.manipulate(File.getY(),i),File.getdX(),self.manipulate(File.getdY(),i))
+                         self.addGraph(File.getX(),
+                         self.manipulate(File.getY(),i),
+                         File.getdX(),
+                         self.manipulate(File.getdY(),i))
                      else:
-                         sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+                         raise ValueError("Invalid normalization input! Try "
+                                          "'off', '1/C^{2}' or '[float,"
+                                          "float,...]'!")
+                # if data points have no error bars
                 else:
-                                  
                     if self.__cfg.get('Misc','Normalization') == "off":
-                        self.addGraph(self.__files[i].getX(),self.__files[i].getY())
+                        self.addGraph(self.__files[i].getX(),
+                                      self.__files[i].getY())
                     elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                        self.addGraph(self.__files[i].getX(),self.manipulate(self.__files[i].getY(),i))
+                        self.addGraph(self.__files[i].getX(),
+                                      self.manipulate(self.__files[i].getY(),i))
                     elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
                         self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                     else:
-                        sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+                         raise ValueError("Invalid normalization input! Try "
+                                          "'off', '1/C^{2}' or '[float,"
+                                          "float,...]'!")
         else:
             if self.__cfg.get('Misc','Normalization') == "off":
                 self.addGraph(self.__files[j].getX(),self.__files[j].getY())
@@ -603,12 +635,21 @@ class KITPlot(object):
             elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
                 self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             else:
-                sys.exit("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+                raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+
         return True
 
 
 
     def addGraph(self, *args):
+        """ The KITData objects within the 'self.__files' list (containing 
+        the data tables) are now converted into ROOT objects. A ROOT object 
+        represents a single graph of the future plot. These ROOT objects are 
+        stored within the 'self.__graphs' list.
+
+        Args: x, y or KITData
+
+        """
 
         # args: x, y or KITData
 
@@ -678,6 +719,16 @@ class KITPlot(object):
 
 
     def draw(self, arg="APE"):
+        """ Finally, a canvas needs to created and all the ROOT objects within 
+        'self.__graphs' need to be drawn. Different plot styles are set in 
+        respect of the cfg file and as a last step, the legend is created and 
+        drawn on the canvas. 
+
+        Args: 
+            arg(str): This is a ROOT option. See ROOT documentation 
+                (TGraph, Draw).
+
+        """
 
         if len(self.__graphs) == 0:
             print("No graphs to draw")
@@ -686,11 +737,15 @@ class KITPlot(object):
 
 
         # init canvas
-        self.canvas = ROOT.TCanvas("c1","c1", int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')))
+        self.canvas = ROOT.TCanvas("c1","c1",
+                                   int(self.__cfg.get('Canvas','SizeX')),
+                                   int(self.__cfg.get('Canvas','SizeY')))
         self.canvas.cd()
 
         # apply plot styles
-        self.plotStyles(self.__cfg.get('XAxis','Title'), self.__cfg.get('YAxis','Title'), self.__cfg.get('Title','Title'))    
+        self.plotStyles(self.__cfg.get('XAxis','Title'),
+                        self.__cfg.get('YAxis','Title'),
+                        self.__cfg.get('Title','Title'))
         
         # set log scale if 
         if self.logX:
@@ -708,7 +763,12 @@ class KITPlot(object):
         # Set legend (always at the very end!)
 
         LegH = LegHandler()
-        LegH.setKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files, self.__cfg.get('Canvas','SizeX'), self.__cfg.get('Canvas','SizeY'), self.Scale)
+        LegH.setKITLegend(self.__cfg.get('Legend'),
+                          self.__graphs, 
+                          self.__files, 
+                          self.__cfg.get('Canvas','SizeX'),
+                          self.__cfg.get('Canvas','SizeY'), 
+                          self.Scale)
         self.leg = LegH.getLegend()
         self.leg.Draw()
         self.canvas.Update()
@@ -749,7 +809,7 @@ class KITPlot(object):
         self.setMarkerStyles()
         # assign colors
         self.setGraphColor()
-                
+
         return True
 
 
@@ -766,11 +826,11 @@ class KITPlot(object):
         TempList2 = []
         IDList = []
         IndexList = []
-        print(self.__files[0].getName())
+
         for temp in self.__files:
             TempList1.append(temp.getName())
             TempList2.append(temp.getName())
-        print(TempList1)
+
         # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
@@ -868,18 +928,6 @@ class KITPlot(object):
         return ListY
 
 
-    def convertTF(self, val):
-        
-        if type(val) == bool:
-            return val
-        elif val != 'False' and val != 'True':
-            sys.exit('Wrong parameter type in cfg where only boolean is allowed!')
-        elif val == 'False':
-            return False
-        else:
-            return True
-
-
     def checkTitleLenght(self, Title):
         
         # adapt title size in case it's too long
@@ -893,13 +941,11 @@ class KITPlot(object):
 
 
     def setAutoTitles(self):
-        """When cfg was just created and the measurement type was identified 
-        (which gets checked by 'self.cfg_initialized()' and 
-        'self.MeasurementType()') these labels are written into cfg.
+        """ Writes certain labels into the cfg. 
 
         """
 
-        self.__cfg['Legend','EntryList'] = self.getDefaultEL()
+        self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
         self.__cfg['Title','Title'] = self.autotitle
         self.__cfg['XAxis','Title'] = self.autotitleX
         self.__cfg['YAxis','Title'] = self.autotitleY
@@ -909,38 +955,33 @@ class KITPlot(object):
 
     def readEntryList(self):
         """'EntryList' makes all graphs, their names and order accessible. This 
-        entry is read every time KITPlot is executed. An empty value ' ' can be 
-        used to reset the entry to its default value (the original order and 
-        names given by the file list).
+        subsection is read every time KITPlot is executed. An empty value ("") 
+        can be used to reset the entry to its default value (the original order 
+        and names given by the file list).
 
         """
 
-        # sets entry to default
+        # sets entry list to default
         if self.__cfg['Legend','EntryList'] == "":
-            self.__cfg['Legend','EntryList'] = self.getDefaultEL()
+            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
             print("Entry list was set back to default!")
-            self.EL = self.getDefaultEL()
+            self.__EntryList = self.getDefaultEntryList()
+
         #read out all the changes the user made
         else:
-#            if len(self.__files) != len(self.EL):
-#                raise ValueError("Lenght of entry list is not as expected!")
-#            else:
-            self.EL = self.__cfg['Legend','EntryList']
+            self.__EntryList = self.getEntryList()
 
         return True
 
 
     def changeOrder(self, counter):
-        print(123, self.EL)
-        if self.EL == {}:
-            print(678)
-            return counter
-        else:
-            for i, key in enumerate(self.EL):
-                if int(key) == counter:
-                    return i
-                else:
-                    pass
+
+        for i, key in enumerate(self.__EntryList):
+            if int(key) == counter:
+                
+                return i
+            else:
+                pass
 
         return 0
 
@@ -975,6 +1016,14 @@ class KITPlot(object):
 
 
     def setLegend(self):
+        """ The whole legend handling is outsourced and done by the 'leghandler' 
+        module. As a result, all the legend options (stored inside the 'Legend' 
+        dictionary), the 'self.__graph' list (containing all graphs as ROOT 
+        objects) and the'self.__files' list (containing the respective KITData 
+        objects) have to be given as arguments when calling 'leghandler' 
+        methods.
+
+        """
 
         LegH = LegHandler()
 
@@ -991,43 +1040,54 @@ class KITPlot(object):
 #######################
 
 
-    def getELOrder(self):
 
-        self.ELOrder = []
-        
-        dic = self.__cfg['Legend','EntryList']
-        for key in dic:
-            self.ELOrder.append(key)
+    def getEntryList(self):
+        """ Loads names and order in respect to the 'EntryList' section in cfg 
+        in 'self.__files' list. Keys and values of the dictionary and the cfg 
+        are strings by default.
 
-        return True
+        """
 
-
-    def getEL(self):
-
-        self.EL = self.__cfg['Legend','EntryList']
+        EntryList = self.__cfg['Legend','EntryList']
         
         List = []
 
-        for key in self.EL:
+        for key in EntryList:
             List.append(int(key))
         
-#        if len(self.EL)-1 != max(List):
-#            raise KeyError("Unexpected entry positions! First element starts "
-#                        "with '0'. Also check for skipped numbers...")
-#        else:
-#            pass
+        if len(EntryList) != len(self.__files):
+            raise KeyError("Unexpected 'EntryList' value! At least one key "
+                           "is used more than once.")
+        else:
+            pass
+        if min(List) != 0:
+            raise KeyError("Unexpected 'EntryList' value! First element must "
+                           "start with a '0'.")
+        else:
+            pass
+        if len(EntryList)-1 != max(List):
+            raise KeyError("Unexpected 'EntryList' value! Skipping numbers is " 
+                           "forbidden.")
+        else:
+            pass
 
-        return True
+        return EntryList
 
 
-    def getDefaultEL(self):
-        
-        Names = {}
+    def getDefaultEntryList(self):
+        """ Loads default names and order in respect to the KITData objects 
+        in 'self.__files' list. Both keys and values of the dictionary must be 
+        strings.
+
+        """
+
+        EntryList = OrderedDict()
+
         # write legend entries in a dict
         for i, graph in enumerate(self.__files):
-            Names[i] = str(graph.getName())
+            EntryList[str(i)] = str(graph.getName())
 
-        return Names
+        return EntryList
 
 
     def setRanges(self):
@@ -1081,15 +1141,16 @@ class KITPlot(object):
                 sys.exit("Invalid group parameter! Try 'off', 'name' or define user groups with '[...],[...],...'!")
 
         # User Groups
-        if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
+        if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
             self.getGroupList()
+
             j = 0
 
-            if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
-                sys.exit("Insufficient UserGroup. Numbers do not match!")
+            if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
+                raise ValueError("Insufficient UserGroup. Numbers do not match!")
             else:
                 pass
-            for elem in self.GroupList:
+            for elem in self.__GroupList:
                 if elem == 666:
                     j = 0
                 else:
@@ -1119,29 +1180,30 @@ class KITPlot(object):
             elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
                 break
             elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
-                sys.exit("Need GraphGroups for applying shades!")
+                raise ValueError("Need GraphGroups for applying shades!")
 
         # User Groups
-        if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
+        if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
+
             self.getGroupList()
             colorcount = 0
             shadecount = 0
 
-            if len(self.GroupList)-self.GroupList.count(666) != len(self.__graphs):
-                sys.exit("Insufficient UserGroup. Numbers do not match!")
+            if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
+                raise ValueError("Insufficient UserGroup. Numbers do not match!")
             else:
                 pass
-            for elem in self.GroupList:
+            for elem in self.__GroupList:
                 if elem == 666:
                     colorcount += 1
                     shadecount = 0
-                elif self.__cfg.get('Misc','ColorShades') == "True":
+                elif self.ColorShades == True:
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
 #                        self.__graphs[elem].SetLineStyle(7)
                         shadecount += 1
-                elif self.__cfg.get('Misc','ColorShades') == "False":
+                elif self.ColorShades == False:
                         self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
                         self.__graphs[elem].SetLineWidth(self.LineWidth)
@@ -1200,7 +1262,7 @@ class KITPlot(object):
 
     def getGroupList(self):
     
-        self.GroupList = []
+        self.__GroupList = []
         TempList = []
         UserList = []
         for i, Element in enumerate(self.__files):
@@ -1214,17 +1276,17 @@ class KITPlot(object):
         if self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]":
            for char in self.__cfg.get('Misc','GraphGroup'):
                 if char.isdigit() == True:
-                    self.GroupList.append(int(char))
+                    self.__GroupList.append(int(char))
                 elif char == "[" or char == ",":
                     pass
                 else:
-                    self.GroupList.append(666)
+                    self.__GroupList.append(666)
 
         for i, TempElement in enumerate(TempList):
-            if TempElement not in self.GroupList:
-                  self.GroupList.append(TempList[i])
+            if TempElement not in self.__GroupList:
+                  self.__GroupList.append(TempList[i])
 
-        return self.GroupList
+        return self.__GroupList
 
 
 #####################
@@ -1233,8 +1295,8 @@ class KITPlot(object):
 
     def __initColor(self):
     
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
-#        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+#        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))

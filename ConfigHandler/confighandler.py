@@ -1,5 +1,6 @@
 import os
 import json
+from collections import OrderedDict
 
 class ConfigHandler(object):
     """ Class that converts json based config files into dictonaries
@@ -29,7 +30,7 @@ class ConfigHandler(object):
         self.name = self.getCfgName(cfg)
         try:
             with open(self.__dir+self.name) as cfgFile:
-                return json.load(cfgFile)
+                return json.load(cfgFile, object_pairs_hook=OrderedDict)
         except:
             raise OSError("No file found")
         
@@ -93,7 +94,7 @@ class ConfigHandler(object):
     def write(self, cfg='default.cfg'):
         self.name = self.getCfgName(cfg)
         with open(self.__dir + self.name,'w') as cfgFile:
-            json.dump(self.__cfg, cfgFile, indent=4, sort_keys=True)
+            json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=False)
 
 
     def setDict(self, dictionary):

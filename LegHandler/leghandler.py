@@ -46,8 +46,8 @@ class LegHandler(object):
 
 
     def fillKITLegend(self, dic, graphList, fileList):
-        
-        self.getEL(dic)
+
+        self.__EntryList = dic['EntryList']
 
         for i, graph in enumerate(graphList):
             if dic['SortPara'] == "name":
@@ -55,9 +55,20 @@ class LegHandler(object):
             elif dic['SortPara'] == "ID":
                 self.legend.AddEntry(graphList[i], fileList[i].getID(), "p")
             elif dic['SortPara'] == "list":
-                self.legend.AddEntry(graphList[self.changeOrder(i)], self.EL[str(self.changeOrder(i))], "p")
+                self.legend.AddEntry(graphList[self.changeOrder(i)], self.__EntryList[str(list(self.__EntryList)[self.changeOrder(i)])], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
+
+
+    def changeOrder(self, counter):
+
+        for i, key in enumerate(self.__EntryList):
+            if int(key) == counter:
+                return i
+            else:
+                pass
+
+        return 0
 
 
     def setLegendParameters(self, dic, fileList, Scale):
@@ -204,25 +215,9 @@ class LegHandler(object):
             sys.exit("Unexpected parameter type for legend fill color! Try 'int'!")
         return True
 
-    def changeOrder(self, counter):
-
-        for i, key in enumerate(self.EL):
-            if int(key) == counter:
-                return i
-            else:
-                pass
-
-        return 0
 
 
 
-
-
-    def getEL(self,dic):
-
-        self.EL = dic['EntryList']
-
-        return True
 
 #    def moveLegend(self, canvasX, canvasY, dic, fileList, Scale):
 
@@ -235,6 +230,7 @@ class LegHandler(object):
 #        #legend.SetBBoxY2(int(canvasY*ParaList[3]))      # moves bottom edge to the bottom
 
 #        return True
+
 
     def setKITLegend(self, dic, graphList, fileList, canvasX, canvasY, Scale):
 
