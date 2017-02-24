@@ -204,7 +204,8 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+#            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
+            self.__markerSet = [21,20,20,20,20,20,22,23,25,24,26,32,34]
             self.cfg_initialized = False
         else:
             pass
@@ -770,6 +771,7 @@ class KITPlot(object):
                           self.__cfg.get('Canvas','SizeY'), 
                           self.Scale)
         self.leg = LegH.getLegend()
+#        self.leg.SetHeader("n-in-p FZ, 240#mum")
         self.leg.Draw()
         self.canvas.Update()
 
@@ -1040,7 +1042,6 @@ class KITPlot(object):
 #######################
 
 
-
     def getEntryList(self):
         """ Loads names and order in respect to the 'EntryList' section in cfg 
         in 'self.__files' list. Keys and values of the dictionary and the cfg 
@@ -1068,10 +1069,34 @@ class KITPlot(object):
         if len(EntryList)-1 != max(List):
             raise KeyError("Unexpected 'EntryList' value! Skipping numbers is " 
                            "forbidden.")
+
         else:
-            pass
+            List = self.__cfg.get('Legend','EntryList').split(",")
+        
+            if self.__cfg.get('Legend','EntryList') != "":
+                for Name in List:
+                    if Name.replace(" ","")[1].isdigit() == False:
+                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+                    else:
+                        if Name.replace(" ","")[2] == ")":
+                            self.UserOrder.append(int(Name.replace(" ","")[1]))
+                        elif Name.replace(" ","")[2].isdigit() == True:
+                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
+                        else:
+                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
+            
+                for Name in self.UserOrder:
+                    if self.UserOrder.count(Name) > 1:
+                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
+                    elif max(self.UserOrder) > len(self.UserOrder)-1:
+                        sys.exit("Unexpected entry positions! Check for skipped numbers...")
+                    else:
+                        pass
+            else:
+                pass
 
         return EntryList
+
 
 
     def getDefaultEntryList(self):
@@ -1297,6 +1322,7 @@ class KITPlot(object):
     
 #        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
         self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))

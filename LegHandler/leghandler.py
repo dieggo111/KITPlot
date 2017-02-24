@@ -20,6 +20,7 @@ class LegHandler(object):
         else:
             self.textSize(0.02)
             self.legend.SetFillColor(0)
+
         return True
 
 
@@ -36,12 +37,14 @@ class LegHandler(object):
     def fillLegend(self, graphList, nameList=None):
 
         for i,graph in enumerate(graphList):
+            
             if nameList == None:
                 self.legend.AddEntry(graphList[i], "graph " + str(i), "p")
             elif nameList is not None and type(nameList) == list and type(nameList[0]) == str:
                 self.legend.AddEntry(graphList[i], nameList[i], "p")
             else:
                 sys.exit("Unexpected name list content. Expected 'str' or 'KITData.KITData'!")
+
         return True
 
 
@@ -58,6 +61,10 @@ class LegHandler(object):
                 self.legend.AddEntry(graphList[self.changeOrder(i)], self.__EntryList[str(list(self.__EntryList)[self.changeOrder(i)])], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
+        
+#        self.legend.SetHeader("f1")
+
+        return True
 
 
     def changeOrder(self, counter):
@@ -213,10 +220,8 @@ class LegHandler(object):
             self.legend.SetFillColor(val)
         else:
             sys.exit("Unexpected parameter type for legend fill color! Try 'int'!")
+
         return True
-
-
-
 
 
 #    def moveLegend(self, canvasX, canvasY, dic, fileList, Scale):
