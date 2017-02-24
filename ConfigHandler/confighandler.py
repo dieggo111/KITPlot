@@ -126,12 +126,8 @@ class ConfigHandler(object):
     
     # Get data from a dictionary with position provided as a list
     def __getFromDict(self, dataDict, mapList):
-        try:
-            for k in mapList: dataDict = dataDict[k]
-            return entry
-        except:
-            print("Raise exception")
-            raise Exception("Key not found")
+        for k in mapList: dataDict = dataDict[k]
+        return dataDict
     
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):
@@ -143,8 +139,8 @@ class ConfigHandler(object):
             pass
 
         # Set key in a multilevel dictionary
-        print("InputSubKey: " + str(mapList))
-        print("Subkeys: %s" %self.existingSubKeys(dataDict,mapList))
+        #print("InputSubKey: " + str(mapList))
+        #print("Subkeys: %s" %self.existingSubKeys(dataDict,mapList))
         
         
 #        try:
