@@ -1070,30 +1070,6 @@ class KITPlot(object):
             raise KeyError("Unexpected 'EntryList' value! Skipping numbers is " 
                            "forbidden.")
 
-        else:
-            List = self.__cfg.get('Legend','EntryList').split(",")
-        
-            if self.__cfg.get('Legend','EntryList') != "":
-                for Name in List:
-                    if Name.replace(" ","")[1].isdigit() == False:
-                        sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-                    else:
-                        if Name.replace(" ","")[2] == ")":
-                            self.UserOrder.append(int(Name.replace(" ","")[1]))
-                        elif Name.replace(" ","")[2].isdigit() == True:
-                            self.UserOrder.append(int(Name.replace(" ","")[1]+Name.replace(" ","")[2]))
-                        else:
-                            sys.exit("Wrong format in entry positions. Try '(int) name, ...'!")
-            
-                for Name in self.UserOrder:
-                    if self.UserOrder.count(Name) > 1:
-                        sys.exit("Entry positions must have different values! At least two numbers are equal!")
-                    elif max(self.UserOrder) > len(self.UserOrder)-1:
-                        sys.exit("Unexpected entry positions! Check for skipped numbers...")
-                    else:
-                        pass
-            else:
-                pass
 
         return EntryList
 
