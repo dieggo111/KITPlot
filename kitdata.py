@@ -9,29 +9,29 @@ import datetime
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
-    to connect to the IEKP database in order to read and store all relevant 
-    data into private member variables. 
+    to connect to the IEKP database in order to read and store all relevant
+    data into private member variables.
 
-    """        
-    
+    """
+
     __dbCnx = None
     __dbCrs = None
 
     def __init__(self, dataInput=None, measurement="probe", misc=None,
-                 credentials='db.cfg'):
+                 credentials='db.cfg', show_input=None):
         """ Initialize KITData object based on the input that is passed.
-        
+
         Args:
-            dataInput (None|pid|file): Only pid inputs will fill all additional 
+            dataInput (None|pid|file): Only pid inputs will fill all additional
                 information automatically
-            measurement (probe|alibava): Specify if PID belongs to a probe 
+            measurement (probe|alibava): Specify if PID belongs to a probe
                 station or alibava measurement
-            credentials (str): Specify the credentials file for the database if 
+            credentials (str): Specify the credentials file for the database if
                 the file is not located in the current working directory
             misc : IDK... ask Marius
-        
+
         """
-        self.__id = None        
+        self.__id = None
         self.__name = None
 
         self.__x = []
@@ -44,7 +44,7 @@ class KITData(object):
 
         self.__temp = []
         self.__humid = []
-        
+
         self.__px = None
         self.__py = None
         self.__pz = None
@@ -54,12 +54,12 @@ class KITData(object):
 
         self.__RPunchDict = None
         self.__credentials = credentials
-        
+
         # ALiBaVa specific
         self.__gain = None
         self.__seed = None
         self.__seederr = None
-        
+
         # Empty object
         if dataInput is None:
             return False
@@ -72,14 +72,20 @@ class KITData(object):
 
             # Establish database connection if its no already established
             if KITData.__dbCrs is None:
-                self.__init_db_connection() 
+                self.__init_db_connection()
 
             # Distinguish between probe station and ALiBaVa ID
             if measurement is "alibava":
-                print("Input: ALiBaVa run")
+                if show_input is not False:
+                    print("Input: ALiBaVa run")
+                else:
+                    pass
                 self.__allo_db_alibava(dataInput)
-            elif measurement is "probe":
-                print("Input: Probe station PID")
+            elif measurement is "probe" and show_input is not False:
+                if show_input is not False:
+                    print("Input: Probe station PID")
+                else:
+                    pass
                 self.__allo_db(dataInput)
 
         # Check if dataInput is a file
@@ -120,10 +126,10 @@ class KITData(object):
                     sec = self.__x[0]
                     ix = []
                     iy = []
-                    
+
                     # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                     for (valX, valY, valZ) in zip(self.__x, self.__y, self.__z):
-                        if sec == valX: 
+                        if sec == valX:
                             ix.append(valY)
                             iy.append(valZ)
                         else:
@@ -143,7 +149,7 @@ class KITData(object):
                         self.__name = os.path.basename(dataInput).split("-")[0]
 
         # Data input contains list of KITData objects
-        # TODO 
+        # TODO
         elif isinstance(dataInput,list) and all(isinstance(i, KITData)
                                                 for i in dataInput):
 
@@ -158,13 +164,13 @@ class KITData(object):
                 self.__y.append(kitFile.getY()[0])
                 self.__z.append(kitFile.getZ()[0])
                 self.__dy.append(kitFile.getdY()[0])
-                
+
         # Rpunch
         elif (isinstance(dataInput, list) and isinstance(measurement, list)
               and isinstance(misc, str) and len(dataInput) == len(measurement)):
 
-                self.__x = dataInput            
-                self.__y = measurement          
+                self.__x = dataInput
+                self.__y = measurement
                 self.__name = misc + " V" # bias labels
                 self.__px = "Voltage"
                 self.__py = "Rpunch"
@@ -186,18 +192,18 @@ class KITData(object):
 
     def __init_db_connection(self, credentials='db.cfg', section='database'):
         """Initialize db_connection and set static connection and curser
-        
+
         Args:
             filename: database config file that contains all necessary data
             section: config section where login data can be found
 
         """
 
-     
+
         try:
             cnxConf = ConfigHandler()
 
-            cnxConf.load(credentials)                                    
+            cnxConf.load(credentials)
             db_config = cnxConf[section]
 
             KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
@@ -218,7 +224,7 @@ class KITData(object):
                              "Please add correct database parameters"
                              "to 'db.cfg'")
 
-       
+
     def __createCfg(self):
         """Create empty config file dummy that has to be filled
 
@@ -230,14 +236,14 @@ class KITData(object):
                     "database": "",
                     "user": "",
                     "passwd": ""}}
-        
+
         cfg = ConfigHandler()
         cfg.setDict(dic)
         cfg.write("db.cfg")
-        
+
     def __check_if_folder_pid(self, fileName):
         """Check if file contains PIDs or datasets
-        
+
         Args:
             fileName: file with pids or datasets
 
@@ -250,18 +256,18 @@ class KITData(object):
             if len(file.readline().split()) == 1:
                 return True
             else:
-                return False 
-        
+                return False
+
 
     def __allo_db(self, pid):
-        """Allocate measurement information. 
+        """Allocate measurement information.
            This works only if database connection is already established.
 
         Args:
             pid: probe id in the IEKP database
 
         """
-        
+
         qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
         KITData.__dbCrs.execute(qryProbeData)
         for (uid, pid, x, y, z, t, h) in KITData.__dbCrs:
@@ -270,7 +276,7 @@ class KITData(object):
             self.__z.append(z)
             self.__temp.append(t)
             self.__humid.append(h)
-            
+
         name = None
 
         qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
@@ -285,7 +291,7 @@ class KITData(object):
             self.__t0 = t
             self.__h0 = h
             name = sid
-            
+
         qrySensorName = ("SELECT * FROM info WHERE id=%s" %(name))
         KITData.__dbCrs.execute(qrySensorName)
         for (sid,name,project,man,cls,stype,spec,
@@ -296,7 +302,7 @@ class KITData(object):
             self.__Fp = Fp
 
     def __allo_db_alibava(self, run):
-        
+
         self.__px = "Voltage"
         self.__py = "Signal"
         self.__pz = "Annealing"
@@ -305,8 +311,8 @@ class KITData(object):
         tmpID = None
         tmpDate = None
         annealing = 0
-        
-        qryRunData = ("SELECT voltage, current, gain, electron_sig, " 
+
+        qryRunData = ("SELECT voltage, current, gain, electron_sig, "
                       "signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date "
                       "FROM alibava WHERE run=%s" %(run))
         KITData.__dbCrs.execute(qryRunData)
@@ -339,33 +345,33 @@ class KITData(object):
 
         qrySensorName = ("SELECT name, F_p_aim_n_cm2 "
                          "FROM info WHERE id=%s" %(tmpID))
-        
+
         KITData.__dbCrs.execute(qrySensorName)
 
         for (name, Fp) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
 
-            
+
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow
 
         Args:
-            xlow: everything below xlow will be droped 
+            xlow: everything below xlow will be droped
 
         Returns:
             True
-        
+
         """
-        
+
         xTemp = []
         yTemp = []
-        
+
         for i,x in enumerate(self.__x):
             if x >= float(xlow):
                 xTemp.append(x)
                 yTemp.append(self.__y[i])
-        
+
         self.__x = xTemp
         self.__y = yTemp
 
@@ -375,46 +381,46 @@ class KITData(object):
         """Drops datasets if x > xhigh
 
         Args:
-            xhigh: everything above xhigh will be droped 
+            xhigh: everything above xhigh will be droped
 
         Returns:
             True
-        
+
         """
 
         xTemp = []
         yTemp = []
-        
+
         for i,x in enumerate(self.__x):
             if x <= float(xhigh):
                 xTemp.append(x)
                 yTemp.append(self.__y[i])
-        
+
         self.__x = xTemp
         self.__y = yTemp
 
         return True
 
-    
+
     def dropYLower(self, ylow=0):
         """Drops datasets if y < ylow
 
         Args:
-            ylow: everything below ylow will be droped 
+            ylow: everything below ylow will be droped
 
         Returns:
             True
-        
+
         """
 
         xTemp = []
         yTemp = []
-        
+
         for i,y in enumerate(self.__y):
             if y >= float(ylow):
                 xTemp.append(self.__x[i])
                 yTemp.append(y)
-        
+
         self.__x = xTemp
         self.__y = yTemp
 
@@ -425,21 +431,21 @@ class KITData(object):
         """Drops datasets if y > yhigh
 
         Args:
-            yhigh: everything below yhigh will be droped 
+            yhigh: everything below yhigh will be droped
 
         Returns:
             True
-        
+
         """
 
         xTemp = []
         yTemp = []
-        
+
         for i,y in enumerate(self.__y):
             if y <= float(yhigh):
                 xTemp.append(self.__x[i])
                 yTemp.append(y)
-        
+
         self.__x = xTemp
         self.__y = yTemp
 
@@ -448,9 +454,9 @@ class KITData(object):
     def setRange(self, var="x", low=0, high=0):
         """Set a certain data range. Every dataset outside this
         range will be droped.
-        
+
         Args:
-            var ("x"|"y"): range referes to either x or y 
+            var ("x"|"y"): range referes to either x or y
             low: lower limit
             high: upper limit
 
@@ -462,12 +468,12 @@ class KITData(object):
         elif var is "y":
             self.dropYLower(low)
             self.dropYHigher(high)
-            
+
         return True
 
     def includesErrors(self):
         return True if len(self.__dx) != 0 else False
-        
+
 
     ###################
     ### Set methods ###
@@ -483,7 +489,7 @@ class KITData(object):
             True|False if the data format is correct or wrong
 
         """
-        
+
         if inputArray is not None:
             try:
                 self.__x = inputArray
@@ -491,7 +497,7 @@ class KITData(object):
             except:
                 print("Cannot set x: wrong format")
                 return False
-    
+
     def setY(self, inputArray=None):
         """Set new or initialize y values of data file
 
@@ -502,7 +508,7 @@ class KITData(object):
             True|False if the data format is correct or wrong
 
         """
-        
+
         if inputArray is not None:
             try:
                 self.__y = inputArray
@@ -530,16 +536,16 @@ class KITData(object):
             except:
                 print("Cannot set z: wrong format")
                 return False
-    
+
     def setData(self, **kwargs):
         """Set whole data sets
 
         Args:
             kwargs (x=[],y=[],z=[]): only x,y,z will be considered
-        
+
         Returns:
             True
-        
+
         """
 
         for key in kwargs:
@@ -557,7 +563,7 @@ class KITData(object):
 
         Args:
             name: name of data file
-        
+
         Returns:
             True
 
@@ -573,13 +579,13 @@ class KITData(object):
 
     def getData(self, dataSet="x"):
         """Returns x or y array
-        
+
         Args:
             dataSet ("x"|"y"): whether x or y data will be returned
 
         Returns:
             List of x or y data set
-        
+
         """
 
         if (str(dataSet) == "x") | (dataSet == 0) :
@@ -591,21 +597,21 @@ class KITData(object):
 
     def getRun(self):
         """Returns PID or Run number
-        
+
         Returns:
             PID/Run
-        
+
         """
-        
+
         return self.__id
 
 
     def getID(self):
         """Returns PID or Run number
-        
+
         Returns:
             PID/Run
-        
+
         """
 
         return self.__id
@@ -613,9 +619,9 @@ class KITData(object):
 
     def getX(self, asarray=False):
         """Returns x dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -630,33 +636,33 @@ class KITData(object):
 
     def getY(self,  asarray=False):
         """Returns y dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
             list or array of y dataset
 
         """
-        
+
         if asarray:
             return np.asarray(self.__y)
         else:
             return self.__y
-    
+
     def getZ(self, asarray=False):
         """Returns z dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
             list or array of z dataset
 
         """
-                
+
         if asarray:
             return np.asarray(self.__z)
         else:
@@ -664,9 +670,9 @@ class KITData(object):
 
     def getSeed(self):
         """Returns dx dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -677,9 +683,9 @@ class KITData(object):
 
     def getSeederr(self):
         """Returns dx dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -690,9 +696,9 @@ class KITData(object):
 
     def getGain(self):
         """Returns dx dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -704,9 +710,9 @@ class KITData(object):
 
     def getdX(self, asarray=False):
         """Returns dx dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -717,13 +723,13 @@ class KITData(object):
             return np.asarray(self.__dx)
         else:
             return self.__dx
-        
+
 
     def getdY(self, asarray=False):
         """Returns dy dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -738,9 +744,9 @@ class KITData(object):
 
     def getdZ(self, asarray=False):
         """Returns dz dataset as list or array
-        
+
         Args:
-            asarray (True|False): dataset will be returned as 
+            asarray (True|False): dataset will be returned as
                 array(True) or list(false)
 
         Returns:
@@ -751,7 +757,7 @@ class KITData(object):
             return np.asarray(self.__dz)
         else:
             return self.__dz
-        
+
 
     def getSize(self):
         """Returns size of dataset
@@ -788,20 +794,20 @@ class KITData(object):
 
     def getParaY(self):
         """Returns measured variable
-        
+
         Returns:
             string: measured variable
-        
+
         """
 
         return self.__py
 
     def getParaZ(self):
         """Returns measured variable
-        
+
         Returns:
             string: measured variable
-        
+
         """
 
         return self.__pz
@@ -815,7 +821,7 @@ class KITData(object):
             float: measured temperature
 
         """
-        
+
         return float(self.__t0)
 
 
@@ -829,36 +835,35 @@ class KITData(object):
 
         return self.__h0
 
-    
+
     def getFluenceP(self):
         """Returns fluence of irradiated sensors
 
         Returns:
             string: fluence of irradiated sensor
-        
+
         """
-        
+
         return self.__Fp
 
 
     #TODO: Do we need these two methods?
     def getScaleX(self):
         """Returns min and max of x dataset
-        
+
         Returns:
             float,float: min and max of x
 
         """
-        
-        return min(self.__x), max(self.__x) 
+
+        return min(self.__x), max(self.__x)
 
     def getScaleY(self):
 
         return 0, 1.3*max(__y)
 
-    
+
 if __name__ == '__main__':
-    
+
     data = KITData(38268)
     print(data.getX())
-    

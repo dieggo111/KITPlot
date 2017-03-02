@@ -25,7 +25,7 @@ class LegHandler(object):
 
 
     def textSize(self, TextSize):
-        
+
         if 0.02 <= float(TextSize) <= 0.05:
             self.legend.SetTextSize(float(TextSize))
         else:
@@ -37,7 +37,7 @@ class LegHandler(object):
     def fillLegend(self, graphList, nameList=None):
 
         for i,graph in enumerate(graphList):
-            
+
             if nameList == None:
                 self.legend.AddEntry(graphList[i], "graph " + str(i), "p")
             elif nameList is not None and type(nameList) == list and type(nameList[0]) == str:
@@ -61,7 +61,7 @@ class LegHandler(object):
                 self.legend.AddEntry(graphList[self.changeOrder(i)], self.__EntryList[str(list(self.__EntryList)[self.changeOrder(i)])], "p")
             else:
                 sys.exit("Invalid sort parameter! Try 'name', 'ID' or 'list'!")
-        
+
 #        self.legend.SetHeader("f1")
 
         return True
@@ -79,54 +79,78 @@ class LegHandler(object):
 
 
     def setLegendParameters(self, dic, fileList, Scale):
-        # Evaluate Legend Position and write it into list [Lxmin, Lymin, Lxmax, Lymax]. Try top right, top left, bottom right
-        
+        """ Evaluates the legend position and writes it into list [Lxmin,
+        Lymin, Lxmax, Lymax]. Valid positions are top right (TR), top left (TL)
+        and bottom right (BR).
+
+        Args:
+            dic (dictinoary):   ...
+            fileList (list):    list containing KITData files
+            Scale (list):       list containing the scaling (lower and upper
+                                limit) of x- and y-axis
+
+        """
+
         LegendParas = []
         TR = TL = BR = False
 
-        # para_height contains the number of entries and determines the height of the legend box
-        para_height = len(fileList)
+        # para_height is determined by the number of entries. It
+        # determines the height of the legend box
+        para_height = len(fileList)*float(dic['TextSize']) \
+                      + float(dic['TextSize']) + len(fileList)*0.01
 
-        # para_width determines the width of the legend box based on the longest entry
-        para_width = self.getWidth(fileList)
+        # para_width determines the width of the legend box based on the
+        # longest entry and the 'BoxParameter'
+        para_width = self.getWidth(fileList,
+                                   float(dic['TextSize']),
+                                   float(dic['BoxPara']))
 
         # consider some ugly stuff
         if para_width > 30:
-            sys.exit("Legend name too long! Reduce the number of characters!")
+            raise ValueError("Legend name too long! Reduce the number of characters!")
         elif not 0.5 <= float(dic['BoxPara']) <= 1.5:
-            sys.exit("Invalid box parameter! Value must be between 0.5 and 1.5!")
-        elif dic['Position'] != "auto" and dic['Position'] != "TR" and dic['Position'] != "TL" and dic['Position'] != "BR":
-            sys.exit("Invalid legend position! Try 'auto', 'TR', 'TL' or 'BR'!")
+            raise ValueError("Invalid box parameter! Value must be "
+                     "between 0.5 and 1.5!")
+        elif (dic['Position'] != "auto" and dic['Position'] != "TR"
+                and dic['Position'] != "TL" and dic['Position'] != "BR"):
+            raise ValueError("Invalid legend position! Try 'auto', 'TR', "
+                             "'TL' or 'BR'!")
         else:
             pass
-        
-        # magic_para .... it's magic!
-        if float(dic['TextSize']) == 0.02:
-            magic_para = para_width/100.*float(dic['BoxPara'])
-        else:
-            magic_para = (0.03+para_width*0.014)*float(dic['BoxPara'])
-        
 
+        # magic_para .... it's magic!
+        if float(dic['TextSize']) == 0.03:
+            magic_para_width = 0
+        else:
+            magic_para_width = 0
+        if float(dic['TextSize']) == 0.03:
+            magic_para_height = 0
+        else:
+            magic_para_height = 0
+
+        print(para_width, magic_para_width)
+        print(para_height, magic_para_height)
         # Default/starting position for the legend box
+
         TRxmax = 0.89
         TRymax = 0.88
-        TRxmin = TRxmax-magic_para
-        TRymin = TRymax-para_height*0.042
+        TRxmin = TRxmax - para_width - magic_para_width
+        TRymin = TRymax - para_height - magic_para_height
 
         TLxmin = 0.18
         TLymax = 0.88
-        TLymin = TLymax-para_height*0.04
-        TLxmax = TLxmin+magic_para*1.05
+        TLxmax = TLxmin + para_width + magic_para_width
+        TLymin = TLymax - para_height - magic_para_height
 
         BRxmax = 0.89
         BRymin = 0.18
-        BRxmin = BRxmax-magic_para
-        BRymax = BRymin+para_height*0.04
+        BRxmin = BRxmax - para_width - magic_para_width
+        BRymax = BRymin + para_height + magic_para_height
 
         Oxmax = 0.98
         Oymax = 0.93
-        Oxmin = Oxmax-magic_para
-        Oymin = Oymax-para_height*0.042
+        Oxmin = Oxmax-magic_para_width
+        Oymin = Oymax-magic_para_height
 
         # check if graphs are in box
         TR = self.__isInside(fileList, TRxmin, TRymin, TRxmax, TRymax, Scale)
@@ -142,23 +166,23 @@ class LegHandler(object):
         if TR == True or dic['Position'] == "TR":
             LegendParas.append(TRxmin)
             LegendParas.append(TRymin)
-            LegendParas.append(TRxmax) 
+            LegendParas.append(TRxmax)
             LegendParas.append(TRymax)
         elif TR == False and TL == True or dic['Position'] == "TL":
             LegendParas.append(TLxmin)
-            LegendParas.append(TLymin) 
-            LegendParas.append(TLxmax) 
+            LegendParas.append(TLymin)
+            LegendParas.append(TLxmax)
             LegendParas.append(TLymax)
         elif TL == TR == False and BR == True or dic['Position'] == "BR":
-            LegendParas.append(BRxmin) 
-            LegendParas.append(BRymin) 
-            LegendParas.append(BRxmax) 
+            LegendParas.append(BRxmin)
+            LegendParas.append(BRymin)
+            LegendParas.append(BRxmax)
             LegendParas.append(BRymax)
         else:
             # TODO: place legend outside of frame, if there's no sufficient space
             LegendParas.append(Oxmin)
             LegendParas.append(Oymin)
-            LegendParas.append(Oxmax) 
+            LegendParas.append(Oxmax)
             LegendParas.append(Oymax)
             print("Couldn't find sufficient space for legend!")
 
@@ -167,30 +191,30 @@ class LegHandler(object):
 
 
     def __isInside(self, fileList, Lxmin, Lymin, Lxmax, Lymax, Scale):
-        
-# TLegend needs percentage values from total canvas :( For 1280x7
-######################################################################################### =
-#                       CANVAS                                                          # |
-#                                                                                       # 0.1
-#       #########################################################################       # =
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #               FRAME                                                   #       # |
-#       #                                                                       #       # 0.75
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #                                                                       #       # |
-#       #                             x                                         #       # |
-#       #                                                                       #       # |
-#       #########################################################################       # =
-#       |-----x/(xmax-xmin)-----------|                                                 # |
-#|---------x/(xmax-xmin)*0.75+0.15----|                                                 # 0.15
-#                                                                                       # |
-######################################################################################### =
-#|-0.15-|------------------------0.75--------------------------------------------|--0.1---|
+
+# TLegend needs percentage values from total canvas :( For 1280x768
+###################################################################### =
+#                       CANVAS                                       # |
+#                                                                    # 0.1
+#       ######################################################       # =
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #               FRAME                                #       # |
+#       #                                                    #       # 0.75
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #                                                    #       # |
+#       #                             x                      #       # |
+#       #                                                    #       # |
+#       ######################################################       # =
+#       |-----x/(xmax-xmin)-----------|                              # |
+#|---------x/(xmax-xmin)*0.75+0.15----|                              # 0.15
+#                                                                    # |
+################################# #################################### =
+#|-0.15-|------------------------0.75------ --------------------------|--0.1---|
 
 
         check = True
@@ -244,28 +268,30 @@ class LegHandler(object):
         self.legend = ROOT.TLegend(ParaList[0], ParaList[1], ParaList[2], ParaList[3])
         self.fillKITLegend(dic, graphList, fileList)
         self.setOptions(dic)
-        
+
         return True
 
-    def getWidth(self, fileList):
+    def getWidth(self, fileList, text, box):
 
+        length = 0
         para = 0
 
         for File in fileList:
-            if len(File.getName()) > para:
+            if len(File.getName()) > length:
+                # length of graph name
                 Long = len(File.getName())
-                Short = len(File.getName().replace("i","").replace("I","").replace("j","").replace("r","").replace("l","").replace("t","")) 
-                if Short > para:
-                    para = Short            # number of wide chars
-                    dif = Long-Short        # number of narrow chars
+                # lenght of graph name without narrow characters
+                Short = len(File.getName().replace("i","").replace("I","")\
+                            .replace("j","").replace("r","").replace("l","")\
+                            .replace("t",""))
+                if Short > length:
+                    wide_chr = Short            # number of wide chars
+                    nar_chr = Long-Short        # number of narrow chars
                 else:
                     pass
             else:
                 pass
 
-        para = int(para + 0.5*dif)
+        para = (wide_chr*(text - 0.013)*box + nar_chr*0.5*text)
 
         return para
-
-
-

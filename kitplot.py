@@ -3,91 +3,91 @@
 import numpy as np
 import ROOT
 import os, sys
-from .kitdata import KITData 
+from .kitdata import KITData
 from .ConfigHandler import ConfigHandler
-from .LegHandler import LegHandler 
+from .LegHandler import LegHandler
 from collections import OrderedDict
 
-""" A simple ROOT based python plot script 
+""" A simple ROOT based python plot script
 
 1) Synopsis:
-Hello World! Welcome to the KITPlot script. This script was created by 
-Daniel Schell (daniel.schell@kit.edu) and Marius Metzler 
-(marius.metzler@kit.edu). This script is about creating distinctive, 
-well-arranged plots especially for bachelor/master students at IEKP, who find 
-common, commercially availible plotting software as lame and unconvinient 
-as we do. The greatest benifit of KITPlot is that it is able to directly 
-communicate with the IEKP database. It also automatizes standard operations and 
-procedures as well as making plots easily editable and reproducible via 
+Hello World! Welcome to the KITPlot script. This script was created by
+Daniel Schell (daniel.schell@kit.edu) and Marius Metzler
+(marius.metzler@kit.edu). This script is about creating distinctive,
+well-arranged plots especially for bachelor/master students at IEKP, who find
+common, commercially availible plotting software as lame and unconvinient
+as we do. The greatest benifit of KITPlot is that it is able to directly
+communicate with the IEKP database. It also automatizes standard operations and
+procedures as well as making plots easily editable and reproducible via
 distinctive config files.
 
 2) Structure:
 The script consists of 4 modules:
-    a) The KITData module determines the input type of the data you want to 
-       plot. It accepts: 
-        - single .txt file that contains a data table (x-value, y-value, 
-          x-error, y-error seperated by tabs or spaces) 
+    a) The KITData module determines the input type of the data you want to
+       plot. It accepts:
+        - single .txt file that contains a data table (x-value, y-value,
+          x-error, y-error seperated by tabs or spaces)
         - folder that houses several .txt files
-        - single ID ('probe ID' for probe station measurements, 
+        - single ID ('probe ID' for probe station measurements,
           'Run' for alibava measurements)
         - single .txt file that contains a list of IDs
 
-        KITData then creates a KITData object for every graph, which contains 
-        the data table and provides convenient methods for handling all 
+        KITData then creates a KITData object for every graph, which contains
+        the data table and provides convenient methods for handling all
         sensor parameters.
 
-    b) The KITPlot module handles the conversion of a given input type into 
-       ROOT objects via pyROOT. It then handles all the plotting and drawing 
+    b) The KITPlot module handles the conversion of a given input type into
+       ROOT objects via pyROOT. It then handles all the plotting and drawing
        by using parameters from a .cfg file. Eventually, the output contains:
-        - 2 plot graphics (.png and .pdf file) that will be automatically 
-          stored in your output folder (will be created in your main 
+        - 2 plot graphics (.png and .pdf file) that will be automatically
+          stored in your output folder (will be created in your main
           folder if necessary)
-        - and a .cfg file that will be automatically stored in your cfg folder 
+        - and a .cfg file that will be automatically stored in your cfg folder
           (will be created in your main folder if necessary)
 
-    c) The LegHandler module handles the arrangement, position and style of the 
-       legend box and its elements. It also uses a very rudimentary algorithm 
-       to search for the most convinient spot inside the canvas 
+    c) The LegHandler module handles the arrangement, position and style of the
+       legend box and its elements. It also uses a very rudimentary algorithm
+       to search for the most convinient spot inside the canvas
        (one of the 4 corners), so that the legend doesn't cover any data points.
 
-    d) The ConfigHandler module writes/reads/edits a plot-specific .cfg file. 
-       Since KITPlot is console-based and has no graphical interface, the 
+    d) The ConfigHandler module writes/reads/edits a plot-specific .cfg file.
+       Since KITPlot is console-based and has no graphical interface, the
        config file solution makes up for it.
 
 3) Installation:
     a) Create a main folder and give it a nice name (f.e. 'KITPlot')
-    b) Clone the KITPlot repository from 'https://github.com/SchellDa/KITPlot', 
-       put its content inside an extra folder within your main folder and name 
-       it 'modules'. If you feel the need to name it otherwise you will have to 
-       append its path the sys.path list). 
-    c) Download and install python 2.7 on your system 
+    b) Clone the KITPlot repository from 'https://github.com/SchellDa/KITPlot',
+       put its content inside an extra folder within your main folder and name
+       it 'modules'. If you feel the need to name it otherwise you will have to
+       append its path the sys.path list).
+    c) Download and install python 2.7 on your system
        (https://www.python.org/downloads/).
-    d) The most recent version of python 2 contains 'pip', a download 
-       manager/installer for python modules, which should be used to download 
-       the following modules: 
-        'numpy', 'mysql.connector, 'ConfigParser' and 'collections' 
-       (the rest should be standard python modules... there's nothing fancy 
+    d) The most recent version of python 2 contains 'pip', a download
+       manager/installer for python modules, which should be used to download
+       the following modules:
+        'numpy', 'mysql.connector, 'ConfigParser' and 'collections'
+       (the rest should be standard python modules... there's nothing fancy
         here!').
-    e) Download and build ROOT v5.34/36 on your system. When building ROOT, 
-       make sure you enable the use of pyROOT. This is easy on Linux. However, 
-       doing this on Windows or Mac is a different story... although it's 
+    e) Download and build ROOT v5.34/36 on your system. When building ROOT,
+       make sure you enable the use of pyROOT. This is easy on Linux. However,
+       doing this on Windows or Mac is a different story... although it's
        generally possible to do this on every system.
     f) For security reasons the login
 
 4) Let's get started:
-    Before creating your first plot you need to write a few lines of code for 
-    yourself. Create a 'main.py' file import KITPlot and KITData as well as sys 
-    or other modules you need. KITPlot needs at least 1 arguement to do its 
-    magic. A second argument is optional. 
-        - First argument: data input. As described earlier, this can be a path 
+    Before creating your first plot you need to write a few lines of code for
+    yourself. Create a 'main.py' file import KITPlot and KITData as well as sys
+    or other modules you need. KITPlot needs at least 1 arguement to do its
+    magic. A second argument is optional.
+        - First argument: data input. As described earlier, this can be a path
           of a file, folder or a run number from the database.
-        
-        - Second argument: cfg file. If this is not given (None), then the 
-          script will search the cfg folder for a cfg file with the same name 
-          as the input. If you want to use a cfg file from another plot then 
-          this argument should be the path of this cfg file. Bottom line: names 
-          are important! Do not try to plot two folders that happen to have the 
-          same name. The former output will be overwritten with the new plot. 
+
+        - Second argument: cfg file. If this is not given (None), then the
+          script will search the cfg folder for a cfg file with the same name
+          as the input. If you want to use a cfg file from another plot then
+          this argument should be the path of this cfg file. Bottom line: names
+          are important! Do not try to plot two folders that happen to have the
+          same name. The former output will be overwritten with the new plot.
 
     A basic example of a main file could look like this:
 
@@ -95,7 +95,7 @@ The script consists of 4 modules:
 
     import sys
     import numpy as np
-    import ROOT 
+    import ROOT
     sys.path.append('modules/')
     from KITData import KITData
     from KITPlot import KITPlot
@@ -112,70 +112,70 @@ The script consists of 4 modules:
 
     ####################################################
 
-    If no errors are being raised, the plot will show up on your screen. 
+    If no errors are being raised, the plot will show up on your screen.
     You can now start to edit plot with the related cfg file in your cfg folder.
 
 5) cfg file:
-    Most parameters in our cfg file are self-explanatory. Some have a special 
+    Most parameters in our cfg file are self-explanatory. Some have a special
     syntax that needs be considered or need some explanation:
 
-    - 'Range = [200:1000]': sets axis range from 200 to 1000 units. 
+    - 'Range = [200:1000]': sets axis range from 200 to 1000 units.
                             Mind the brackets!
-    - 'Font = 62': 62 is standard arial, bulky and ideal for presentations. 
+    - 'Font = 62': 62 is standard arial, bulky and ideal for presentations.
                    See ROOT documention for other options.
-    - 'Log = False': This needs to be a boolean value. Remember that having a 0 
+    - 'Log = False': This needs to be a boolean value. Remember that having a 0
                      in your data table may raise errors.
     - 'Abs = True': This needs to be a boolean value.
-    - 'Title = Voltage (V)': You can announce special characters here with an 
-                             '#' like '#circ', '#sigma' or super/subscript 
+    - 'Title = Voltage (V)': You can announce special characters here with an
+                             '#' like '#circ', '#sigma' or super/subscript
                              by '_{i}' and '^{2}'.
-    - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'. 
-                          Sometimes you might want to visualize that certain 
+    - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'.
+                          Sometimes you might want to visualize that certain
                           graphs belong together by giving them a similar color.
-                          'off' will just alter marker color and style for 
-                          every graph. By choosing 'name', all graphs that 
-                          share the first 5 letters of their name will be drawn 
-                          in the same color but with altering markers (f.e. 
-                          sensors of the same type but from different wafers). 
-                          If 'fluence' is choosen then then sensors with equal 
-                          fluences will be drawn in the same color (the flunces 
-                          are retreived from the database). Lastly, you can 
-                          make your own 'GraphGroup' by using the original 
-                          sensor order and put them into brackets like 
+                          'off' will just alter marker color and style for
+                          every graph. By choosing 'name', all graphs that
+                          share the first 5 letters of their name will be drawn
+                          in the same color but with altering markers (f.e.
+                          sensors of the same type but from different wafers).
+                          If 'fluence' is choosen then then sensors with equal
+                          fluences will be drawn in the same color (the flunces
+                          are retreived from the database). Lastly, you can
+                          make your own 'GraphGroup' by using the original
+                          sensor order and put them into brackets like
                           '[1,2][6][3,4,5]'.
-    - 'ColorShades = False': This needs to be a boolean value. If you use 
-                             GraphGroups, you might as well want to use 
-                             ColorShades. Let's say you have 3 red graphs and 
-                             set this to True, then you will get 3 different 
+    - 'ColorShades = False': This needs to be a boolean value. If you use
+                             GraphGroups, you might as well want to use
+                             ColorShades. Let's say you have 3 red graphs and
+                             set this to True, then you will get 3 different
                              kinds of red instead of one to make the graphs more
                              distinctive and reconizable.
-    - 'Normalization = off': When ploting quantities like currents or 
-                             resistances you might want to normalize them. 
-                             This can be done by inserting the normalization 
-                             factors (denominators) like 
-                             '[7.590296,7.590296,1.277161,1.277161]' in respect 
-                             of the original sensor order. In this case, every 
-                             y-value of graph 1 and 2 (original sensor order) 
+    - 'Normalization = off': When ploting quantities like currents or
+                             resistances you might want to normalize them.
+                             This can be done by inserting the normalization
+                             factors (denominators) like
+                             '[7.590296,7.590296,1.277161,1.277161]' in respect
+                             of the original sensor order. In this case, every
+                             y-value of graph 1 and 2 (original sensor order)
                              would be divided (normalized) by 7.590296.
     - 'Position = auto': If this is set to auto then the scripts will search all
-                         4 corners for the best spot to place the legend. You 
- .                         might wanna adjust this by using 
-                         'TR' (top right corner), 
-                         'TL', 
-                         'BR' (bottom right corner) or 
+                         4 corners for the best spot to place the legend. You
+ .                         might wanna adjust this by using
+                         'TR' (top right corner),
+                         'TL',
+                         'BR' (bottom right corner) or
                          'BL'.
-    - 'BoxPara = 1': If you change the name of a legend element you might want 
-                     to adjust the legend box width by changing this factor in 
+    - 'BoxPara = 1': If you change the name of a legend element you might want
+                     to adjust the legend box width by changing this factor in
                      between 0.5 and 1.5.
-    - 'SortPara = list': Pronounces the parameter that determines the order of 
+    - 'SortPara = list': Pronounces the parameter that determines the order of
                          all legend element.
-    - 'EntryList = (0)a, (1)b, (3)c, (2)d': The legend elements are naturally 
+    - 'EntryList = (0)a, (1)b, (3)c, (2)d': The legend elements are naturally
                                             ordered by ROOT. This original order
-                                            (here: a = 0, b = 1, c = 2, d = 3) 
+                                            (here: a = 0, b = 1, c = 2, d = 3)
                                             can be edited by changing the number
-                                            in the brackets. However, other 
-                                            options will always refere to the 
-                                            original order. 
+                                            in the brackets. However, other
+                                            options will always refere to the
+                                            original order.
 
 """
 
@@ -196,39 +196,38 @@ class KITPlot(object):
 
     def __init__(self, dataInput=None, cfgFile=None):
 
-        
+
         # init lists
         self.__files = []
         self.__graphs = []
-                    
+
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-#            self.__markerSet = [21,20,22,23,25,24,26,32,34] 
-            self.__markerSet = [21,20,20,20,20,20,22,23,25,24,26,32,34]
+            self.__markerSet = [21,20,22,23,25,24,26,32,34]
             self.cfg_initialized = False
         else:
             pass
 
-        # Load parameters and apply default style        
+        # Load parameters and apply default style
         self.__cfg = ConfigHandler()
         self.__cfg.setDir("cfg/")
         self.cfgPath = self.__cfg.getCfgName(dataInput)
 
         # Load cfg file
-        if cfgFile is not None: 
+        if cfgFile is not None:
             self.__cfg.load(cfgFile)
         # Empty KITPlot with existing default cfg
-        elif dataInput is None and self.__cfgPresent(): 
+        elif dataInput is None and self.__cfgPresent():
             self.__cfg.load('default.cfg')
             print("Initialized default.cfg")
         # Empty KITPlot / create new default cfg
-        elif dataInput is None and self.__cfgPresent() is not True: 
+        elif dataInput is None and self.__cfgPresent() is not True:
             self.__initDefaultCfg()
             self.__cfg.write()
             print("Created new default.cfg")
         # Load default dataInput cfg
-        elif dataInput is not None and self.__cfgPresent(dataInput): 
+        elif dataInput is not None and self.__cfgPresent(dataInput):
             self.__cfg.load(dataInput)
             print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
         else:
@@ -247,13 +246,13 @@ class KITPlot(object):
             self.add(dataInput, a)
         else:
             pass
-        
+
     #####################
     ### ConfigHandler ###
     #####################
 
     def __initDefaultCfg(self):
-        
+
         pDict = {'General' :{ 'Measurement'  : 'probe'   },
                  'Title'   :{ 'Title'        : 'Title',
                               'X0'           : 0.5,
@@ -283,27 +282,27 @@ class KITPlot(object):
                               'EntryList'    : ''        },
                  'Marker'  :{ 'Size'         : 1.5,
                               'Style'        : 22,
-                              'Color'        : 1100      }, 
+                              'Color'        : 1100      },
                  'Canvas'  :{ 'SizeX'        : 1280,
                               'SizeY'        : 768,
                               'PadBMargin'   : 0.15,
                               'PadLMargin'   : 0.15,
                               'MaxDigits'    : 4         },
-                         
+
                  'Misc'    :{ 'GraphGroup'   : 'off',
                               'ColorShades'  : False,
                               'Normalization': 'off',
 }
 
         }
-        
-        self.__cfg.init(pDict)    
+
+        self.__cfg.init(pDict)
 
         return True
 
-            
+
     def __cfgPresent(self, fileName='default'):
-        
+
         file_path = os.getcwd() + "/cfg"
         if os.path.exists(file_path) == False:
             return False
@@ -311,7 +310,7 @@ class KITPlot(object):
             if os.listdir(file_path) == []:
                 return False
             for cfg in os.listdir(file_path):
-                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(fileName))))[0])):                    
+                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(fileName))))[0])):
                     return True
             else:
                 return False
@@ -323,72 +322,72 @@ class KITPlot(object):
     ##################
 
     def MeasurementType(self):
-        """If KITPlot is initialized with probe IDs it is able to determine the 
-        measurement type by checking database information. The default axis 
-        labels and titles are then set according to this information as soon as 
+        """If KITPlot is initialized with probe IDs it is able to determine the
+        measurement type by checking database information. The default axis
+        labels and titles are then set according to this information as soon as
         the respective cfg file is created.
         """
 
         if self.__files[0].getParaY() == None:
-            self.autotitle = "Title" 
+            self.autotitle = "Title"
             self.autotitleY = "Y Value"
             self.autotitleX = "X Value"
-    
+
         if self.__files[0].getParaY() != None:
             self.MT = self.__files[0].getParaY()
             if self.MT == "I_tot":
-                self.autotitle = "Current Voltage Characteristics" 
+                self.autotitle = "Current Voltage Characteristics"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "Pinhole":
-                self.autotitle = "Pinhole Leakage" 
+                self.autotitle = "Pinhole Leakage"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Strip No"
             elif self.MT == "I_leak_dc":
-                self.autotitle = "Strip Leakage Current" 
+                self.autotitle = "Strip Leakage Current"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Strip No"
             elif self.MT == "C_tot":
-                self.autotitle = "Capacitance Voltage Characteristics" 
+                self.autotitle = "Capacitance Voltage Characteristics"
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "C_int":
-                self.autotitle = "Interstrip Capacitance Measurement" 
+                self.autotitle = "Interstrip Capacitance Measurement"
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Strip No"
             elif self.MT == "CC":
-                self.autotitle = "Coupling Capacitance Measurement" 
+                self.autotitle = "Coupling Capacitance Measurement"
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Strip No"
             elif self.MT == "R_int":
-                self.autotitle = "Interstrip Resistance Measurement" 
+                self.autotitle = "Interstrip Resistance Measurement"
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Strip No"
             elif self.MT == "R_poly_dc":
-                self.autotitle = "Strip Resistance Measurement" 
+                self.autotitle = "Strip Resistance Measurement"
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Strip No"
             elif self.MT == "C_int_Ramp":
-                self.autotitle = "Interstrip Capacitance Measurement" 
+                self.autotitle = "Interstrip Capacitance Measurement"
                 self.autotitleY = "Capacitance (F)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "R_int_Ramp":
-                self.autotitle = "Strip Resistance Measurement" 
+                self.autotitle = "Strip Resistance Measurement"
                 self.autotitleY = "Resistance (#Omega)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "I_leak_dc_Ramp":
-                self.autotitle = "Interstrip Current Leakage" 
+                self.autotitle = "Interstrip Current Leakage"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             elif self.MT == "Rpunch":
-                self.autotitle = "R_{Edge} of " + self.cfgPath.replace("cfg/","").replace(".cfg","").replace("for_","for ").replace("rev_","rev ").replace("m20C","(T = -20#circC)").replace("20C","(T = 20#circC)")[15:] 
+                self.autotitle = "R_{Edge} of " + self.cfgPath.replace("cfg/","").replace(".cfg","").replace("for_","for ").replace("rev_","rev ").replace("m20C","(T = -20#circC)").replace("20C","(T = 20#circC)")[15:]
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             else:
-                self.autotitle = "Title" 
+                self.autotitle = "Title"
                 self.autotitleY = "Y Value"
                 self.autotitleX = "X Value"
-            
+
         if len(self.__files) >= 2 and self.__files[0].getParaY() != None:
             if self.__files[0].getParaY() != self.__files[1].getParaY():
                 sys.exit("Measurement types are not equal!")
@@ -408,7 +407,7 @@ class KITPlot(object):
     ### Graph methods ###
     #####################
 
-    
+
     def __initStyle(self):
 
         # Title options
@@ -429,12 +428,12 @@ class KITPlot(object):
         ROOT.gStyle.SetLabelSize(float(self.__cfg.get('XAxis','Size')),"X")
         ROOT.gStyle.SetLabelSize(float(self.__cfg.get('YAxis','Size')),"Y")
         ROOT.TGaxis.SetMaxDigits(int(self.__cfg.get('Canvas','MaxDigits')))
-        
-        
+
+
         # Canvas Options
         ROOT.gStyle.SetPadBottomMargin(float(self.__cfg.get('Canvas','PadBMargin')))
         ROOT.gStyle.SetPadLeftMargin(float(self.__cfg.get('Canvas','PadLMargin')))
-        
+
         # Marker Options
         ROOT.gStyle.SetMarkerSize(float(self.__cfg.get('Marker','Size')))
         ROOT.gStyle.SetMarkerStyle(int(self.__cfg.get('Marker','Style')))
@@ -455,14 +454,14 @@ class KITPlot(object):
 
 
     def add(self, dataInput=None, measurement="probe"):
-        """ Depending on the type, the 'self.__files' list is filled with 
-        KITData objects. An integer represents a single probe ID. A string 
+        """ Depending on the type, the 'self.__files' list is filled with
+        KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
 
         Args:
-            dataInput(None|int|str): Determines the way the 'self.__files' 
+            dataInput(None|int|str): Determines the way the 'self.__files'
                 is filled.
-            measurement(str): probe station and ALiBaVa measurements must be 
+            measurement(str): probe station and ALiBaVa measurements must be
                 handled differently due to different database paramters
         """
 
@@ -502,12 +501,12 @@ class KITPlot(object):
                 #self.changeNames()
 
                 self.addNorm()
-                        
-                        # If you open the file the data type changes from str to file 
+
+                        # If you open the file the data type changes from str to file
                         # with open(dataInput + file) as inputFile:
                         #     self.__files.append(KITData(inputFile))
                         #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
-            
+
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -537,7 +536,7 @@ class KITPlot(object):
                             self.addGraph(File.getX(), File.getY())
                         else:
                             self.addNorm(False, i)
-                        
+
                 # Rpunch Ramp file
                 elif "REdge" in dataInput:
 
@@ -580,11 +579,11 @@ class KITPlot(object):
 
 
     def addNorm(self, loop=True, j=0):
-        """ This method enables normalizations of data tables. It is has the 
-        same function as 'addGraph' but with more options. If the user wants to 
-        take advantage of normalization options then the data from the KITData 
+        """ This method enables normalizations of data tables. It is has the
+        same function as 'addGraph' but with more options. If the user wants to
+        take advantage of normalization options then the data from the KITData
         objects needs to be manipulated while creating the ROOT graphs.
-        
+
         Args:
             loop(bool), j(integer): ???
 
@@ -605,7 +604,7 @@ class KITPlot(object):
                                        self.manipulate(self.__files[i].getY(),i),
                                        self.__files[i].getdX(),
                                        self.manipulate(self.__files[i].getdY(),i))
-                     elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                     elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
                          self.addGraph(File.getX(),
                          self.manipulate(File.getY(),i),
                          File.getdX(),
@@ -622,7 +621,7 @@ class KITPlot(object):
                     elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
                         self.addGraph(self.__files[i].getX(),
                                       self.manipulate(self.__files[i].getY(),i))
-                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
                         self.addGraph(File.getX(),self.manipulate(File.getY(),i))
                     else:
                          raise ValueError("Invalid normalization input! Try "
@@ -633,7 +632,7 @@ class KITPlot(object):
                 self.addGraph(self.__files[j].getX(),self.__files[j].getY())
             elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
                 self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
-            elif self.__cfg.get('Misc','Normalization') == "1/C^{2}": 
+            elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
                 self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
             else:
                 raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
@@ -643,9 +642,9 @@ class KITPlot(object):
 
 
     def addGraph(self, *args):
-        """ The KITData objects within the 'self.__files' list (containing 
-        the data tables) are now converted into ROOT objects. A ROOT object 
-        represents a single graph of the future plot. These ROOT objects are 
+        """ The KITData objects within the 'self.__files' list (containing
+        the data tables) are now converted into ROOT objects. A ROOT object
+        represents a single graph of the future plot. These ROOT objects are
         stored within the 'self.__graphs' list.
 
         Args: x, y or KITData
@@ -657,12 +656,12 @@ class KITPlot(object):
         if isinstance(args[0], KITData):
             if KITData.getDic() == None:
                 self.__files.append(args[0])
-            
+
                 if self.absX:
                     x = np.absolute(args[0].getX())
                 else:
                     x = args[0].getX()
-            
+
                 if self.absY:
                     if str(args[1]) == "y":
                         y = np.absolute(args[0].getY())
@@ -680,24 +679,24 @@ class KITPlot(object):
 
 
         elif len(args) == 2 and not isinstance(args[0], KITData):
-            
+
             if self.absX:
                 x = np.absolute(args[0])
             else:
                 x = args[0]
-            
+
             if self.absY:
                 y = np.absolute(args[1])
             else:
                 y = args[1]
 
         elif len(args) == 4 and not isinstance(args[0], KITData):
-             
+
             if self.absX:
                 x = np.absolute(args[0])
             else:
                 x = args[0]
-            
+
             if self.absY:
                 y = np.absolute(args[1])
             else:
@@ -705,28 +704,28 @@ class KITPlot(object):
 
             dx = args[2]
             dy = args[3]
-                
-            
+
+
         else:
             sys.exit("Cant add graph")
 
-            
+
         if len(args) == 2:
             self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
         elif len(args) == 4:
             self.__graphs.append(ROOT.TGraphErrors(len(x),np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
-            
+
         return True
 
 
     def draw(self, arg="APE"):
-        """ Finally, a canvas needs to created and all the ROOT objects within 
-        'self.__graphs' need to be drawn. Different plot styles are set in 
-        respect of the cfg file and as a last step, the legend is created and 
-        drawn on the canvas. 
+        """ Finally, a canvas needs to created and all the ROOT objects within
+        'self.__graphs' need to be drawn. Different plot styles are set in
+        respect of the cfg file and as a last step, the legend is created and
+        drawn on the canvas.
 
-        Args: 
-            arg(str): This is a ROOT option. See ROOT documentation 
+        Args:
+            arg(str): This is a ROOT option. See ROOT documentation
                 (TGraph, Draw).
 
         """
@@ -747,8 +746,8 @@ class KITPlot(object):
         self.plotStyles(self.__cfg.get('XAxis','Title'),
                         self.__cfg.get('YAxis','Title'),
                         self.__cfg.get('Title','Title'))
-        
-        # set log scale if 
+
+        # set log scale if
         if self.logX:
             self.canvas.SetLogx()
         if self.logY:
@@ -760,15 +759,15 @@ class KITPlot(object):
                 graph.Draw(arg)
             else:
                 graph.Draw(arg.replace("A","") + "SAME")
-        
+
         # Set legend (always at the very end!)
 
         LegH = LegHandler()
         LegH.setKITLegend(self.__cfg.get('Legend'),
-                          self.__graphs, 
-                          self.__files, 
+                          self.__graphs,
+                          self.__files,
                           self.__cfg.get('Canvas','SizeX'),
-                          self.__cfg.get('Canvas','SizeY'), 
+                          self.__cfg.get('Canvas','SizeY'),
                           self.Scale)
         self.leg = LegH.getLegend()
 #        self.leg.SetHeader("n-in-p FZ, 240#mum")
@@ -785,11 +784,11 @@ class KITPlot(object):
 
         if not os.path.exists("output"):
             os.makedirs("output")
-        self.canvas.SaveAs("output/%s.png" %(fileName))        
+        self.canvas.SaveAs("output/%s.png" %(fileName))
         self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
     def update(self):
-        
+
         try:
             self.canvas.Update()
         except:
@@ -802,7 +801,7 @@ class KITPlot(object):
         self.__graphs[0].GetYaxis().SetTitle(YTitle)
         self.__graphs[0].SetTitle(Title)
         #self.getLegendOrder()
-        
+
         # set titles (take auto titles when creating the cfg and the cfg value from here after)
         self.setTitles()
         # set axis ranges
@@ -820,7 +819,7 @@ class KITPlot(object):
 #####################
 
     def arrangeFileList(self):
-        """ The KITData files in 'self.__files' are somewhat arbitrarily 
+        """ The KITData files in 'self.__files' are somewhat arbitrarily
         ordered at first. This method pre-orders them in respect of their names.
 
         """
@@ -836,15 +835,15 @@ class KITPlot(object):
         # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
-                
+
                 Test = Name1 + "_" + "(" + str(i) + ")"
                 TempList2[i] = Test
                 TempList1[i] = Test
-            else: 
+            else:
                 pass
-                
+
         TempList2.sort()
-        
+
         for i,Name2 in enumerate(TempList2):
             if Name2 == TempList1[i]:
                 IndexList.append(i)
@@ -854,7 +853,7 @@ class KITPlot(object):
                         IndexList.append(j)
 
         TempList1[:] = []
-        
+
         for index in IndexList:
             TempList1.append(self.__files[index])
         self.__files = TempList1
@@ -879,7 +878,7 @@ class KITPlot(object):
             for i,inputFile in enumerate(self.__files):
                 ListX += inputFile.getX()
                 ListY += inputFile.getY()
-        
+
         if self.absX:
             ListX = np.absolute(ListX)
         else:
@@ -900,7 +899,7 @@ class KITPlot(object):
             self.Scale.append(min(ListY)*(1.-self.perc))
             self.Scale.append(max(ListX)*(1.+self.perc))
             self.Scale.append(max(ListY)*(1.+self.perc))
-        
+
         #if (self.Scale[2]/self.Scale[3]) > 1e-4:
         #    self.logY = True
 
@@ -908,42 +907,42 @@ class KITPlot(object):
 
 
     def manipulate(self, ListY, index):
-        
+
         FacList = []
         TempList = []
-                    
+
         if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
             for val in ListY:
                     TempList.append(1/(val*val))
         else:
             for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
                 FacList.append(float(char))
-    
+
             if len(self.__files) != len(FacList):
                 sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
             else:
                 for val in ListY:
                     TempList.append(val/FacList[index])
-                    
+
         ListY = TempList
-               
+
         return ListY
 
 
     def checkTitleLenght(self, Title):
-        
+
         # adapt title size in case it's too long
-        if len(Title) > 30 and float(self.__cfg.get('Title','Y0')) <= 0.97: 
+        if len(Title) > 30 and float(self.__cfg.get('Title','Y0')) <= 0.97:
             ROOT.gStyle.SetTitleY(0.99)
             #self.__writeSpecifics(self.cfgPath, "Title", "y0", 0.99)
-        else: 
+        else:
             pass
 
         return Title
 
 
     def setAutoTitles(self):
-        """ Writes certain labels into the cfg. 
+        """ Writes certain labels into the cfg.
 
         """
 
@@ -956,9 +955,9 @@ class KITPlot(object):
 
 
     def readEntryList(self):
-        """'EntryList' makes all graphs, their names and order accessible. This 
-        subsection is read every time KITPlot is executed. An empty value ("") 
-        can be used to reset the entry to its default value (the original order 
+        """'EntryList' makes all graphs, their names and order accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
         and names given by the file list).
 
         """
@@ -980,7 +979,7 @@ class KITPlot(object):
 
         for i, key in enumerate(self.__EntryList):
             if int(key) == counter:
-                
+
                 return i
             else:
                 pass
@@ -1018,20 +1017,28 @@ class KITPlot(object):
 
 
     def setLegend(self):
-        """ The whole legend handling is outsourced and done by the 'leghandler' 
-        module. As a result, all the legend options (stored inside the 'Legend' 
-        dictionary), the 'self.__graph' list (containing all graphs as ROOT 
-        objects) and the'self.__files' list (containing the respective KITData 
-        objects) have to be given as arguments when calling 'leghandler' 
+        """ The whole legend handling is outsourced and done by the 'leghandler'
+        module. As a result, all the legend options (stored inside the 'Legend'
+        dictionary), the 'self.__graph' list (containing all graphs as ROOT
+        objects) and the'self.__files' list (containing the respective KITData
+        objects) have to be given as arguments when calling 'leghandler'
         methods.
 
         """
 
         LegH = LegHandler()
 
-        LegH.fillKITLegend(self.__cfg.get('Legend'), self.__graphs, self.__files)
+        LegH.fillKITLegend(self.__cfg.get('Legend'),
+                           self.__graphs,
+                           self.__files)
+
         LegH.setOptions(self.__cfg.get('Legend'))
-        LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')), int(self.__cfg.get('Canvas','SizeY')), self.__cfg.get('Legend'), self.__files, self.Scale)
+
+        LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')),
+                        int(self.__cfg.get('Canvas','SizeY')),
+                        self.__cfg.get('Legend'),
+                        self.__files,
+                        self.Scale)
 
         return LegH.getLegend()
 
@@ -1043,22 +1050,23 @@ class KITPlot(object):
 
 
     def getEntryList(self):
-        """ Loads names and order in respect to the 'EntryList' section in cfg 
-        in 'self.__files' list. Keys and values of the dictionary and the cfg 
+        """ Loads names and order in respect to the 'EntryList' section in cfg
+        in 'self.__files' list. Keys and values of the dictionary and the cfg
         are strings by default.
 
         """
 
         EntryList = self.__cfg['Legend','EntryList']
-        
+
         List = []
 
         for key in EntryList:
             List.append(int(key))
-        
+
         if len(EntryList) != len(self.__files):
-            raise KeyError("Unexpected 'EntryList' value! At least one key "
-                           "is used more than once.")
+            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                           "entries does not match or a key is used more than"
+                           "once. Adjust or reset 'EntryList'.")
         else:
             pass
         if min(List) != 0:
@@ -1067,17 +1075,18 @@ class KITPlot(object):
         else:
             pass
         if len(EntryList)-1 != max(List):
-            raise KeyError("Unexpected 'EntryList' value! Skipping numbers is " 
+            raise KeyError("Unexpected 'EntryList' value! Skipping numbers is "
                            "forbidden.")
-
+        else:
+            pass
 
         return EntryList
 
 
 
     def getDefaultEntryList(self):
-        """ Loads default names and order in respect to the KITData objects 
-        in 'self.__files' list. Both keys and values of the dictionary must be 
+        """ Loads default names and order in respect to the KITData objects
+        in 'self.__files' list. Both keys and values of the dictionary must be
         strings.
 
         """
@@ -1092,7 +1101,7 @@ class KITPlot(object):
 
 
     def setRanges(self):
-        
+
         # Scale is always filled ROOT oriantated (xmin, ymin, xmax, ymax)
         self.Scale = []
         self.__autoScaling()
@@ -1110,7 +1119,7 @@ class KITPlot(object):
             self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[2])
         else:
             sys.exit("Invalid X-axis range! Try 'auto' or '[float:float]'!")
-        
+
         if self.__cfg.get('YAxis','Range') == "auto":
             self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
         elif ":" in self.__cfg.get('YAxis','Range'):
@@ -1226,7 +1235,7 @@ class KITPlot(object):
 
         ROOT.gStyle.SetTitleSize(size,"X")
         ROOT.gStyle.SetTitleSize(size,"Y")
-        
+
         return True
 
     def setAxisTitleOffset(self, offset):
@@ -1236,33 +1245,33 @@ class KITPlot(object):
 
         return True
 
-    
+
     def getMarkerStyle(self, index):
-        
+
         if index >= 9:
             return self.__markerSet[index % 8]
         else:
             return self.__markerSet[index]
-            
+
 
     def getMarkerShade(self, index):
-        
+
         self.getShadeList()
         MarkerShade = []
         color_num = self.ShadeList[0]
-        
+
         for i, shade in enumerate(self.ShadeList):
             if not self.ShadeList[i]-color_num > 9:
                 MarkerShade.append(self.ShadeList[i]-color_num)
             if self.ShadeList[i]-color_num > 9:
                 color_num += 100
                 MarkerShade.append(self.ShadeList[i]-color_num)
-        
+
         return self.__markerSet[MarkerShade[index]]
 
 
     def getGroupList(self):
-    
+
         self.__GroupList = []
         TempList = []
         UserList = []
@@ -1274,7 +1283,8 @@ class KITPlot(object):
             else:
                 pass
 
-        if self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]":
+        if (self.__cfg.get('Misc','GraphGroup')[0] == "[" and
+           self.__cfg.get('Misc','GraphGroup')[-1] == "]"):
            for char in self.__cfg.get('Misc','GraphGroup'):
                 if char.isdigit() == True:
                     self.__GroupList.append(int(char))
@@ -1295,9 +1305,9 @@ class KITPlot(object):
 #####################
 
     def __initColor(self):
-    
-#        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
-        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+
+        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+        # self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
@@ -1305,19 +1315,19 @@ class KITPlot(object):
         self.__kitGreen.append(ROOT.TColor(1102,125./255, 210./255, 185./255))
         self.__kitGreen.append(ROOT.TColor(1103,180./255, 230./255, 210./255))
         self.__kitGreen.append(ROOT.TColor(1104,215./255, 240./255, 230./255))
-        
+
         self.__kitRed.append(ROOT.TColor(1200, 191./255, 35./255, 41./255))
         self.__kitRed.append(ROOT.TColor(1201, 205./255, 85./255, 75./255))
         self.__kitRed.append(ROOT.TColor(1202, 220./255, 130./255, 110./255))
         self.__kitRed.append(ROOT.TColor(1203, 230./255, 175./255, 160./255))
         self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
-        
+
         self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
         self.__kitOrange.append(ROOT.TColor(1301, 249./255, 174./255, 73./255))
         self.__kitOrange.append(ROOT.TColor(1302, 251./255, 195./255, 118./255))
         self.__kitOrange.append(ROOT.TColor(1303, 252./255, 218./255, 168./255))
         self.__kitOrange.append(ROOT.TColor(1304, 254./255, 236./255, 211./255))
-        
+
         self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
         self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
         self.__kitBlue.append(ROOT.TColor(1402, 155./255, 170./255, 220./255))
@@ -1347,28 +1357,28 @@ class KITPlot(object):
         self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
         self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
         self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
-        
+
         # yellow removed because color 1900 is already taken and it looks shitty
-       
+
 
         KITPlot.__init = True
-        
+
         return True
 
     def getColor(self, index):
-        
+
         KITPlot.__color = index + 1
         KITPlot.__color %= 8
-        
+
         return self.colorSet[KITPlot.__color-1]
 
 
     def getShadeList(self):
-    
+
         self.ShadeList = []
         shade_counter = 0
         j = 0
-        
+
         for File in self.__files:
             if File.getName()[:5] == self.getGroupList()[j]:
                 self.ShadeList.append(self.colorSet[j]+shade_counter)
@@ -1379,20 +1389,20 @@ class KITPlot(object):
                     j += 1
                 self.ShadeList.append(self.colorSet[j]+shade_counter)
                 shade_counter += 1
-             
+
         return True
-        
+
     def getColorShades(self, index):
         self.getShadeList()
         return self.ShadeList[index]
-        
+
 
 ###################
 ### Get methods ###
 ###################
 
     def getGraph(self, graph=None):
-        
+
         if len(self.__graphs) == 1:
             return self.__graphs[0]
         elif (len(self.__graphs) != 1) and (graph is None):
@@ -1408,9 +1418,9 @@ class KITPlot(object):
                     return self.__graphs[graph]
                 else:
                     return False
-                    
+
     def getFile(self, KITFile=None):
-        
+
         if len(self.__files) == 1:
             return self.__files[0]
         elif (len(self.__files) != 1) and (KITFile is None):
@@ -1426,7 +1436,7 @@ class KITPlot(object):
                     return self.__files[KITFile]
                 else:
                     return False
-        
+
 
     def getCanvas(self):
         return self.canvas
@@ -1442,7 +1452,7 @@ class KITPlot(object):
         for List in self.__files:
             Y.append(List.getY())
         return Y
-        
+
 if __name__ == '__main__':
     plot = KITPlot(38268)
     plot.draw('APL')
