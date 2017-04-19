@@ -108,9 +108,9 @@ class LegHandler(object):
         # consider some ugly stuff
         if para_width > 30:
             raise ValueError("Legend name too long! Reduce the number of characters!")
-        elif not 0.5 <= float(dic['BoxPara']) <= 1.5:
-            raise ValueError("Invalid box parameter! Value must be "
-                     "between 0.5 and 1.5!")
+        # elif not 0.5 <= float(dic['BoxPara']) <= 1.5:
+        #     raise ValueError("Invalid box parameter! Value must be "
+        #              "between 0.5 and 1.5!")
         elif (dic['Position'] != "auto" and dic['Position'] != "TR"
                 and dic['Position'] != "TL" and dic['Position'] != "BR"):
             raise ValueError("Invalid legend position! Try 'auto', 'TR', "

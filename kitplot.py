@@ -285,7 +285,7 @@ class KITPlot(object):
                               'Color'        : 1100      },
                  'Canvas'  :{ 'SizeX'        : 1280,
                               'SizeY'        : 768,
-                              'PadBMargin'   : 0.15,
+                              'PadBMargin'   : 0.12,
                               'PadLMargin'   : 0.15,
                               'MaxDigits'    : 4         },
 
@@ -1306,8 +1306,8 @@ class KITPlot(object):
 
     def __initColor(self):
 
-        self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
-        # self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
+        #self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
+        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
 
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
