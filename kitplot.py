@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import ROOT
@@ -231,7 +231,7 @@ class KITPlot(object):
             self.__cfg.load(dataInput)
             print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
         else:
-            # create new cfg for dataInput
+            # new plot / create new cfg for dataInput
             self.cfg_initialized = True
             self.__initDefaultCfg()
             self.__cfg.write(dataInput)
@@ -537,18 +537,24 @@ class KITPlot(object):
                         else:
                             self.addNorm(False, i)
 
-                # Rpunch Ramp file
+                # Rpunch/REdge Ramp file
                 elif "REdge" in dataInput:
-
-                    data = KITData(dataInput).getDic()
+                    print("start", dataInput)
+                    data = KITData(dataInput).getRPunchDict()
 
                     x = []
                     y = []
                     labels = []
 
                     for i, bias in enumerate(data):
-                        xi, yi = zip(*data[bias])
-                        self.__files.append(KITData(list(xi),list(yi),str(data.keys()[i])))
+                        x, y = zip(*data[bias])
+                        kdata = KITData()
+                        kdata.setX(list(x))
+                        kdata.setY(list(y))
+                        kdata.setName(str(bias) + " V")
+                        kdata.setPX("Voltage")
+                        kdata.setPY("Rpunch")
+                        self.__files.append(kdata)
 
                     self.addNorm()
 
@@ -559,21 +565,14 @@ class KITPlot(object):
                     #self.changeNames()
                     self.addNorm()
 
-                    #if "Ramp" in self.__files[-1].getParaY():
-                        #self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
-                    #else:
-                    #self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
-
 
         if self.cfg_initialized == True:
             self.MeasurementType()
             self.setAutoTitles()
         else:
             pass
+
         self.readEntryList()
-
-
-
 
         return True
 
@@ -985,7 +984,6 @@ class KITPlot(object):
                 pass
 
         return 0
-
 
 
     def interpolate(self, x=None, y=None):

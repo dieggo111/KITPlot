@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os,sys
 import numpy as np
 import mysql.connector
 from .ConfigHandler import ConfigHandler
-import collections
+from collections import OrderedDict
 import datetime
 
 class KITData(object):
@@ -17,7 +17,7 @@ class KITData(object):
     __dbCnx = None
     __dbCrs = None
 
-    def __init__(self, dataInput=None, measurement="probe", misc=None,
+    def __init__(self, dataInput=None, measurement="probe",
                  credentials='db.cfg', show_input=None):
         """ Initialize KITData object based on the input that is passed.
 
@@ -28,7 +28,6 @@ class KITData(object):
                 station or alibava measurement
             credentials (str): Specify the credentials file for the database if
                 the file is not located in the current working directory
-            misc : IDK... ask Marius
 
         """
         self.__id = None
@@ -62,7 +61,7 @@ class KITData(object):
 
         # Empty object
         if dataInput is None:
-            return False
+            pass
 
         # A single PID for either a probe station or ALiBaVa measurement
         # Sometimes integers are interpreted as strings, therefore
@@ -114,39 +113,37 @@ class KITData(object):
                         self.__dx.append(float(splited[3]))
                         self.__dy.append(float(splited[4]))
                         self.__dz.append(float(splited[5]))
-                    # DEBRICATED Rpunch measurement from file
+                    # Rpunch measurement from file
                     elif len(splited) > 6 and "REdge" in dataInput:
                         self.__z.append(float(splited[2]))
 
-                # DEBRICATED Reorder variables if file
+                # Reorder variables if file
                 # contains a RPunch measurement
                 if self.__checkRpunch(self.__x):
 
-                    dic = {}
-                    sec = self.__x[0]
+                    dic = OrderedDict()
+                    bias = self.__x[0]
                     ix = []
                     iy = []
 
                     # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                     for (valX, valY, valZ) in zip(self.__x, self.__y, self.__z):
-                        if sec == valX:
+                        if bias == valX:
                             ix.append(valY)
                             iy.append(valZ)
                         else:
-                            dic[sec] = zip(ix,iy)
-                            sec = valX
+                            dic[bias] = zip(ix,iy)
+                            bias = valX
                             ix = [valY]
                             iy = [valZ]
 
-                    dic[sec] = zip(ix,iy)
+                    dic[bias] = zip(ix,iy)
 
-                    self.__RPunchDict = collections.OrderedDict(sorted(dic
-                                                                      .items()))
+                else:
+                    pass
 
-                self.__name = os.path.basename(dataInput).split(".")[0]
-                for char in os.path.basename(dataInput):
-                    if char == "-":
-                        self.__name = os.path.basename(dataInput).split("-")[0]
+                self.__RPunchDict = dic
+
 
         # Data input contains list of KITData objects
         # TODO
@@ -165,15 +162,6 @@ class KITData(object):
                 self.__z.append(kitFile.getZ()[0])
                 self.__dy.append(kitFile.getdY()[0])
 
-        # Rpunch
-        elif (isinstance(dataInput, list) and isinstance(measurement, list)
-              and isinstance(misc, str) and len(dataInput) == len(measurement)):
-
-                self.__x = dataInput
-                self.__y = measurement
-                self.__name = misc + " V" # bias labels
-                self.__px = "Voltage"
-                self.__py = "Rpunch"
 
         else:
             raise OSError("Input could not be identified (Input: %s)"
@@ -570,6 +558,39 @@ class KITData(object):
         """
 
         self.__name = name
+        return True
+
+
+    def setPX(self, paraX=""):
+        """Set x parameter name of data file
+
+        Args:
+            paraX: x parameter name of data file
+
+        Returns:
+            True
+
+        """
+
+        self.__px = paraX
+
+        return True
+
+
+
+    def setPY(self, paraY=""):
+        """Set y parameter name of data file
+
+        Args:
+            paraY: y parameter name of data file
+
+        Returns:
+            True
+
+        """
+
+        self.__py = paraY
+
         return True
 
 
