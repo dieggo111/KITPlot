@@ -214,7 +214,7 @@ class KITPlot(object):
         self.__cfg.setDir("cfg/")
         self.cfgPath = self.__cfg.getCfgName(dataInput)
 
-        # Load cfg file
+        # Load cfg file given in initial argument
         if cfgFile is not None:
             self.__cfg.load(cfgFile)
         # Empty KITPlot with existing default cfg
@@ -226,7 +226,7 @@ class KITPlot(object):
             self.__initDefaultCfg()
             self.__cfg.write()
             print("Created new default.cfg")
-        # Load default dataInput cfg
+        # Load existing cfg belonging to dataInput
         elif dataInput is not None and self.__cfgPresent(dataInput):
             self.__cfg.load(dataInput)
             print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
@@ -498,15 +498,7 @@ class KITPlot(object):
                         pass
 
                 self.arrangeFileList()
-                #self.changeNames()
-
                 self.addNorm()
-
-                        # If you open the file the data type changes from str to file
-                        # with open(dataInput + file) as inputFile:
-                        #     self.__files.append(KITData(inputFile))
-                        #     self.addGraph(self.__files[-1].getX(),self.__files[-1].getY())
-
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -527,7 +519,6 @@ class KITPlot(object):
                             self.__files.append(KITData(fileList))
 
                     self.arrangeFileList()
-                    #self.changeNames()
 
                     for i,File in enumerate(self.__files):
                         if "Ramp" in File.getParaY():
@@ -539,7 +530,7 @@ class KITPlot(object):
 
                 # Rpunch/REdge Ramp file
                 elif "REdge" in dataInput:
-                    print("start", dataInput)
+
                     data = KITData(dataInput).getRPunchDict()
 
                     x = []
@@ -561,8 +552,6 @@ class KITPlot(object):
                 # singel file
                 else:
                     self.__files.append(KITData(dataInput))
-
-                    #self.changeNames()
                     self.addNorm()
 
 
@@ -578,7 +567,7 @@ class KITPlot(object):
 
 
     def addNorm(self, loop=True, j=0):
-        """ This method enables normalizations of data tables. It is has the
+        """ This method enables normalizations of data tables. It has the
         same function as 'addGraph' but with more options. If the user wants to
         take advantage of normalization options then the data from the KITData
         objects needs to be manipulated while creating the ROOT graphs.
@@ -718,9 +707,9 @@ class KITPlot(object):
 
 
     def draw(self, arg="APE"):
-        """ Finally, a canvas needs to created and all the ROOT objects within
-        'self.__graphs' need to be drawn. Different plot styles are set in
-        respect of the cfg file and as a last step, the legend is created and
+        """ Finally, a canvas needs to be created and all the ROOT objects
+        within 'self.__graphs' need to be drawn. Different plot styles are set
+        in respect of the cfg file and as a last step, the legend is created and
         drawn on the canvas.
 
         Args:
@@ -786,6 +775,7 @@ class KITPlot(object):
         self.canvas.SaveAs("output/%s.png" %(fileName))
         self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
+
     def update(self):
 
         try:
@@ -834,7 +824,6 @@ class KITPlot(object):
         # if same name appears more than once...
         for i, Name1 in enumerate(TempList1):
             if TempList1.count(Name1) > 1:
-
                 Test = Name1 + "_" + "(" + str(i) + ")"
                 TempList2[i] = Test
                 TempList1[i] = Test

@@ -117,8 +117,8 @@ class KITData(object):
                     elif len(splited) > 6 and "REdge" in dataInput:
                         self.__z.append(float(splited[2]))
 
-                # Reorder variables if file
-                # contains a RPunch measurement
+
+                # Reorder variables if file contains a RPunch measurement
                 if self.__checkRpunch(self.__x):
 
                     dic = OrderedDict()
@@ -139,10 +139,15 @@ class KITData(object):
 
                     dic[bias] = zip(ix,iy)
 
-                else:
-                    pass
+                    self.__RPunchDict = dic
 
-                self.__RPunchDict = dic
+                else:
+                    self.__name = os.path.basename(dataInput).split(".")[0]
+                    for char in os.path.basename(dataInput):
+                        if char == "-":
+                            self.__name = os.path.basename(dataInput).split("-")[0]
+                        else:
+                            pass
 
 
         # Data input contains list of KITData objects

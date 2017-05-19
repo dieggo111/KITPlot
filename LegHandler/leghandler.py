@@ -128,10 +128,7 @@ class LegHandler(object):
         else:
             magic_para_height = 0
 
-        print(para_width, magic_para_width)
-        print(para_height, magic_para_height)
         # Default/starting position for the legend box
-
         TRxmax = 0.89
         TRymax = 0.88
         TRxmin = TRxmax - para_width - magic_para_width
