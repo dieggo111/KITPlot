@@ -204,7 +204,7 @@ class KITPlot(object):
         # init colors and markers
         if self.__init == False:
             self.__initColor()
-            self.__markerSet = [21,20,22,23,25,24,26,32,34]
+            #self.__markerSet = [21,20,22,23,25,24,26,32,34]
             self.cfg_initialized = False
         else:
             pass
@@ -238,6 +238,7 @@ class KITPlot(object):
             print("%s.cfg has been created" %dataInput)
 
         self.__initStyle()
+
 #        a = self.__cfg['General','Measurement']
         a = "probe"
         # add files
@@ -253,12 +254,13 @@ class KITPlot(object):
 
     def __initDefaultCfg(self):
 
-        pDict = {'General' :{ 'Measurement'  : 'probe'   },
+        pDict = OrderedDict()
+        pDict = {'General' :{ 'Measurement'  : 'probe'      },
                  'Title'   :{ 'Title'        : 'Title',
                               'X0'           : 0.5,
                               'Y0'           : 0.97,
                               'H'            : 0.05,
-                              'Font'         : 62        },
+                              'Font'         : 62           },
                  'XAxis'   :{ 'Title'        : 'X Value',
                               'Size'         : 0.05,
                               'Offset'       : 1.1,
@@ -266,7 +268,7 @@ class KITPlot(object):
                               'Font'         : 62,
                               'Abs'          : True,
                               'Log'          : False,
-                              'Range'        : 'auto',   },
+                              'Range'        : 'auto',      },
                  'YAxis'   :{ 'Title'        : 'Y Value',
                               'Size'         : 0.05,
                               'Offset'       : 1.1,
@@ -274,26 +276,26 @@ class KITPlot(object):
                               'Font'         : 62,
                               'Abs'          : True,
                               'Log'          : False,
-                              'Range'        : 'auto'    },
+                              'Range'        : 'auto'       },
                  'Legend'  :{ 'SortPara'     : 'list',
                               'Position'     : 'auto',
                               'TextSize'     : 0.03,
                               'BoxPara'      : 1,
-                              'EntryList'    : ''        },
-                 'Marker'  :{ 'Size'         : 1.5,
-                              'Style'        : 22,
-                              'Color'        : 1100      },
+                              'EntryList'    : ''           },
+                 'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
+                              'Size'         : 1.5,         },
+                 'Line'    :{ 'NoLine'       : False,
+                              'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
+                              'Style'        : 1,
+                              'Width'        : 2            },
                  'Canvas'  :{ 'SizeX'        : 1280,
                               'SizeY'        : 768,
                               'PadBMargin'   : 0.12,
                               'PadLMargin'   : 0.15,
-                              'MaxDigits'    : 4         },
-
+                              'MaxDigits'    : 4            },
                  'Misc'    :{ 'GraphGroup'   : 'off',
                               'ColorShades'  : False,
-                              'Normalization': 'off',
-}
-
+                              'Normalization': 'off',       }
         }
 
         self.__cfg.init(pDict)
@@ -314,7 +316,6 @@ class KITPlot(object):
                     return True
             else:
                 return False
-
 
 
     ##################
@@ -411,45 +412,52 @@ class KITPlot(object):
     def __initStyle(self):
 
         # Title options
-        ROOT.gStyle.SetTitleX(float(self.__cfg.get('Title','X0')))
-        ROOT.gStyle.SetTitleY(float(self.__cfg.get('Title','Y0')))
-        ROOT.gStyle.SetTitleH(float(self.__cfg.get('Title','H')))
-        ROOT.gStyle.SetTitleFont(int(self.__cfg.get('Title','Font')), "")
+        ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
+        ROOT.gStyle.SetTitleY(self.__cfg.get('Title','Y0'))
+        ROOT.gStyle.SetTitleH(self.__cfg.get('Title','H'))
+        ROOT.gStyle.SetTitleFont(self.__cfg.get('Title','Font'), "")
 
         # Axis Options
-        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('XAxis','Size')), "X")
-        ROOT.gStyle.SetTitleSize(float(self.__cfg.get('YAxis','Size')), "Y")
-        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('XAxis','Offset')), "X")
-        ROOT.gStyle.SetTitleOffset(float(self.__cfg.get('YAxis','Offset')), "Y")
-        ROOT.gStyle.SetTitleFont(int(self.__cfg.get('XAxis','Font')), "X")
-        ROOT.gStyle.SetTitleFont(int(self.__cfg.get('YAxis','Font')), "Y")
-        ROOT.gStyle.SetLabelFont(int(self.__cfg.get('XAxis','Font')),"X")
-        ROOT.gStyle.SetLabelFont(int(self.__cfg.get('YAxis','Font')),"Y")
-        ROOT.gStyle.SetLabelSize(float(self.__cfg.get('XAxis','Size')),"X")
-        ROOT.gStyle.SetLabelSize(float(self.__cfg.get('YAxis','Size')),"Y")
-        ROOT.TGaxis.SetMaxDigits(int(self.__cfg.get('Canvas','MaxDigits')))
-
+        ROOT.gStyle.SetTitleSize(self.__cfg.get('XAxis','Size'), "X")
+        ROOT.gStyle.SetTitleSize(self.__cfg.get('YAxis','Size'), "Y")
+        ROOT.gStyle.SetTitleOffset(self.__cfg.get('XAxis','Offset'), "X")
+        ROOT.gStyle.SetTitleOffset(self.__cfg.get('YAxis','Offset'), "Y")
+        ROOT.gStyle.SetTitleFont(self.__cfg.get('XAxis','Font'), "X")
+        ROOT.gStyle.SetTitleFont(self.__cfg.get('YAxis','Font'), "Y")
+        ROOT.gStyle.SetLabelFont(self.__cfg.get('XAxis','Font'),"X")
+        ROOT.gStyle.SetLabelFont(self.__cfg.get('YAxis','Font'),"Y")
+        ROOT.gStyle.SetLabelSize(self.__cfg.get('XAxis','Size'),"X")
+        ROOT.gStyle.SetLabelSize(self.__cfg.get('YAxis','Size'),"Y")
+        ROOT.TGaxis.SetMaxDigits(self.__cfg.get('Canvas','MaxDigits'))
 
         # Canvas Options
-        ROOT.gStyle.SetPadBottomMargin(float(self.__cfg.get('Canvas','PadBMargin')))
-        ROOT.gStyle.SetPadLeftMargin(float(self.__cfg.get('Canvas','PadLMargin')))
+        ROOT.gStyle.SetPadBottomMargin(self.__cfg.get('Canvas','PadBMargin'))
+        ROOT.gStyle.SetPadLeftMargin(self.__cfg.get('Canvas','PadLMargin'))
 
         # Marker Options
-        ROOT.gStyle.SetMarkerSize(float(self.__cfg.get('Marker','Size')))
-        ROOT.gStyle.SetMarkerStyle(int(self.__cfg.get('Marker','Style')))
-        ROOT.gStyle.SetMarkerColor(int(self.__cfg.get('Marker','Color')))
-        self.LineWidth = 2
+        ROOT.gStyle.SetMarkerSize(self.__cfg.get('Marker','Size'))
+        # ROOT.gStyle.SetMarkerStyle(self.__cfg.get('Marker','Style'))
+        # ROOT.gStyle.SetMarkerColor(self.__cfg.get('Marker','Color'))
+        self.markerSet = self.__cfg['Marker','Set'].replace("[","").replace("]","").split(",")
+
+        #Line options
+        self.noLine = self.__cfg['Line','NoLine']
+        self.colorSet = self.__cfg['Line','Color'].replace("[","").replace("]","").split(",")
+        self.lineWidth = self.__cfg['Line','Width']
+        self.lineStyle = self.__cfg['Line','Style']
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
         ROOT.gStyle.SetPadGridY(True)
 
+        # KITPlot specific options
         self.ColorShades = self.__cfg['Misc','ColorShades']
         self.absX = self.__cfg['XAxis','Abs']
         self.absY = self.__cfg['YAxis','Abs']
         self.logX = self.__cfg['XAxis','Log']
         self.logY = self.__cfg['YAxis','Log']
         KITPlot.__init = True
+
         return True
 
 
@@ -664,8 +672,6 @@ class KITPlot(object):
             else:
                 sys.exit("Dictinary error")
 
-
-
         elif len(args) == 2 and not isinstance(args[0], KITData):
 
             if self.absX:
@@ -693,10 +699,8 @@ class KITPlot(object):
             dx = args[2]
             dy = args[3]
 
-
         else:
             sys.exit("Cant add graph")
-
 
         if len(args) == 2:
             self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
@@ -706,23 +710,37 @@ class KITPlot(object):
         return True
 
 
-    def draw(self, arg="APE"):
+    def draw(self, arg=None):
         """ Finally, a canvas needs to be created and all the ROOT objects
         within 'self.__graphs' need to be drawn. Different plot styles are set
-        in respect of the cfg file and as a last step, the legend is created and
+        in respect of the cfg file and as a last step the legend is created and
         drawn on the canvas.
 
         Args:
-            arg(str): This is a ROOT option. See ROOT documentation
-                (TGraph, Draw).
+            arg(str): This is a ROOT specific argument (TGraph  Draw):
+                'A' -> draw axis
+                'L' -> draw lines
+                'P' -> draw markers
+                'C' -> draw smooth curve
+                See ROOT documentation for more details.
 
         """
+
+        if arg == None:
+            arg = "APL"
+        else:
+            pass
+
+        if self.__cfg.get('Line','NoLine') == True and "L" in arg:
+            arg = arg.replace("L","")
+        elif self.__cfg.get('Line','NoLine') == False and "L" not in arg:
+            arg = arg + "L"
+        else:
+            pass
 
         if len(self.__graphs) == 0:
             print("No graphs to draw")
             return False
-
-
 
         # init canvas
         self.canvas = ROOT.TCanvas("c1","c1",
@@ -1164,16 +1182,16 @@ class KITPlot(object):
             if self.__cfg.get('Misc','GraphGroup') == "off" :
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
-#                self.__graphs[self.changeOrder(i)].SetLineStyle(7)
+                self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+#                self.__graphs[self.changeOrder(i)].Set(7)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
+                self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
                  self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
                  self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
-                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.LineWidth)
+                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
             elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
                 break
             elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
@@ -1195,16 +1213,16 @@ class KITPlot(object):
                     colorcount += 1
                     shadecount = 0
                 elif self.ColorShades == True:
-                        self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount]+shadecount)
-                        self.__graphs[elem].SetLineColor(self.colorSet[colorcount]+shadecount)
-                        self.__graphs[elem].SetLineWidth(self.LineWidth)
-#                        self.__graphs[elem].SetLineStyle(7)
+                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
+                        self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
+                        self.__graphs[elem].SetLineWidth(self.lineWidth)
+                        self.__graphs[elem].SetLineStyle(self.lineStyle)
                         shadecount += 1
                 elif self.ColorShades == False:
-                        self.__graphs[elem].SetMarkerColor(self.colorSet[colorcount])
-                        self.__graphs[elem].SetLineColor(self.colorSet[colorcount])
-                        self.__graphs[elem].SetLineWidth(self.LineWidth)
-#                        self.__graphs[elem].SetLineStyle(7)
+                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
+                        self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
+                        self.__graphs[elem].SetLineWidth(self.lineWidth)
+                        self.__graphs[elem].SetLineStyle(self.lineStyle)
                 else:
                     pass
         else:
@@ -1236,9 +1254,9 @@ class KITPlot(object):
     def getMarkerStyle(self, index):
 
         if index >= 9:
-            return self.__markerSet[index % 8]
+            return int(self.markerSet[index % 8])
         else:
-            return self.__markerSet[index]
+            return int(self.markerSet[index])
 
 
     def getMarkerShade(self, index):
@@ -1254,7 +1272,7 @@ class KITPlot(object):
                 color_num += 100
                 MarkerShade.append(self.ShadeList[i]-color_num)
 
-        return self.__markerSet[MarkerShade[index]]
+        return int(self.markerSet[MarkerShade[index]])
 
 
     def getGroupList(self):
@@ -1292,10 +1310,6 @@ class KITPlot(object):
 #####################
 
     def __initColor(self):
-
-        #self.colorSet = [1100,1200,1300,1400,1500,1600,1700,1800]
-        self.colorSet = [1400,1500,1700,1800,1100,1200,1300,1600]
-
 
         self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
         self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
@@ -1345,19 +1359,19 @@ class KITPlot(object):
         self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
         self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
 
-        # yellow removed because color 1900 is already taken and it looks shitty
-
+        # yellow removed because it looks shitty
 
         KITPlot.__init = True
 
         return True
+
 
     def getColor(self, index):
 
         KITPlot.__color = index + 1
         KITPlot.__color %= 8
 
-        return self.colorSet[KITPlot.__color-1]
+        return int(self.colorSet[KITPlot.__color-1])
 
 
     def getShadeList(self):
@@ -1368,13 +1382,13 @@ class KITPlot(object):
 
         for File in self.__files:
             if File.getName()[:5] == self.getGroupList()[j]:
-                self.ShadeList.append(self.colorSet[j]+shade_counter)
+                self.ShadeList.append(int(self.colorSet[j])+shade_counter)
                 shade_counter += 1
             if File.getName()[:5] != self.getGroupList()[j]:
                 shade_counter = 0
                 if j <= len(self.getGroupList())-1:
                     j += 1
-                self.ShadeList.append(self.colorSet[j]+shade_counter)
+                self.ShadeList.append(int(self.colorSet[j])+shade_counter)
                 shade_counter += 1
 
         return True

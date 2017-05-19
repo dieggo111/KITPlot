@@ -92,10 +92,9 @@ class ConfigHandler(object):
         self.__setInDict(self.__cfg,mapList,value)
 
     def write(self, cfg='default.cfg'):
-        print(self.getCfgName(cfg))
         self.name = self.getCfgName(cfg)
         with open(self.__dir + self.name,'w') as cfgFile:
-            json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=False)
+            json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=True)
 
 
     def setDict(self, dictionary):
