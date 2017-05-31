@@ -29,6 +29,7 @@ class ConfigHandler(object):
     def __load(self,cfg='default.cfg'):
         self.name = self.getCfgName(cfg)
         try:
+            print(self.__dir+self.name)
             with open(self.__dir+self.name) as cfgFile:
                 return json.load(cfgFile, object_pairs_hook=OrderedDict)
         except:

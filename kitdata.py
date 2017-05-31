@@ -119,7 +119,7 @@ class KITData(object):
 
 
                 # Reorder variables if file contains a RPunch measurement
-                if self.__checkRpunch(self.__x):
+                if self.checkRpunch(self.__x):
 
                     dic = OrderedDict()
                     bias = self.__x[0]
@@ -128,6 +128,7 @@ class KITData(object):
 
                     # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
                     for (valX, valY, valZ) in zip(self.__x, self.__y, self.__z):
+                        # create the IV keys for one bias voltage
                         if bias == valX:
                             ix.append(valY)
                             iy.append(valZ)
@@ -172,10 +173,11 @@ class KITData(object):
             raise OSError("Input could not be identified (Input: %s)"
                           %(dataInput))
 
+
     def getRPunchDict(self):
         return self.__RPunchDict
 
-    def __checkRpunch(self, List):
+    def checkRpunch(self, List):
 
         for val in List:
             if List.count(val) > 2:
@@ -233,6 +235,7 @@ class KITData(object):
         cfg = ConfigHandler()
         cfg.setDict(dic)
         cfg.write("db.cfg")
+
 
     def __check_if_folder_pid(self, fileName):
         """Check if file contains PIDs or datasets
@@ -294,6 +297,7 @@ class KITData(object):
             self.__name = name
             self.__Fp = Fp
 
+
     def __allo_db_alibava(self, run):
 
         self.__px = "Voltage"
@@ -321,7 +325,6 @@ class KITData(object):
 
             tmpID = id
             tmpDate = date
-
 
         qryAnnealing = ("SELECT date,equiv FROM annealing "
                         "WHERE id=%s and "
@@ -369,6 +372,7 @@ class KITData(object):
         self.__y = yTemp
 
         return True
+
 
     def dropXHigher(self, xhigh=0):
         """Drops datasets if x > xhigh
@@ -444,6 +448,7 @@ class KITData(object):
 
         return True
 
+
     def setRange(self, var="x", low=0, high=0):
         """Set a certain data range. Every dataset outside this
         range will be droped.
@@ -464,6 +469,7 @@ class KITData(object):
 
         return True
 
+
     def includesErrors(self):
         return True if len(self.__dx) != 0 else False
 
@@ -471,6 +477,7 @@ class KITData(object):
     ###################
     ### Set methods ###
     ###################
+
 
     def setX(self, inputArray=None):
         """Set new or initialize x values of data file
@@ -491,6 +498,7 @@ class KITData(object):
                 print("Cannot set x: wrong format")
                 return False
 
+
     def setY(self, inputArray=None):
         """Set new or initialize y values of data file
 
@@ -509,6 +517,7 @@ class KITData(object):
             except:
                 print("Cannot set y: wrong format")
                 return False
+
 
     def setZ(self, inputArray=None):
         """Set new or initialize z values of data file
@@ -529,6 +538,7 @@ class KITData(object):
             except:
                 print("Cannot set z: wrong format")
                 return False
+
 
     def setData(self, **kwargs):
         """Set whole data sets

@@ -201,10 +201,9 @@ class KITPlot(object):
         self.__files = []
         self.__graphs = []
 
-        # init colors and markers
+        # init colors
         if self.__init == False:
             self.__initColor()
-            #self.__markerSet = [21,20,22,23,25,24,26,32,34]
             self.cfg_initialized = False
         else:
             pass
@@ -295,7 +294,7 @@ class KITPlot(object):
                               'MaxDigits'    : 4            },
                  'Misc'    :{ 'GraphGroup'   : 'off',
                               'ColorShades'  : False,
-                              'Normalization': 'off',       }
+                              'Normalization': 'off'       }
         }
 
         self.__cfg.init(pDict)
@@ -327,6 +326,7 @@ class KITPlot(object):
         measurement type by checking database information. The default axis
         labels and titles are then set according to this information as soon as
         the respective cfg file is created.
+
         """
 
         if self.__files[0].getParaY() == None:
@@ -380,8 +380,8 @@ class KITPlot(object):
                 self.autotitle = "Interstrip Current Leakage"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
-            elif self.MT == "Rpunch":
-                self.autotitle = "R_{Edge} of " + self.cfgPath.replace("cfg/","").replace(".cfg","").replace("for_","for ").replace("rev_","rev ").replace("m20C","(T = -20#circC)").replace("20C","(T = 20#circC)")[15:]
+            elif self.MT == "V_Ramp":
+                self.autotitle = "R_{Edge} Measurement"
                 self.autotitleY = "Current (A)"
                 self.autotitleX = "Voltage (V)"
             else:
@@ -394,6 +394,7 @@ class KITPlot(object):
                 sys.exit("Measurement types are not equal!")
 
         return True
+
 
     def checkPID(self, dataInput):
         # checks if PIDs are listed in the file
@@ -410,6 +411,10 @@ class KITPlot(object):
 
 
     def __initStyle(self):
+        """ Loads and sets various parameters from cfg file which are then used
+            to create the desired plot.
+
+        """
 
         # Title options
         ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
@@ -449,6 +454,7 @@ class KITPlot(object):
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
         ROOT.gStyle.SetPadGridY(True)
+        ROOT.gStyle.SetGridColor(17)
 
         # KITPlot specific options
         self.ColorShades = self.__cfg['Misc','ColorShades']
@@ -465,6 +471,9 @@ class KITPlot(object):
         """ Depending on the type, the 'self.__files' list is filled with
         KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
+        A RPunch measurement, however, origionaly consist of one KITData file
+        that needs to be split up into several KITData objects for one bias
+        value (x value) represents one graph.
 
         Args:
             dataInput(None|int|str): Determines the way the 'self.__files'
@@ -481,6 +490,7 @@ class KITPlot(object):
         # Load single PID
         elif isinstance(dataInput, int):
             self.__files.append(KITData(dataInput))
+            print(self.__files[0].getX())
             if "Ramp" in self.__files[-1].getParaY():
                 print("Ramp measurement")
                 self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
@@ -492,10 +502,40 @@ class KITPlot(object):
             if dataInput.isdigit():
                 self.__files.append(KITData(dataInput))
                 if "Ramp" in self.__files[-1].getParaY():
-                    print("Ramp measurement")
-                    self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+
+                    x = []
+                    y = []
+                    labels = []
+
+                    if len(self.__files) > 1:
+                        raise ValueError("You can only print one RPunch ramp"
+                                         " at once!")
+
+                    # get the values from the KITData file and convert it into
+                    # a dictionary: section=V_bias,key=(V_edge, I_edge) [tuple]
+                    kdict = self.getRDict(self.__files[0])
+                    self.__files = []
+                    for i, bias in enumerate(kdict):
+                        # create an empty KITData object
+                        kdata = KITData()
+                        # extract each single bias value from the dictionary
+                        # and create KITData files for every value
+                        x, y = zip(*kdict[bias])
+                        kdata.setX(list(x))
+                        kdata.setY(list(y))
+                        kdata.setName(str(bias) + " V")
+                        kdata.setPX("Voltage")
+                        kdata.setPY("Rpunch")
+
+                        self.__files.append(kdata)
+
+                    self.addNorm()
+                    for kdata in self.__files:
+                        self.makeFit(kdata, print_fit=True, draw_fit=False)
+
                 else:
                     self.addNorm()
+
 
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
@@ -507,6 +547,8 @@ class KITPlot(object):
 
                 self.arrangeFileList()
                 self.addNorm()
+                for kdata in self.__files:
+                    self.makeFit(kdata, print_fit=True, draw_fit=False)
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -536,32 +578,35 @@ class KITPlot(object):
                         else:
                             self.addNorm(False, i)
 
-                # Rpunch/REdge Ramp file
-                elif "REdge" in dataInput:
 
-                    data = KITData(dataInput).getRPunchDict()
 
-                    x = []
-                    y = []
-                    labels = []
-
-                    for i, bias in enumerate(data):
-                        x, y = zip(*data[bias])
-                        kdata = KITData()
-                        kdata.setX(list(x))
-                        kdata.setY(list(y))
-                        kdata.setName(str(bias) + " V")
-                        kdata.setPX("Voltage")
-                        kdata.setPY("Rpunch")
-                        self.__files.append(kdata)
-
-                    self.addNorm()
-
+                # TODO Rpunch/REdge Ramp file
+                # elif "REdge" in dataInput:
+                #
+                #     data = KITData(dataInput).getRPunchDict()
+                #
+                #     x = []
+                #     y = []
+                #     labels = []
+                #
+                #     for i, bias in enumerate(data):
+                #         x, y = zip(*data[bias])
+                #         kdata = KITData()
+                #         kdata.setX(list(x))
+                #         kdata.setY(list(y))
+                #         kdata.setName(str(bias) + " V")
+                #         kdata.setPX("Voltage")
+                #         kdata.setPY("Rpunch")
+                #         self.__files.append(kdata)
+                #
+                #     self.addNorm()
+                #
                 # singel file
                 else:
                     self.__files.append(KITData(dataInput))
                     self.addNorm()
-
+                    for kdata in self.__files:
+                        self.makeFit(kdata, print_fit=True, draw_fit=False)
 
         if self.cfg_initialized == True:
             self.MeasurementType()
@@ -590,25 +635,25 @@ class KITPlot(object):
             for i, File in enumerate(self.__files):
                 # if data points have error bars
                 if self.__files[i].includesErrors():
-                     if self.__cfg.get('Misc','Normalization') == "off":
-                         self.addGraph(self.__files[i].getX(),
-                                       self.__files[i].getY(),
-                                       self.__files[i].getdX(),
-                                       self.__files[i].getdY())
-                     elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                         self.addGraph(self.__files[i].getX(),
-                                       self.manipulate(self.__files[i].getY(),i),
-                                       self.__files[i].getdX(),
-                                       self.manipulate(self.__files[i].getdY(),i))
-                     elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-                         self.addGraph(File.getX(),
-                         self.manipulate(File.getY(),i),
-                         File.getdX(),
-                         self.manipulate(File.getdY(),i))
-                     else:
-                         raise ValueError("Invalid normalization input! Try "
-                                          "'off', '1/C^{2}' or '[float,"
-                                          "float,...]'!")
+                    if self.__cfg.get('Misc','Normalization') == "off":
+                        self.addGraph(self.__files[i].getX(),
+                                      self.__files[i].getY(),
+                                      self.__files[i].getdX(),
+                                      self.__files[i].getdY())
+                    elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+                        self.addGraph(self.__files[i].getX(),
+                                      self.manipulate(self.__files[i].getY(),i),
+                                      self.__files[i].getdX(),
+                                      self.manipulate(self.__files[i].getdY(),i))
+                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+                        self.addGraph(File.getX(),
+                        self.manipulate(File.getY(),i),
+                        File.getdX(),
+                        self.manipulate(File.getdY(),i))
+                    else:
+                        raise ValueError("Invalid normalization input! Try "
+                                         "'off', '1/C^{2}' or '[float,"
+                                         "float,...]'!")
                 # if data points have no error bars
                 else:
                     if self.__cfg.get('Misc','Normalization') == "off":
@@ -634,7 +679,6 @@ class KITPlot(object):
                 raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
 
         return True
-
 
 
     def addGraph(self, *args):
@@ -1016,6 +1060,31 @@ class KITPlot(object):
         return v
 
 
+    def makeFit(self, List, print_fit, draw_fit):
+
+        x = []
+        y = []
+
+        print("Fit Results:")
+
+        if isinstance(List, KITData):
+            x = List.getX()
+            y = List.getY()
+
+            p0, p1 = abs(np.polyfit(x ,y, 1))
+
+
+            print("{:>8} {:>8} {:>8}".format(List.getName(),
+                                             " : m = " + str(round(p0,5)),
+                                             " ; R = " + str(round(1./p0,5))))
+
+        else:
+            #TODO non-kitdata objects
+            pass
+
+
+
+
 #####################
 ### Legend method ###
 #####################
@@ -1052,6 +1121,32 @@ class KITPlot(object):
 #######################
 ### Set/get methods ###
 #######################
+
+
+    def getRDict(self, kdata):
+
+        dic = OrderedDict()
+        bias = kdata.getX()[0]
+        ix = []
+        iy = []
+
+        # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
+        for (valX, valY, valZ) in zip(kdata.getX(), kdata.getY(), kdata.getZ()):
+            # create the IV keys for one bias voltage
+            if bias == valX:
+                ix.append(valY)
+                iy.append(valZ)
+            else:
+                dic[bias] = zip(ix,iy)
+                bias = valX
+                ix = [valY]
+                iy = [valZ]
+
+        dic[bias] = zip(ix,iy)
+
+        self.__RDict = dic
+
+        return self.__RDict
 
 
     def getEntryList(self):
