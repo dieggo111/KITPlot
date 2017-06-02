@@ -60,19 +60,19 @@ The script consists of 4 modules:
        put its content inside an extra folder within your main folder and name
        it 'modules'. If you feel the need to name it otherwise you will have to
        append its path the sys.path list).
-    c) Download and install python 2.7 on your system
+    c) Download and install python 3 on your system
        (https://www.python.org/downloads/).
-    d) The most recent version of python 2 contains 'pip', a download
+    d) The most recent version of python 3 contains 'pip', a download
        manager/installer for python modules, which should be used to download
        the following modules:
-        'numpy', 'mysql.connector, 'ConfigParser' and 'collections'
+        'numpy', 'mysql-connector-python, 'ConfigParser' and 'collections'
        (the rest should be standard python modules... there's nothing fancy
-        here!').
-    e) Download and build ROOT v5.34/36 on your system. When building ROOT,
+        here.').
+    e) Download and build ROOT v5.34/36 or 6 on your system. When building ROOT,
        make sure you enable the use of pyROOT. This is easy on Linux. However,
        doing this on Windows or Mac is a different story... although it's
        generally possible to do this on every system.
-    f) For security reasons the login
+    f) For security reasons the login [TODO]
 
 4) Let's get started:
     Before creating your first plot you need to write a few lines of code for
@@ -123,7 +123,7 @@ The script consists of 4 modules:
                             Mind the brackets!
     - 'Font = 62': 62 is standard arial, bulky and ideal for presentations.
                    See ROOT documention for other options.
-    - 'Log = False': This needs to be a boolean value. Remember that having a 0
+    - 'Log = false': This needs to be a boolean value. Remember that having a 0
                      in your data table may raise errors.
     - 'Abs = True': This needs to be a boolean value.
     - 'Title = Voltage (V)': You can announce special characters here with an
@@ -143,7 +143,7 @@ The script consists of 4 modules:
                           make your own 'GraphGroup' by using the original
                           sensor order and put them into brackets like
                           '[1,2][6][3,4,5]'.
-    - 'ColorShades = False': This needs to be a boolean value. If you use
+    - 'ColorShades = false': This needs to be a boolean value. If you use
                              GraphGroups, you might as well want to use
                              ColorShades. Let's say you have 3 red graphs and
                              set this to True, then you will get 3 different
@@ -159,7 +159,7 @@ The script consists of 4 modules:
                              would be divided (normalized) by 7.590296.
     - 'Position = auto': If this is set to auto then the scripts will search all
                          4 corners for the best spot to place the legend. You
- .                         might wanna adjust this by using
+                          might wanna adjust this by using
                          'TR' (top right corner),
                          'TL',
                          'BR' (bottom right corner) or
@@ -177,6 +177,34 @@ The script consists of 4 modules:
                                             options will always refere to the
                                             original order.
 
+    - 'Line' -> 'Style' = '[1,7]': This feature enables drawing different lines
+                                   in different styles. In this example, the
+                                   first line is continuous while the second
+                                   line is dashed. You can also just write
+                                   something like 'Style' = 1 (integer) to draw
+                                   all lines in the same style.
+
+    - 'Line' -> 'NoLine' = false: If you want happy with just drawing markers
+                                  and no lines then set this option to 'false'.
+
+    - 'Marker' -> 'Set' = "[21,20,...]": KITPlot will iterate through this list
+                                         when drawing graphs to determine
+                                         the marker style. This list is just a
+                                         suggestion. Feel free to edit the
+                                         number of marker styles in this list.
+                                         See ROOT documention for the respective
+                                         marker styles.
+
+    - 'Line' -> 'Color' = "[1100,1200,...]": KITPlot will iterate through this
+                                             list when drawing graphs to
+                                             determine the line color. KITPlot
+                                             uses its own color palette, but can
+                                             also use the ROOT palette, although
+                                             some options might not work then.
+                                             The 'self.__initColor' function
+                                             incorporates our self-made color
+                                             palette.
+                                             
 """
 
 class KITPlot(object):
