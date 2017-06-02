@@ -530,8 +530,8 @@ class KITPlot(object):
                         self.__files.append(kdata)
 
                     self.addNorm()
-                    for kdata in self.__files:
-                        self.makeFit(kdata, print_fit=True, draw_fit=False)
+                    # for kdata in self.__files:
+                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
 
                 else:
                     self.addNorm()
@@ -601,12 +601,13 @@ class KITPlot(object):
                 #
                 #     self.addNorm()
                 #
+
                 # singel file
                 else:
                     self.__files.append(KITData(dataInput))
                     self.addNorm()
-                    for kdata in self.__files:
-                        self.makeFit(kdata, print_fit=True, draw_fit=False)
+                    # for kdata in self.__files:
+                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
 
         if self.cfg_initialized == True:
             self.MeasurementType()
@@ -1083,6 +1084,26 @@ class KITPlot(object):
             pass
 
 
+    def getLineStyle(self, i):
+
+        l = len(self.__files)
+        lineSet = []
+
+        if isinstance(self.lineStyle, int):
+            return self.lineStyle
+        if isinstance(self.lineStyle, str):
+            lineSet = self.lineStyle.replace("[","").replace("]","").split(",")
+            for j, string in enumerate(lineSet):
+                lineSet[j] = int(lineSet[j].replace("'",""))
+            if l != len(lineSet):
+                raise ValueError("Number of elements in 'line style' doesn't"
+                                 " match the number of graphs!")
+            else:
+                return lineSet[i]
+        else:
+            raise ValueError("Line style needs to be either a single integer"
+                             " or something like '[x,y,z,...]'")
+
 
 
 #####################
@@ -1278,15 +1299,17 @@ class KITPlot(object):
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-#                self.__graphs[self.changeOrder(i)].Set(7)
+                self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+                self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
             elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
                  self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
                  self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
                  self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+                 self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
             elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
                 break
             elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
@@ -1311,13 +1334,13 @@ class KITPlot(object):
                         self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
                         self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
                         self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.lineStyle)
+                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
                         shadecount += 1
                 elif self.ColorShades == False:
                         self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
                         self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
                         self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.lineStyle)
+                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
                 else:
                     pass
         else:
