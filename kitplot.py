@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
-import ROOT
-import os, sys
-from .kitdata import KITData
-from .ConfigHandler import ConfigHandler
-from .LegHandler import LegHandler
-from collections import OrderedDict
-
 """ A simple ROOT based python plot script
 
 1) Synopsis:
@@ -62,17 +54,24 @@ The script consists of 4 modules:
        append its path the sys.path list).
     c) Download and install python 3 on your system
        (https://www.python.org/downloads/).
-    d) The most recent version of python 3 contains 'pip', a download
+    d) The most recent version of python 3 contains 'pip3', a download
        manager/installer for python modules, which should be used to download
        the following modules:
-        'numpy', 'mysql-connector-python, 'ConfigParser' and 'collections'
+       - numpy: 'pip3 install numpy'
+       - pymysql: 'pip3 install mysqlclient'
+       - json: 'pip3 install simplejson'
        (the rest should be standard python modules... there's nothing fancy
         here.').
-    e) Download and build ROOT v5.34/36 or 6 on your system. When building ROOT,
-       make sure you enable the use of pyROOT. This is easy on Linux. However,
-       doing this on Windows or Mac is a different story... although it's
-       generally possible to do this on every system.
-    f) For security reasons the login [TODO]
+    e) There are 2 'plot engines' you can use: ROOT or matplotlib.
+       - ROOT: Download and build ROOT v5.34/36 or 6 on your system. When
+               building ROOT, make sure you enable the use of pyROOT. This is
+               easy on Linux. However,doing this on Windows or Mac is a
+               different story... although it's generally possible to do this
+               on every system.
+       - matplotlib: 'pip3 install matplotlib'
+    f) Lastly, you need login informations to access the database, which are
+       stored in the 'db.cfg'. For security reasons the login file can not be
+       downloaded, but must be requested from Daniel or Marius.
 
 4) Let's get started:
     Before creating your first plot you need to write a few lines of code for
@@ -94,11 +93,8 @@ The script consists of 4 modules:
     ####################################################
 
     import sys
-    import numpy as np
-    import ROOT
-    sys.path.append('modules/')
-    from KITData import KITData
-    from KITPlot import KITPlot
+    from .kitdata import KITData
+    from .kitplot import KITPlot
 
     if len(sys.argv) > 2:
         kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
@@ -108,7 +104,7 @@ The script consists of 4 modules:
 
     kPlot1.draw("APL")
 
-    raw_input()
+    input()
 
     ####################################################
 
@@ -204,10 +200,31 @@ The script consists of 4 modules:
                                              The 'self.__initColor' function
                                              incorporates our self-made color
                                              palette.
-                                             
+
 """
 
+import numpy as np
+import os, sys
+from .kitdata import KITData
+from .KITConfig import KITConfig
+from .KITLegend import KITLegend
+from collections import OrderedDict
+
+
 class KITPlot(object):
+
+    # try to load plot engines
+    try:
+        import ROOT
+        self.root_present = True
+    except:
+        self.root_present = False
+    try:
+        import matplotlib.pyplot as plt
+        self.root_present = True
+    except:
+        self.mpl_present = False
+
 
     __kitGreen = []
     __kitBlue = []
@@ -222,8 +239,21 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None, cfgFile=None):
+    def __init__(self, dataInput=None, cfgFile=None, engine=None):
 
+        # select plot engine
+        if engine == None and self.root_present == False and self.mpl_present == False:
+            raise ImportError("Can not find sufficient plot enginge. 'ROOT' or"
+                              " 'matplotlib' must be provided to use KITPlot.")
+        elif (engine == None and self.mpl_present == True) or engine == "matplotlib":
+            print("Plot engine: matplotlib")
+            self.engine = "matplotlib"
+        elif (engine == None and self.mpl_present == False and self.root_present == True) or engine == "ROOT":
+            print("Plot engine: ROOT")
+            self.engine = "ROOT"
+        else:
+            raise ImportError("Unkown plot engine. Supported engines: 'ROOT' "
+                              "and 'matplotlib'.")
 
         # init lists
         self.__files = []

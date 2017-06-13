@@ -3,7 +3,7 @@
 import os,sys
 import numpy as np
 import mysql.connector
-from .ConfigHandler import ConfigHandler
+from .KITConfig import KITConfig
 from collections import OrderedDict
 import datetime
 
