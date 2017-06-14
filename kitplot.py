@@ -208,22 +208,11 @@ import os, sys
 from .kitdata import KITData
 from .KITConfig import KITConfig
 from .KITLegend import KITLegend
+from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 
 
 class KITPlot(object):
-
-    # try to load plot engines
-    try:
-        import ROOT
-        self.root_present = True
-    except:
-        self.root_present = False
-    try:
-        import matplotlib.pyplot as plt
-        self.root_present = True
-    except:
-        self.mpl_present = False
 
 
     __kitGreen = []
@@ -239,21 +228,7 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None, cfgFile=None, engine=None):
-
-        # select plot engine
-        if engine == None and self.root_present == False and self.mpl_present == False:
-            raise ImportError("Can not find sufficient plot enginge. 'ROOT' or"
-                              " 'matplotlib' must be provided to use KITPlot.")
-        elif (engine == None and self.mpl_present == True) or engine == "matplotlib":
-            print("Plot engine: matplotlib")
-            self.engine = "matplotlib"
-        elif (engine == None and self.mpl_present == False and self.root_present == True) or engine == "ROOT":
-            print("Plot engine: ROOT")
-            self.engine = "ROOT"
-        else:
-            raise ImportError("Unkown plot engine. Supported engines: 'ROOT' "
-                              "and 'matplotlib'.")
+    def __init__(self, dataInput=None, cfgFile=None):
 
         # init lists
         self.__files = []
@@ -267,7 +242,7 @@ class KITPlot(object):
             pass
 
         # Load parameters and apply default style
-        self.__cfg = ConfigHandler()
+        self.__cfg = KITConfig()
         self.__cfg.setDir("cfg/")
         self.cfgPath = self.__cfg.getCfgName(dataInput)
 
@@ -301,7 +276,7 @@ class KITPlot(object):
         # add files
         # TODO: 'probe' is hard-coded ??? wtf???
         if dataInput is not None:
-            self.add(dataInput, a)
+            self.addFiles(dataInput, a)
         else:
             pass
 
@@ -342,7 +317,8 @@ class KITPlot(object):
                  'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
                               'Size'         : 1.5,         },
                  'Line'    :{ 'NoLine'       : False,
-                              'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
+                            #   'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
+                              'Color'        : "[1,2,3,4,5,6,7,8]",
                               'Style'        : 1,
                               'Width'        : 2            },
                  'Canvas'  :{ 'SizeX'        : 1280,
@@ -473,34 +449,32 @@ class KITPlot(object):
             to create the desired plot.
 
         """
-
-        # Title options
-        ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
-        ROOT.gStyle.SetTitleY(self.__cfg.get('Title','Y0'))
-        ROOT.gStyle.SetTitleH(self.__cfg.get('Title','H'))
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('Title','Font'), "")
-
-        # Axis Options
-        ROOT.gStyle.SetTitleSize(self.__cfg.get('XAxis','Size'), "X")
-        ROOT.gStyle.SetTitleSize(self.__cfg.get('YAxis','Size'), "Y")
-        ROOT.gStyle.SetTitleOffset(self.__cfg.get('XAxis','Offset'), "X")
-        ROOT.gStyle.SetTitleOffset(self.__cfg.get('YAxis','Offset'), "Y")
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('XAxis','Font'), "X")
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('YAxis','Font'), "Y")
-        ROOT.gStyle.SetLabelFont(self.__cfg.get('XAxis','Font'),"X")
-        ROOT.gStyle.SetLabelFont(self.__cfg.get('YAxis','Font'),"Y")
-        ROOT.gStyle.SetLabelSize(self.__cfg.get('XAxis','Size'),"X")
-        ROOT.gStyle.SetLabelSize(self.__cfg.get('YAxis','Size'),"Y")
-        ROOT.TGaxis.SetMaxDigits(self.__cfg.get('Canvas','MaxDigits'))
-
-        # Canvas Options
-        ROOT.gStyle.SetPadBottomMargin(self.__cfg.get('Canvas','PadBMargin'))
-        ROOT.gStyle.SetPadLeftMargin(self.__cfg.get('Canvas','PadLMargin'))
+        #
+        # # Title options
+        # ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
+        # ROOT.gStyle.SetTitleY(self.__cfg.get('Title','Y0'))
+        # ROOT.gStyle.SetTitleH(self.__cfg.get('Title','H'))
+        # ROOT.gStyle.SetTitleFont(self.__cfg.get('Title','Font'), "")
+        #
+        # # Axis Options
+        # ROOT.gStyle.SetTitleSize(self.__cfg.get('XAxis','Size'), "X")
+        # ROOT.gStyle.SetTitleSize(self.__cfg.get('YAxis','Size'), "Y")
+        # ROOT.gStyle.SetTitleOffset(self.__cfg.get('XAxis','Offset'), "X")
+        # ROOT.gStyle.SetTitleOffset(self.__cfg.get('YAxis','Offset'), "Y")
+        # ROOT.gStyle.SetTitleFont(self.__cfg.get('XAxis','Font'), "X")
+        # ROOT.gStyle.SetTitleFont(self.__cfg.get('YAxis','Font'), "Y")
+        # ROOT.gStyle.SetLabelFont(self.__cfg.get('XAxis','Font'),"X")
+        # ROOT.gStyle.SetLabelFont(self.__cfg.get('YAxis','Font'),"Y")
+        # ROOT.gStyle.SetLabelSize(self.__cfg.get('XAxis','Size'),"X")
+        # ROOT.gStyle.SetLabelSize(self.__cfg.get('YAxis','Size'),"Y")
+        # ROOT.TGaxis.SetMaxDigits(self.__cfg.get('Canvas','MaxDigits'))
+        #
+        # # Canvas Options
+        # ROOT.gStyle.SetPadBottomMargin(self.__cfg.get('Canvas','PadBMargin'))
+        # ROOT.gStyle.SetPadLeftMargin(self.__cfg.get('Canvas','PadLMargin'))
 
         # Marker Options
-        ROOT.gStyle.SetMarkerSize(self.__cfg.get('Marker','Size'))
-        # ROOT.gStyle.SetMarkerStyle(self.__cfg.get('Marker','Style'))
-        # ROOT.gStyle.SetMarkerColor(self.__cfg.get('Marker','Color'))
+        # ROOT.gStyle.SetMarkerSize(self.__cfg.get('Marker','Size'))
         self.markerSet = self.__cfg['Marker','Set'].replace("[","").replace("]","").split(",")
 
         #Line options
@@ -510,9 +484,9 @@ class KITPlot(object):
         self.lineStyle = self.__cfg['Line','Style']
 
         # Pad Options
-        ROOT.gStyle.SetPadGridX(True)
-        ROOT.gStyle.SetPadGridY(True)
-        ROOT.gStyle.SetGridColor(17)
+        # ROOT.gStyle.SetPadGridX(True)
+        # ROOT.gStyle.SetPadGridY(True)
+        # ROOT.gStyle.SetGridColor(17)
 
         # KITPlot specific options
         self.ColorShades = self.__cfg['Misc','ColorShades']
@@ -525,7 +499,7 @@ class KITPlot(object):
         return True
 
 
-    def add(self, dataInput=None, measurement="probe"):
+    def addFiles(self, dataInput=None, measurement="probe"):
         """ Depending on the type, the 'self.__files' list is filled with
         KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
@@ -543,17 +517,17 @@ class KITPlot(object):
         # Load KITData
         if isinstance(dataInput, KITData):
             self.__files.append(dataInput)
-            self.addGraph(dataInput.getX(),dataInput.getY())
+            # self.addGraph(dataInput.getX(),dataInput.getY())
 
         # Load single PID
+        # ???
         elif isinstance(dataInput, int):
             self.__files.append(KITData(dataInput))
-            print(self.__files[0].getX())
-            if "Ramp" in self.__files[-1].getParaY():
-                print("Ramp measurement")
-                self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
-            else:
-                self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+            # if "Ramp" in self.__files[-1].getParaY():
+            #     print("Ramp measurement")
+            #     self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
+            # else:
+            #     self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
 
         elif isinstance(dataInput, str):
             # Load single PID
@@ -587,12 +561,10 @@ class KITPlot(object):
 
                         self.__files.append(kdata)
 
-                    self.addNorm()
-                    # for kdata in self.__files:
-                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
 
                 else:
-                    self.addNorm()
+                    pass
+                    # self.addNorm()
 
 
             # Load multiple data files in a folder
@@ -604,9 +576,7 @@ class KITPlot(object):
                         pass
 
                 self.arrangeFileList()
-                self.addNorm()
-                for kdata in self.__files:
-                    self.makeFit(kdata, print_fit=True, draw_fit=False)
+                # self.addNorm()
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -628,13 +598,13 @@ class KITPlot(object):
 
                     self.arrangeFileList()
 
-                    for i,File in enumerate(self.__files):
-                        if "Ramp" in File.getParaY():
-                            self.addGraph(File.getZ(), File.getY())
-                        elif File.getParaY() is "Signal":
-                            self.addGraph(File.getX(), File.getY())
-                        else:
-                            self.addNorm(False, i)
+                    # for i,File in enumerate(self.__files):
+                    #     if "Ramp" in File.getParaY():
+                    #         self.addGraph(File.getZ(), File.getY())
+                    #     elif File.getParaY() is "Signal":
+                    #         self.addGraph(File.getX(), File.getY())
+                    #     else:
+                    #         self.addNorm(False, i)
 
 
 
@@ -663,9 +633,8 @@ class KITPlot(object):
                 # singel file
                 else:
                     self.__files.append(KITData(dataInput))
-                    self.addNorm()
-                    # for kdata in self.__files:
-                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
+                    # self.addNorm()
+
 
         if self.cfg_initialized == True:
             self.MeasurementType()
@@ -678,142 +647,145 @@ class KITPlot(object):
         return True
 
 
-    def addNorm(self, loop=True, j=0):
-        """ This method enables normalizations of data tables. It has the
-        same function as 'addGraph' but with more options. If the user wants to
-        take advantage of normalization options then the data from the KITData
-        objects needs to be manipulated while creating the ROOT graphs.
+    # def addNorm(self, loop=True, j=0):
+    #     """ This method enables normalizations of data tables. It has the
+    #     same function as 'addGraph' but with more options. If the user wants to
+    #     take advantage of normalization options then the data from the KITData
+    #     objects needs to be manipulated while creating the ROOT graphs.
+    #
+    #     Args:
+    #         loop(bool), j(integer): ???
+    #
+    #     """
+    #
+    # # Sends normalized graph values to addGraph
+    #     if loop == True:
+    #         for i, File in enumerate(self.__files):
+    #             # if data points have error bars
+    #             if self.__files[i].includesErrors():
+    #                 if self.__cfg.get('Misc','Normalization') == "off":
+    #                     self.addGraph(self.__files[i].getX(),
+    #                                   self.__files[i].getY(),
+    #                                   self.__files[i].getdX(),
+    #                                   self.__files[i].getdY())
+    #                 elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+    #                     self.addGraph(self.__files[i].getX(),
+    #                                   self.manipulate(self.__files[i].getY(),i),
+    #                                   self.__files[i].getdX(),
+    #                                   self.manipulate(self.__files[i].getdY(),i))
+    #                 elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+    #                     self.addGraph(File.getX(),
+    #                     self.manipulate(File.getY(),i),
+    #                     File.getdX(),
+    #                     self.manipulate(File.getdY(),i))
+    #                 else:
+    #                     raise ValueError("Invalid normalization input! Try "
+    #                                      "'off', '1/C^{2}' or '[float,"
+    #                                      "float,...]'!")
+    #             # if data points have no error bars
+    #             else:
+    #                 if self.__cfg.get('Misc','Normalization') == "off":
+    #                     self.addGraph(self.__files[i].getX(),
+    #                                   self.__files[i].getY())
+    #                 elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+    #                     self.addGraph(self.__files[i].getX(),
+    #                                   self.manipulate(self.__files[i].getY(),i))
+    #                 elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+    #                     self.addGraph(File.getX(),self.manipulate(File.getY(),i))
+    #                 else:
+    #                      raise ValueError("Invalid normalization input! Try "
+    #                                       "'off', '1/C^{2}' or '[float,"
+    #                                       "float,...]'!")
+    #     else:
+    #         if self.__cfg.get('Misc','Normalization') == "off":
+    #             self.addGraph(self.__files[j].getX(),self.__files[j].getY())
+    #         elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
+    #             self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
+    #         elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+    #             self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
+    #         else:
+    #             raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
+    #
+    #     return True
+    #
+    #
+    # def addGraph(self, *args):
+    #     """ The KITData objects within the 'self.__files' list (containing
+    #     the data tables) are now converted into ROOT objects. A ROOT object
+    #     represents a single graph of the future plot. These ROOT objects are
+    #     stored within the 'self.__graphs' list.
+    #
+    #     Args: x, y or KITData
+    #
+    #     """
+    #
+    #     # args: x, y or KITData
+    #     print(self.__files)
+    #     print("here: ", args[0], type(args[0]))
+    #     # ????
+    #     if isinstance(args[0], KITData):
+    #         #TODO: there is no getDic() method in KITData
+    #         if KITData.getDic() == None:
+    #             self.__files.append(args[0])
+    #             print(self.__files)
+    #             if self.absX:
+    #                 x = np.absolute(args[0].getX())
+    #             else:
+    #                 x = args[0].getX()
+    #
+    #             if self.absY:
+    #                 if str(args[1]) == "y":
+    #                     y = np.absolute(args[0].getY())
+    #                 elif str(args[1]) == "z":
+    #                     y = np.absolute(args[0].getZ())
+    #             else:
+    #                 if args[1] == "y":
+    #                     y = args[0].getY()
+    #                 elif args[1] == "z":
+    #                     y = args[0].getZ()
+    #         # Rpunch
+    #         else:
+    #             raise ValueError("Dictinary error")
+    #
+    #     elif len(args) == 2 and not isinstance(args[0], KITData):
+    #
+    #         if self.absX:
+    #             x = np.absolute(args[0])
+    #         else:
+    #             x = args[0]
+    #
+    #         if self.absY:
+    #             y = np.absolute(args[1])
+    #         else:
+    #             y = args[1]
+    #
+    #     elif len(args) == 4 and not isinstance(args[0], KITData):
+    #
+    #         if self.absX:
+    #             x = np.absolute(args[0])
+    #         else:
+    #             x = args[0]
+    #
+    #         if self.absY:
+    #             y = np.absolute(args[1])
+    #         else:
+    #             y = args[1]
+    #
+    #         dx = args[2]
+    #         dy = args[3]
+    #
+    #     else:
+    #         sys.exit("Cant add graph")
+    #
+    #     if len(args) == 2:
+    #         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
+    #     elif len(args) == 4:
+    #         self.__graphs.append(ROOT.TGraphErrors(len(x),np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
+    #
+    #     return True
 
-        Args:
-            loop(bool), j(integer): ???
 
-        """
-
-    # Sends normalized graph values to addGraph
-        if loop == True:
-            for i, File in enumerate(self.__files):
-                # if data points have error bars
-                if self.__files[i].includesErrors():
-                    if self.__cfg.get('Misc','Normalization') == "off":
-                        self.addGraph(self.__files[i].getX(),
-                                      self.__files[i].getY(),
-                                      self.__files[i].getdX(),
-                                      self.__files[i].getdY())
-                    elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                        self.addGraph(self.__files[i].getX(),
-                                      self.manipulate(self.__files[i].getY(),i),
-                                      self.__files[i].getdX(),
-                                      self.manipulate(self.__files[i].getdY(),i))
-                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-                        self.addGraph(File.getX(),
-                        self.manipulate(File.getY(),i),
-                        File.getdX(),
-                        self.manipulate(File.getdY(),i))
-                    else:
-                        raise ValueError("Invalid normalization input! Try "
-                                         "'off', '1/C^{2}' or '[float,"
-                                         "float,...]'!")
-                # if data points have no error bars
-                else:
-                    if self.__cfg.get('Misc','Normalization') == "off":
-                        self.addGraph(self.__files[i].getX(),
-                                      self.__files[i].getY())
-                    elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                        self.addGraph(self.__files[i].getX(),
-                                      self.manipulate(self.__files[i].getY(),i))
-                    elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-                        self.addGraph(File.getX(),self.manipulate(File.getY(),i))
-                    else:
-                         raise ValueError("Invalid normalization input! Try "
-                                          "'off', '1/C^{2}' or '[float,"
-                                          "float,...]'!")
-        else:
-            if self.__cfg.get('Misc','Normalization') == "off":
-                self.addGraph(self.__files[j].getX(),self.__files[j].getY())
-            elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-                self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
-            elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-                self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
-            else:
-                raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
-
-        return True
-
-
-    def addGraph(self, *args):
-        """ The KITData objects within the 'self.__files' list (containing
-        the data tables) are now converted into ROOT objects. A ROOT object
-        represents a single graph of the future plot. These ROOT objects are
-        stored within the 'self.__graphs' list.
-
-        Args: x, y or KITData
-
-        """
-
-        # args: x, y or KITData
-
-        if isinstance(args[0], KITData):
-            if KITData.getDic() == None:
-                self.__files.append(args[0])
-
-                if self.absX:
-                    x = np.absolute(args[0].getX())
-                else:
-                    x = args[0].getX()
-
-                if self.absY:
-                    if str(args[1]) == "y":
-                        y = np.absolute(args[0].getY())
-                    elif str(args[1]) == "z":
-                        y = np.absolute(args[0].getZ())
-                else:
-                    if args[1] == "y":
-                        y = args[0].getY()
-                    elif args[1] == "z":
-                        y = args[0].getZ()
-            # Rpunch
-            else:
-                sys.exit("Dictinary error")
-
-        elif len(args) == 2 and not isinstance(args[0], KITData):
-
-            if self.absX:
-                x = np.absolute(args[0])
-            else:
-                x = args[0]
-
-            if self.absY:
-                y = np.absolute(args[1])
-            else:
-                y = args[1]
-
-        elif len(args) == 4 and not isinstance(args[0], KITData):
-
-            if self.absX:
-                x = np.absolute(args[0])
-            else:
-                x = args[0]
-
-            if self.absY:
-                y = np.absolute(args[1])
-            else:
-                y = args[1]
-
-            dx = args[2]
-            dy = args[3]
-
-        else:
-            sys.exit("Cant add graph")
-
-        if len(args) == 2:
-            self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
-        elif len(args) == 4:
-            self.__graphs.append(ROOT.TGraphErrors(len(x),np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
-
-        return True
-
-
-    def draw(self, arg=None):
+    def draw(self, engine=None, arg=None):
         """ Finally, a canvas needs to be created and all the ROOT objects
         within 'self.__graphs' need to be drawn. Different plot styles are set
         in respect of the cfg file and as a last step the legend is created and
@@ -829,62 +801,79 @@ class KITPlot(object):
 
         """
 
-        if arg == None:
-            arg = "APL"
+        # set engine
+        engineSet = ['matplotlib', 'ROOT']
+        if engine == None:
+            engine = engineSet[0]
+        elif engine not in engineSet:
+            raise ValueError("Unkown plot engine. Supported engines are: \n"
+                             + str(engineSet).replace('[',"").replace(']',""))
         else:
             pass
 
-        if self.__cfg.get('Line','NoLine') == True and "L" in arg:
-            arg = arg.replace("L","")
-        elif self.__cfg.get('Line','NoLine') == False and "L" not in arg:
-            arg = arg + "L"
+        # draw plots
+        print(self.__cfg)
+        if engine == engineSet[0]:
+            KITMatplotlib(self.__cfg).draw(self.__files)
         else:
             pass
 
-        if len(self.__graphs) == 0:
-            print("No graphs to draw")
-            return False
-
-        # init canvas
-        self.canvas = ROOT.TCanvas("c1","c1",
-                                   int(self.__cfg.get('Canvas','SizeX')),
-                                   int(self.__cfg.get('Canvas','SizeY')))
-        self.canvas.cd()
-
-        # apply plot styles
-        self.plotStyles(self.__cfg.get('XAxis','Title'),
-                        self.__cfg.get('YAxis','Title'),
-                        self.__cfg.get('Title','Title'))
-
-        # set log scale if
-        if self.logX:
-            self.canvas.SetLogx()
-        if self.logY:
-            self.canvas.SetLogy()
-
-        # Draw plots
-        for n,graph in enumerate(self.__graphs):
-            if n==0:
-                graph.Draw(arg)
-            else:
-                graph.Draw(arg.replace("A","") + "SAME")
-
-        # Set legend (always at the very end!)
-
-        LegH = LegHandler()
-        LegH.setKITLegend(self.__cfg.get('Legend'),
-                          self.__graphs,
-                          self.__files,
-                          self.__cfg.get('Canvas','SizeX'),
-                          self.__cfg.get('Canvas','SizeY'),
-                          self.Scale)
-        self.leg = LegH.getLegend()
-#        self.leg.SetHeader("n-in-p FZ, 240#mum")
-        self.leg.Draw()
-        self.canvas.Update()
+        # if arg == None:
+        #     arg = "APL"
+        # else:
+        #     pass
+        #
+        # if self.__cfg.get('Line','NoLine') == True and "L" in arg:
+        #     arg = arg.replace("L","")
+        # elif self.__cfg.get('Line','NoLine') == False and "L" not in arg:
+        #     arg = arg + "L"
+        # else:
+        #     pass
+        #
+        # if len(self.__graphs) == 0:
+        #     print("No graphs to draw")
+        #     return False
+        #
+        # # init canvas
+        # self.canvas = ROOT.TCanvas("c1","c1",
+        #                            int(self.__cfg.get('Canvas','SizeX')),
+        #                            int(self.__cfg.get('Canvas','SizeY')))
+        # self.canvas.cd()
+        #
+        # # apply plot styles
+        # self.plotStyles(self.__cfg.get('XAxis','Title'),
+        #                 self.__cfg.get('YAxis','Title'),
+        #                 self.__cfg.get('Title','Title'))
+        #
+        # # set log scale if
+        # if self.logX:
+        #     self.canvas.SetLogx()
+        # if self.logY:
+        #     self.canvas.SetLogy()
+        #
+        # # Draw plots
+        # for n,graph in enumerate(self.__graphs):
+        #     if n==0:
+        #         graph.Draw(arg)
+        #     else:
+        #         graph.Draw(arg.replace("A","") + "SAME")
+        #
+        # # Set legend (always at the very end!)
+        #
+        # # LegH = LegHandler()
+        # # LegH.setKITLegend(self.__cfg.get('Legend'),
+        # #                   self.__graphs,
+        # #                   self.__files,
+        # #                   self.__cfg.get('Canvas','SizeX'),
+        # #                   self.__cfg.get('Canvas','SizeY'),
+        # #                   self.Scale)
+        # # self.leg = LegH.getLegend()
+        # # # self.leg.SetHeader("n-in-p FZ, 240#mum")
+        # self.leg.Draw()
+        # self.canvas.Update()
+        #
 
         self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
-
 
         return True
 
@@ -897,31 +886,30 @@ class KITPlot(object):
         self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
 
-    def update(self):
+    # def update(self):
+    #
+    #     try:
+    #         self.canvas.Update()
+    #     except:
+    #         pass
 
-        try:
-            self.canvas.Update()
-        except:
-            pass
 
-
-    def plotStyles(self, XTitle, YTitle, Title):
-
-        self.__graphs[0].GetXaxis().SetTitle(XTitle)
-        self.__graphs[0].GetYaxis().SetTitle(YTitle)
-        self.__graphs[0].SetTitle(Title)
-        #self.getLegendOrder()
-
-        # set titles (take auto titles when creating the cfg and the cfg value from here after)
-        self.setTitles()
-        # set axis ranges
-        self.setRanges()
-        # set marker styles (std assigning and/or graph group assigning)
-        self.setMarkerStyles()
-        # assign colors
-        self.setGraphColor()
-
-        return True
+    # def plotStyles(self, XTitle, YTitle, Title):
+    #
+    #     self.__graphs[0].GetXaxis().SetTitle(XTitle)
+    #     self.__graphs[0].GetYaxis().SetTitle(YTitle)
+    #     self.__graphs[0].SetTitle(Title)
+    #
+    #     # set titles (take auto titles when creating the cfg and the cfg value from here after)
+    #     self.setTitles()
+    #     # set axis ranges
+    #     self.setRanges()
+    #     # set marker styles (std assigning and/or graph group assigning)
+    #     self.setMarkerStyles()
+    #     # assign colors
+    #     self.setGraphColor()
+    #
+    #     return True
 
 
 #####################
@@ -1169,31 +1157,31 @@ class KITPlot(object):
 #####################
 
 
-    def setLegend(self):
-        """ The whole legend handling is outsourced and done by the 'leghandler'
-        module. As a result, all the legend options (stored inside the 'Legend'
-        dictionary), the 'self.__graph' list (containing all graphs as ROOT
-        objects) and the'self.__files' list (containing the respective KITData
-        objects) have to be given as arguments when calling 'leghandler'
-        methods.
-
-        """
-
-        LegH = LegHandler()
-
-        LegH.fillKITLegend(self.__cfg.get('Legend'),
-                           self.__graphs,
-                           self.__files)
-
-        LegH.setOptions(self.__cfg.get('Legend'))
-
-        LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')),
-                        int(self.__cfg.get('Canvas','SizeY')),
-                        self.__cfg.get('Legend'),
-                        self.__files,
-                        self.Scale)
-
-        return LegH.getLegend()
+    # def setLegend(self):
+    #     """ The whole legend handling is outsourced and done by the 'leghandler'
+    #     module. As a result, all the legend options (stored inside the 'Legend'
+    #     dictionary), the 'self.__graph' list (containing all graphs as ROOT
+    #     objects) and the'self.__files' list (containing the respective KITData
+    #     objects) have to be given as arguments when calling 'leghandler'
+    #     methods.
+    #
+    #     """
+    #
+    #     LegH = LegHandler()
+    #
+    #     LegH.fillKITLegend(self.__cfg.get('Legend'),
+    #                        self.__graphs,
+    #                        self.__files)
+    #
+    #     LegH.setOptions(self.__cfg.get('Legend'))
+    #
+    #     LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')),
+    #                     int(self.__cfg.get('Canvas','SizeY')),
+    #                     self.__cfg.get('Legend'),
+    #                     self.__files,
+    #                     self.Scale)
+    #
+    #     return LegH.getLegend()
 
 
 
@@ -1350,81 +1338,81 @@ class KITPlot(object):
 
 
 
-    def setGraphColor(self):
+    # def setGraphColor(self):
+    #
+    #     for i, graph in enumerate(self.__graphs):
+    #         if self.__cfg.get('Misc','GraphGroup') == "off" :
+    #             self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+    #             self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+    #             self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+    #             self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
+    #         elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
+    #             self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
+    #             self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
+    #             self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+    #             self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
+    #         elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
+    #              self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
+    #              self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
+    #              self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
+    #              self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
+    #         elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
+    #             break
+    #         elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
+    #             raise ValueError("Need GraphGroups for applying shades!")
+    #
+    #     # User Groups
+    #     if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
+    #
+    #         self.getGroupList()
+    #         colorcount = 0
+    #         shadecount = 0
+    #
+    #         if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
+    #             raise ValueError("Insufficient UserGroup. Numbers do not match!")
+    #         else:
+    #             pass
+    #         for elem in self.__GroupList:
+    #             if elem == 666:
+    #                 colorcount += 1
+    #                 shadecount = 0
+    #             elif self.ColorShades == True:
+    #                     self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
+    #                     self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
+    #                     self.__graphs[elem].SetLineWidth(self.lineWidth)
+    #                     self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
+    #                     shadecount += 1
+    #             elif self.ColorShades == False:
+    #                     self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
+    #                     self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
+    #                     self.__graphs[elem].SetLineWidth(self.lineWidth)
+    #                     self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
+    #             else:
+    #                 pass
+    #     else:
+    #         pass
 
-        for i, graph in enumerate(self.__graphs):
-            if self.__cfg.get('Misc','GraphGroup') == "off" :
-                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-                self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-            elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
-                self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-                self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-                self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-            elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
-                 self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
-                 self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
-                 self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-                 self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-            elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
-                break
-            elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
-                raise ValueError("Need GraphGroups for applying shades!")
+    #
+    # def setTitles(self):
+    #
+    #     self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
+    #     self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
+    #     self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
 
-        # User Groups
-        if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
-
-            self.getGroupList()
-            colorcount = 0
-            shadecount = 0
-
-            if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
-                raise ValueError("Insufficient UserGroup. Numbers do not match!")
-            else:
-                pass
-            for elem in self.__GroupList:
-                if elem == 666:
-                    colorcount += 1
-                    shadecount = 0
-                elif self.ColorShades == True:
-                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
-                        self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
-                        self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
-                        shadecount += 1
-                elif self.ColorShades == False:
-                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
-                        self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
-                        self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
-                else:
-                    pass
-        else:
-            pass
-
-
-    def setTitles(self):
-
-        self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
-        self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
-        self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
-
-
-    def setAxisTitleSize(self, size):
-
-        ROOT.gStyle.SetTitleSize(size,"X")
-        ROOT.gStyle.SetTitleSize(size,"Y")
-
-        return True
-
-    def setAxisTitleOffset(self, offset):
-
-        ROOT.gStyle.SetTitleOffset(offset,"X")
-        ROOT.gStyle.SetTitleOffset(offset,"Y")
-
-        return True
+    #
+    # def setAxisTitleSize(self, size):
+    #
+    #     ROOT.gStyle.SetTitleSize(size,"X")
+    #     ROOT.gStyle.SetTitleSize(size,"Y")
+    #
+    #     return True
+    #
+    # def setAxisTitleOffset(self, offset):
+    #
+    #     ROOT.gStyle.SetTitleOffset(offset,"X")
+    #     ROOT.gStyle.SetTitleOffset(offset,"Y")
+    #
+    #     return True
 
 
     def getMarkerStyle(self, index):
@@ -1487,53 +1475,53 @@ class KITPlot(object):
 
     def __initColor(self):
 
-        self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
-        self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
-        self.__kitGreen.append(ROOT.TColor(1102,125./255, 210./255, 185./255))
-        self.__kitGreen.append(ROOT.TColor(1103,180./255, 230./255, 210./255))
-        self.__kitGreen.append(ROOT.TColor(1104,215./255, 240./255, 230./255))
-
-        self.__kitRed.append(ROOT.TColor(1200, 191./255, 35./255, 41./255))
-        self.__kitRed.append(ROOT.TColor(1201, 205./255, 85./255, 75./255))
-        self.__kitRed.append(ROOT.TColor(1202, 220./255, 130./255, 110./255))
-        self.__kitRed.append(ROOT.TColor(1203, 230./255, 175./255, 160./255))
-        self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
-
-        self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
-        self.__kitOrange.append(ROOT.TColor(1301, 249./255, 174./255, 73./255))
-        self.__kitOrange.append(ROOT.TColor(1302, 251./255, 195./255, 118./255))
-        self.__kitOrange.append(ROOT.TColor(1303, 252./255, 218./255, 168./255))
-        self.__kitOrange.append(ROOT.TColor(1304, 254./255, 236./255, 211./255))
-
-        self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
-        self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
-        self.__kitBlue.append(ROOT.TColor(1402, 155./255, 170./255, 220./255))
-        self.__kitBlue.append(ROOT.TColor(1403, 195./255, 200./255, 235./255))
-        self.__kitBlue.append(ROOT.TColor(1404, 225./255, 225./255, 245./255))
-
-        self.__kitPurple.append(ROOT.TColor(1500, 188./255, 12./255, 141./255))
-        self.__kitPurple.append(ROOT.TColor(1501, 205./255, 78./255, 174./255))
-        self.__kitPurple.append(ROOT.TColor(1502, 218./255, 125./255, 197./255))
-        self.__kitPurple.append(ROOT.TColor(1503, 232./255, 175./255, 220./255))
-        self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
-
-        self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        self.__kitBrown.append(ROOT.TColor(1601, 193./255, 157./255, 82./255))
-        self.__kitBrown.append(ROOT.TColor(1602, 208./255, 181./255, 122./255))
-        self.__kitBrown.append(ROOT.TColor(1603, 226./255, 208./255, 169./255))
-        self.__kitBrown.append(ROOT.TColor(1604, 241./255, 231./255, 210./255))
-
-        self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        self.__kitMay.append(ROOT.TColor(1701, 148./255, 213./255, 98./255))
-        self.__kitMay.append(ROOT.TColor(1702, 178./255, 225./255, 137./255))
-        self.__kitMay.append(ROOT.TColor(1703, 209./255, 237./255, 180./255))
-        self.__kitMay.append(ROOT.TColor(1704, 232./255, 246./255, 217./255))
-
-        self.__kitCyan.append(ROOT.TColor(1800, 28./255, 174./255, 236./255))
-        self.__kitCyan.append(ROOT.TColor(1801, 95./255, 197./255, 241./255))
-        self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
-        self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
-        self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
+        # self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
+        # self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
+        # self.__kitGreen.append(ROOT.TColor(1102,125./255, 210./255, 185./255))
+        # self.__kitGreen.append(ROOT.TColor(1103,180./255, 230./255, 210./255))
+        # self.__kitGreen.append(ROOT.TColor(1104,215./255, 240./255, 230./255))
+        #
+        # self.__kitRed.append(ROOT.TColor(1200, 191./255, 35./255, 41./255))
+        # self.__kitRed.append(ROOT.TColor(1201, 205./255, 85./255, 75./255))
+        # self.__kitRed.append(ROOT.TColor(1202, 220./255, 130./255, 110./255))
+        # self.__kitRed.append(ROOT.TColor(1203, 230./255, 175./255, 160./255))
+        # self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
+        #
+        # self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
+        # self.__kitOrange.append(ROOT.TColor(1301, 249./255, 174./255, 73./255))
+        # self.__kitOrange.append(ROOT.TColor(1302, 251./255, 195./255, 118./255))
+        # self.__kitOrange.append(ROOT.TColor(1303, 252./255, 218./255, 168./255))
+        # self.__kitOrange.append(ROOT.TColor(1304, 254./255, 236./255, 211./255))
+        #
+        # self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
+        # self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
+        # self.__kitBlue.append(ROOT.TColor(1402, 155./255, 170./255, 220./255))
+        # self.__kitBlue.append(ROOT.TColor(1403, 195./255, 200./255, 235./255))
+        # self.__kitBlue.append(ROOT.TColor(1404, 225./255, 225./255, 245./255))
+        #
+        # self.__kitPurple.append(ROOT.TColor(1500, 188./255, 12./255, 141./255))
+        # self.__kitPurple.append(ROOT.TColor(1501, 205./255, 78./255, 174./255))
+        # self.__kitPurple.append(ROOT.TColor(1502, 218./255, 125./255, 197./255))
+        # self.__kitPurple.append(ROOT.TColor(1503, 232./255, 175./255, 220./255))
+        # self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
+        #
+        # self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
+        # self.__kitBrown.append(ROOT.TColor(1601, 193./255, 157./255, 82./255))
+        # self.__kitBrown.append(ROOT.TColor(1602, 208./255, 181./255, 122./255))
+        # self.__kitBrown.append(ROOT.TColor(1603, 226./255, 208./255, 169./255))
+        # self.__kitBrown.append(ROOT.TColor(1604, 241./255, 231./255, 210./255))
+        #
+        # self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
+        # self.__kitMay.append(ROOT.TColor(1701, 148./255, 213./255, 98./255))
+        # self.__kitMay.append(ROOT.TColor(1702, 178./255, 225./255, 137./255))
+        # self.__kitMay.append(ROOT.TColor(1703, 209./255, 237./255, 180./255))
+        # self.__kitMay.append(ROOT.TColor(1704, 232./255, 246./255, 217./255))
+        #
+        # self.__kitCyan.append(ROOT.TColor(1800, 28./255, 174./255, 236./255))
+        # self.__kitCyan.append(ROOT.TColor(1801, 95./255, 197./255, 241./255))
+        # self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
+        # self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
+        # self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
 
         # yellow removed because it looks shitty
 
@@ -1542,12 +1530,12 @@ class KITPlot(object):
         return True
 
 
-    def getColor(self, index):
-
-        KITPlot.__color = index + 1
-        KITPlot.__color %= 8
-
-        return int(self.colorSet[KITPlot.__color-1])
+    # def getColor(self, index):
+    #
+    #     KITPlot.__color = index + 1
+    #     KITPlot.__color %= 8
+    #
+    #     return int(self.colorSet[KITPlot.__color-1])
 
 
     def getShadeList(self):

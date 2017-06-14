@@ -2,7 +2,7 @@ import os
 import json
 from collections import OrderedDict
 
-class ConfigHandler(object):
+class KITConfig(object):
     """ Class that converts json based config files into dictonaries
 
     The ConfigParser class is used to parse JSON based config files.
@@ -12,7 +12,7 @@ class ConfigHandler(object):
     """
 
     def __init__(self,cfg=None):
-        """ Initialize ConfigHandler by loading the config file.
+        """ Initialize KITConfig by loading the config file.
 
         The __init__ method sets the working directory to ./cfg and loads the
         config file.
@@ -166,10 +166,10 @@ class ConfigHandler(object):
 
         # Get the key lists
         if isinstance(comparison,dict):
-            compDict = ConfigHandler()
+            compDict = KITConfig()
             compDict.setDict(comparison)
         else:
-            compDict = ConfigHandler(comparison)
+            compDict = KITConfig(comparison)
 
         compKeys = compDict.keys()
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
                    "f": 5}}
 
     print("Set first dictionary")
-    cfg = ConfigHandler()
+    cfg = KITConfig()
     cfg.setDict(testDict)
     cfg.write()
 

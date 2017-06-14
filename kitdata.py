@@ -215,9 +215,9 @@ class KITData(object):
             if "db.cfg" not in os.listdir(os.getcwd()):
                 self.__createCfg()
             else:
-                raise ValueError("No credentials file found."
-                             "Please add correct database parameters"
-                             "to 'db.cfg'")
+                raise ValueError("No credentials file found. "
+                                 "Please add correct database parameters "
+                                 "to 'db.cfg'")
 
 
     def __createCfg(self):

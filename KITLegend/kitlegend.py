@@ -1,8 +1,11 @@
 import os,sys
-import ROOT
+try:
+    import ROOT
+except:
+    pass
 from ..kitdata import KITData
 
-class LegHandler(object):
+class KITLegend(object):
 
     def __init__(self):
 
