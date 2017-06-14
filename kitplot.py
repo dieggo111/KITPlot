@@ -338,7 +338,7 @@ class KITPlot(object):
 
     def __cfgPresent(self, fileName='default'):
 
-        file_path = os.getcwd() + "/cfg"
+        file_path = os.path.join(os.getcwd(), "cfg")
         if os.path.exists(file_path) == False:
             return False
         else:
@@ -632,6 +632,7 @@ class KITPlot(object):
 
                 # singel file
                 else:
+                    print("single file")
                     self.__files.append(KITData(dataInput))
                     # self.addNorm()
 
@@ -786,18 +787,8 @@ class KITPlot(object):
 
 
     def draw(self, engine=None, arg=None):
-        """ Finally, a canvas needs to be created and all the ROOT objects
-        within 'self.__graphs' need to be drawn. Different plot styles are set
-        in respect of the cfg file and as a last step the legend is created and
-        drawn on the canvas.
-
-        Args:
-            arg(str): This is a ROOT specific argument (TGraph  Draw):
-                'A' -> draw axis
-                'L' -> draw lines
-                'P' -> draw markers
-                'C' -> draw smooth curve
-                See ROOT documentation for more details.
+        """
+        doc
 
         """
 
@@ -807,12 +798,11 @@ class KITPlot(object):
             engine = engineSet[0]
         elif engine not in engineSet:
             raise ValueError("Unkown plot engine. Supported engines are: \n"
-                             + str(engineSet).replace('[',"").replace(']',""))
+                             + engineSet[0] + " and " + engineSet[1])
         else:
             pass
 
-        # draw plots
-        print(self.__cfg)
+        # create plot
         if engine == engineSet[0]:
             KITMatplotlib(self.__cfg).draw(self.__files)
         else:
@@ -882,8 +872,8 @@ class KITPlot(object):
 
         if not os.path.exists("output"):
             os.makedirs("output")
-        self.canvas.SaveAs("output/%s.png" %(fileName))
-        self.canvas.SaveAs("output/%s.pdf" %(fileName))
+        # self.canvas.SaveAs("output/%s.png" %(fileName))
+        # self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
 
     # def update(self):
@@ -1003,27 +993,27 @@ class KITPlot(object):
         return True
 
 
-    def manipulate(self, ListY, index):
-
-        FacList = []
-        TempList = []
-
-        if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-            for val in ListY:
-                    TempList.append(1/(val*val))
-        else:
-            for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
-                FacList.append(float(char))
-
-            if len(self.__files) != len(FacList):
-                sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
-            else:
-                for val in ListY:
-                    TempList.append(val/FacList[index])
-
-        ListY = TempList
-
-        return ListY
+    # def manipulate(self, ListY, index):
+    #
+    #     FacList = []
+    #     TempList = []
+    #
+    #     if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
+    #         for val in ListY:
+    #                 TempList.append(1/(val*val))
+    #     else:
+    #         for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
+    #             FacList.append(float(char))
+    #
+    #         if len(self.__files) != len(FacList):
+    #             sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
+    #         else:
+    #             for val in ListY:
+    #                 TempList.append(val/FacList[index])
+    #
+    #     ListY = TempList
+    #
+    #     return ListY
 
 
     def checkTitleLenght(self, Title):

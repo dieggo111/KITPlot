@@ -196,7 +196,7 @@ class KITData(object):
 
 
         try:
-            cnxConf = ConfigHandler()
+            cnxConf = KITConfig()
 
             cnxConf.load(credentials)
             db_config = cnxConf[section]
@@ -232,7 +232,7 @@ class KITData(object):
                     "user": "",
                     "passwd": ""}}
 
-        cfg = ConfigHandler()
+        cfg = KITConfig()
         cfg.setDict(dic)
         cfg.write("db.cfg")
 

@@ -15,6 +15,8 @@ class KITMatplotlib(object):
 
     def __init__(self, cfg=None):
 
+        self.__graphs = []
+
         if cfg == None:
             print("Use default cfg")
         elif isinstance(cfg, KITConfig):
@@ -91,67 +93,60 @@ class KITMatplotlib(object):
 
         """
 
-        # process additional graph that is not in self.__files?
+        x = []
+        y = []
+        dx = []
+        dy = []
+        # print("args", args[0], type(args[0]))
         if isinstance(args[0], KITData):
-            if KITData.getRPunchDict() == None:
-                self.__files.append(args[0])
-
+            if KITData().getRPunchDict() == None:
+                # self.__files.append(args[0])
+                # toggle absolute mode
                 if self.absX:
-                    x = np.absolute(args[0].getX())
+                    x = list(np.absolute(args[0].getX()))
                 else:
                     x = args[0].getX()
-
                 if self.absY:
-                    if str(args[1]) == "y":
-                        y = np.absolute(args[0].getY())
-                    elif str(args[1]) == "z":
-                        y = np.absolute(args[0].getZ())
+                    y = list(np.absolute(args[0].getY()))
                 else:
-                    if args[1] == "y":
-                        y = args[0].getY()
-                    elif args[1] == "z":
-                        y = args[0].getZ()
+                    y = args[0].getY()
+                # get error bars if present
+                if args[0].getdX() != [] and args[0].getdY() != []:
+                    dx = args[0].getdX()
+                    dy = args[0].getdY()
+                elif args[0].getdX() == [] and args[0].getdY() == []:
+                    pass
+                else:
+                    raise ValueError("Check data table. Only 2 (x,y) or "
+                                     "4 (x,y,dx,dy) coordinates are allowed.")
             # Rpunch
             else:
                 raise ValueError("Dictinary error")
 
-        # process data from self.__files
-        elif len(args) == 2 and not isinstance(args[0], KITData):
-
+        elif len(args) in [2,4] and isinstance(args[0], list):
             if self.absX:
-                x = np.absolute(args[0])
+                x = list(np.absolute(args[0]))
             else:
                 x = args[0]
-
             if self.absY:
-                y = np.absolute(args[1])
+                y = list(np.absolute(args[1]))
             else:
                 y = args[1]
-
-        # process data from self.__files + error bars
-        elif len(args) == 4 and not isinstance(args[0], KITData):
-
-            if self.absX:
-                x = np.absolute(args[0])
-            else:
-                x = args[0]
-
-            if self.absY:
-                y = np.absolute(args[1])
-            else:
-                y = args[1]
-
-            dx = args[2]
-            dy = args[3]
+            if len(args) == 4:
+                dx = args[2]
+                dy = args[3]
 
         else:
-            raise ValueError("Cant add graph")
+            raise ValueError("Cant add graph. Check data table. Only 2 (x,y) or"
+                             "4 (x,y,dx,dy) coordinates are allowed."   )
 
         # create graph list
-        if len(args) == 2:
-            self.__graphs.append((np.asarray(x),np.asarray(y)))
-        elif len(args) == 4:
-            self.__graphs.append((np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
+        if dx == [] and dy == []:
+            self.__graphs.append((x, y))
+        elif dx != [] and dy != []:
+            self.__graphs.append((x, y, dx, dy))
+        else:
+            raise ValueError("z-error not implemented yet")
 
         return True
 
@@ -162,6 +157,14 @@ class KITMatplotlib(object):
 
         """
 
+        # create self.__graphs list
+        for i, dset in enumerate(fileList):
+            self.addGraph(dset)
+        # apply user defined normalization or manipulation of y values of each graph
+        self.manipulate(self.__graphs)
+
+        # apply user order
+        #TODO
 
         # create an empty canvas
         fig = plt.figure()
@@ -169,12 +172,53 @@ class KITMatplotlib(object):
         ax = fig.add_subplot(1, 1, 1)
 
         for dtup in self.__graphs:
+            print(dtup)
             ax.plot(dtup[0], dtup[1])
 
-
-        display(fig)  # this is required to re-display the figure
+        # this is required to re-display the figure
+        fig.show()
 
         return True
+
+
+    def getGraphList(self):
+        return self.__graphs
+
+
+    def manipulate(self, graphList):
+
+        facList = []
+        tempGraphs = graphList
+
+        # normalization for CV plots
+        if self.norm == "1/C^{2}":
+            for graph in graphList:
+                for y in graph[1]:
+                    tempList = []
+                    for val in y:
+                        tempList.append(1/(val*val))
+                    y = tempList
+
+        # no normalization
+        elif self.norm == 'off':
+            pass
+
+        # normalization via list of factors
+        else:
+            for fac in self.extractList(self.norm):
+                facList.append(float(fac))
+
+            if len(self.__files) != len(FacList):
+                raise ValueError("Invalid normalization input! Number of "
+                                 "factors differs from the number of graphs.")
+            for i, graph in enumerate(graphList):
+                for y in graph:
+                    tempList = []
+                    for val in y:
+                        tempList.append(val/facList[i])
+                    y = tempList
+
+        return graphList
 
 
     def extractList(self, string):
@@ -183,6 +227,9 @@ class KITMatplotlib(object):
             return string.replace("[","").replace("]","").split(",")
         else:
             return string
+
+
+
 
 
     def test(self, x, y):

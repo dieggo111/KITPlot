@@ -1,4 +1,4 @@
-import os
+import os, platform
 import json
 from collections import OrderedDict
 
@@ -94,7 +94,7 @@ class KITConfig(object):
 
     def write(self, cfg='default.cfg'):
         self.name = self.getCfgName(cfg)
-        with open(self.__dir + self.name,'w') as cfgFile:
+        with open(os.path.join(self.__dir, self.name),'w') as cfgFile:
             json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=True)
 
 
@@ -121,7 +121,11 @@ class KITConfig(object):
 
     def getCfgName(self, name='default'):
         if os.path.isdir(str(name)):
-            return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
+            if platform.system() == 'Windows':
+                return os.path.normpath(str(name)).split("\\")[-1] + ".cfg"
+            else:
+                return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
+
         else:
             return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
 
