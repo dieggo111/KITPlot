@@ -314,12 +314,14 @@ class KITPlot(object):
                               'TextSize'     : 0.03,
                               'BoxPara'      : 1,
                               'EntryList'    : ''           },
-                 'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
+                #  'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
+                 'Marker'  :{ 'Set'          : "[1,2,3,4,5,6,7]",
                               'Size'         : 1.5,         },
                  'Line'    :{ 'NoLine'       : False,
                             #   'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
-                              'Color'        : "[1,2,3,4,5,6,7,8]",
-                              'Style'        : 1,
+                              'Color'        : "[0,1,2,3,4,5,6,7]",
+                            #   'Style'        : 1,
+                              'Style'        : 0,
                               'Width'        : 2            },
                  'Canvas'  :{ 'SizeX'        : 1280,
                               'SizeY'        : 768,
@@ -356,7 +358,7 @@ class KITPlot(object):
     ##################
 
     def MeasurementType(self):
-        """If KITPlot is initialized with probe IDs it is able to determine the
+        """ If KITPlot is initialized with probe IDs it is able to determine the
         measurement type by checking database information. The default axis
         labels and titles are then set according to this information as soon as
         the respective cfg file is created.
@@ -564,7 +566,6 @@ class KITPlot(object):
 
                 else:
                     pass
-                    # self.addNorm()
 
 
             # Load multiple data files in a folder
@@ -634,7 +635,6 @@ class KITPlot(object):
                 else:
                     print("single file")
                     self.__files.append(KITData(dataInput))
-                    # self.addNorm()
 
 
         if self.cfg_initialized == True:
@@ -646,144 +646,6 @@ class KITPlot(object):
         self.readEntryList()
 
         return True
-
-
-    # def addNorm(self, loop=True, j=0):
-    #     """ This method enables normalizations of data tables. It has the
-    #     same function as 'addGraph' but with more options. If the user wants to
-    #     take advantage of normalization options then the data from the KITData
-    #     objects needs to be manipulated while creating the ROOT graphs.
-    #
-    #     Args:
-    #         loop(bool), j(integer): ???
-    #
-    #     """
-    #
-    # # Sends normalized graph values to addGraph
-    #     if loop == True:
-    #         for i, File in enumerate(self.__files):
-    #             # if data points have error bars
-    #             if self.__files[i].includesErrors():
-    #                 if self.__cfg.get('Misc','Normalization') == "off":
-    #                     self.addGraph(self.__files[i].getX(),
-    #                                   self.__files[i].getY(),
-    #                                   self.__files[i].getdX(),
-    #                                   self.__files[i].getdY())
-    #                 elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-    #                     self.addGraph(self.__files[i].getX(),
-    #                                   self.manipulate(self.__files[i].getY(),i),
-    #                                   self.__files[i].getdX(),
-    #                                   self.manipulate(self.__files[i].getdY(),i))
-    #                 elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-    #                     self.addGraph(File.getX(),
-    #                     self.manipulate(File.getY(),i),
-    #                     File.getdX(),
-    #                     self.manipulate(File.getdY(),i))
-    #                 else:
-    #                     raise ValueError("Invalid normalization input! Try "
-    #                                      "'off', '1/C^{2}' or '[float,"
-    #                                      "float,...]'!")
-    #             # if data points have no error bars
-    #             else:
-    #                 if self.__cfg.get('Misc','Normalization') == "off":
-    #                     self.addGraph(self.__files[i].getX(),
-    #                                   self.__files[i].getY())
-    #                 elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-    #                     self.addGraph(self.__files[i].getX(),
-    #                                   self.manipulate(self.__files[i].getY(),i))
-    #                 elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-    #                     self.addGraph(File.getX(),self.manipulate(File.getY(),i))
-    #                 else:
-    #                      raise ValueError("Invalid normalization input! Try "
-    #                                       "'off', '1/C^{2}' or '[float,"
-    #                                       "float,...]'!")
-    #     else:
-    #         if self.__cfg.get('Misc','Normalization') == "off":
-    #             self.addGraph(self.__files[j].getX(),self.__files[j].getY())
-    #         elif self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-    #             self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
-    #         elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-    #             self.addGraph(self.__files[j].getX(),self.manipulate(self.__files[j].getY(),j))
-    #         else:
-    #             raise ValueError("Invalid normalization input! Try 'off', '1/C^{2}' or '[float,float,...]'!")
-    #
-    #     return True
-    #
-    #
-    # def addGraph(self, *args):
-    #     """ The KITData objects within the 'self.__files' list (containing
-    #     the data tables) are now converted into ROOT objects. A ROOT object
-    #     represents a single graph of the future plot. These ROOT objects are
-    #     stored within the 'self.__graphs' list.
-    #
-    #     Args: x, y or KITData
-    #
-    #     """
-    #
-    #     # args: x, y or KITData
-    #     print(self.__files)
-    #     print("here: ", args[0], type(args[0]))
-    #     # ????
-    #     if isinstance(args[0], KITData):
-    #         #TODO: there is no getDic() method in KITData
-    #         if KITData.getDic() == None:
-    #             self.__files.append(args[0])
-    #             print(self.__files)
-    #             if self.absX:
-    #                 x = np.absolute(args[0].getX())
-    #             else:
-    #                 x = args[0].getX()
-    #
-    #             if self.absY:
-    #                 if str(args[1]) == "y":
-    #                     y = np.absolute(args[0].getY())
-    #                 elif str(args[1]) == "z":
-    #                     y = np.absolute(args[0].getZ())
-    #             else:
-    #                 if args[1] == "y":
-    #                     y = args[0].getY()
-    #                 elif args[1] == "z":
-    #                     y = args[0].getZ()
-    #         # Rpunch
-    #         else:
-    #             raise ValueError("Dictinary error")
-    #
-    #     elif len(args) == 2 and not isinstance(args[0], KITData):
-    #
-    #         if self.absX:
-    #             x = np.absolute(args[0])
-    #         else:
-    #             x = args[0]
-    #
-    #         if self.absY:
-    #             y = np.absolute(args[1])
-    #         else:
-    #             y = args[1]
-    #
-    #     elif len(args) == 4 and not isinstance(args[0], KITData):
-    #
-    #         if self.absX:
-    #             x = np.absolute(args[0])
-    #         else:
-    #             x = args[0]
-    #
-    #         if self.absY:
-    #             y = np.absolute(args[1])
-    #         else:
-    #             y = args[1]
-    #
-    #         dx = args[2]
-    #         dy = args[3]
-    #
-    #     else:
-    #         sys.exit("Cant add graph")
-    #
-    #     if len(args) == 2:
-    #         self.__graphs.append(ROOT.TGraph(len(x),np.asarray(x),np.asarray(y)))
-    #     elif len(args) == 4:
-    #         self.__graphs.append(ROOT.TGraphErrors(len(x),np.asarray(x),np.asarray(y),np.asarray(dx),np.asarray(dy)))
-    #
-    #     return True
 
 
     def draw(self, engine=None, arg=None):
@@ -804,7 +666,7 @@ class KITPlot(object):
 
         # create plot
         if engine == engineSet[0]:
-            KITMatplotlib(self.__cfg).draw(self.__files)
+            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
         else:
             pass
 
@@ -861,7 +723,10 @@ class KITPlot(object):
         # # # self.leg.SetHeader("n-in-p FZ, 240#mum")
         # self.leg.Draw()
         # self.canvas.Update()
-        #
+
+
+        # display figure
+        self.canvas.show()
 
         self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
 
@@ -872,34 +737,12 @@ class KITPlot(object):
 
         if not os.path.exists("output"):
             os.makedirs("output")
-        # self.canvas.SaveAs("output/%s.png" %(fileName))
-        # self.canvas.SaveAs("output/%s.pdf" %(fileName))
+        self.canvas.SaveAs("output/%s.png" %(fileName))
+        self.canvas.SaveAs("output/%s.pdf" %(fileName))
 
 
-    # def update(self):
-    #
-    #     try:
-    #         self.canvas.Update()
-    #     except:
-    #         pass
 
 
-    # def plotStyles(self, XTitle, YTitle, Title):
-    #
-    #     self.__graphs[0].GetXaxis().SetTitle(XTitle)
-    #     self.__graphs[0].GetYaxis().SetTitle(YTitle)
-    #     self.__graphs[0].SetTitle(Title)
-    #
-    #     # set titles (take auto titles when creating the cfg and the cfg value from here after)
-    #     self.setTitles()
-    #     # set axis ranges
-    #     self.setRanges()
-    #     # set marker styles (std assigning and/or graph group assigning)
-    #     self.setMarkerStyles()
-    #     # assign colors
-    #     self.setGraphColor()
-    #
-    #     return True
 
 
 #####################
@@ -991,29 +834,6 @@ class KITPlot(object):
         #    self.logY = True
 
         return True
-
-
-    # def manipulate(self, ListY, index):
-    #
-    #     FacList = []
-    #     TempList = []
-    #
-    #     if self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-    #         for val in ListY:
-    #                 TempList.append(1/(val*val))
-    #     else:
-    #         for char in self.__cfg.get('Misc','Normalization').replace("[", "").replace("]", "").split(","):
-    #             FacList.append(float(char))
-    #
-    #         if len(self.__files) != len(FacList):
-    #             sys.exit("Invalid normalization input! Number of factors differs from the number of graphs.")
-    #         else:
-    #             for val in ListY:
-    #                 TempList.append(val/FacList[index])
-    #
-    #     ListY = TempList
-    #
-    #     return ListY
 
 
     def checkTitleLenght(self, Title):

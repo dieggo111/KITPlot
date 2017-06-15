@@ -1,5 +1,5 @@
+#!/usr/bin/env python3
 import numpy as np
-# try to load plot engines
 try:
     import matplotlib.pyplot as plt
 except:
@@ -20,10 +20,10 @@ class KITMatplotlib(object):
         if cfg == None:
             print("Use default cfg")
         elif isinstance(cfg, KITConfig):
-            # try:
-            self.__initStyle(cfg)
-            # except:
-                # raise ValueError("cfg-file does not look like expected.")
+            try:
+                self.__initStyle(cfg)
+            except:
+                raise ValueError("cfg-file does not look like expected.")
         else:
             raise ValueError("Unexpected argument. KITMatplotlib needs "
                              "dictionary from cfg file.")
@@ -36,12 +36,17 @@ class KITMatplotlib(object):
         """
 
         # Title options
-        # ROOT.gStyle.SetTitleX(cfg.get('Title','X0')
-        # ROOT.gStyle.SetTitleY(cfg.get('Title','Y0'))
-        # ROOT.gStyle.SetTitleH(cfg.get('Title','H'))
-        # ROOT.gStyle.SetTitleFont(cfg.get('Title','Font'), "")
+        self.title = cfg.get('Title','Title')
+        self.titleX0 = cfg.get('Title','X0')
+        self.titleY0 = cfg.get('Title','Y0')
+        self.titleH = cfg.get('Title','H')
+        self.titleFont = cfg.get('Title','Font')
 
         # Axis Options
+        self.labelX = cfg.get('XAxis','Title')
+        self.labelY = cfg.get('YAxis','Title')
+        self.rangeX = self.extractList(cfg.get('XAxis','Range'), "float")
+        self.rangeY = self.extractList(cfg.get('YAxis','Range'), "float")
         # ROOT.gStyle.SetTitleSize(cfg.get('XAxis','Size'), "X")
         # ROOT.gStyle.SetTitleSize(cfg.get('YAxis','Size'), "Y")
         # ROOT.gStyle.SetTitleOffset(cfg.get('XAxis','Offset'), "X")
@@ -59,7 +64,7 @@ class KITMatplotlib(object):
         # ROOT.gStyle.SetPadLeftMargin(cfg.get('Canvas','PadLMargin'))
 
         # Marker Options
-        # ROOT.gStyle.SetMarkerSize(cfg.get('Marker','Size'))
+        self.markerSize = cfg.get('Marker','Size')
         self.markerSet = self.extractList(cfg['Marker','Set'])
 
         #Line options
@@ -69,9 +74,8 @@ class KITMatplotlib(object):
         self.lineStyle = cfg['Line','Style']
 
         # Pad Options
-        # ROOT.gStyle.SetPadGridX(True)
-        # ROOT.gStyle.SetPadGridY(True)
-        # ROOT.gStyle.SetGridColor(17)
+        self.grid = True
+        self.gridOptions = ('w', '-', '0.5')
 
         # KITPlot specific options
         self.ColorShades = cfg['Misc','ColorShades']
@@ -81,6 +85,8 @@ class KITMatplotlib(object):
         self.logY = cfg['YAxis','Log']
         self.norm = self.extractList(cfg['Misc','Normalization'])
 
+        # legend options
+        self.entryDict = cfg['Legend','EntryList']
 
         # KITPlot.__init = True
 
@@ -97,7 +103,6 @@ class KITMatplotlib(object):
         y = []
         dx = []
         dy = []
-        # print("args", args[0], type(args[0]))
         if isinstance(args[0], KITData):
             if KITData().getRPunchDict() == None:
                 # self.__files.append(args[0])
@@ -142,9 +147,9 @@ class KITMatplotlib(object):
 
         # create graph list
         if dx == [] and dy == []:
-            self.__graphs.append((x, y))
+            self.__graphs.append([x, y])
         elif dx != [] and dy != []:
-            self.__graphs.append((x, y, dx, dy))
+            self.__graphs.append([x, y, dx, dy])
         else:
             raise ValueError("z-error not implemented yet")
 
@@ -171,14 +176,106 @@ class KITMatplotlib(object):
         # specify (nrows, ncols, axnum)
         ax = fig.add_subplot(1, 1, 1)
 
-        for dtup in self.__graphs:
-            print(dtup)
-            ax.plot(dtup[0], dtup[1])
+        # plot graph from __.graphs: (x, y, str(color+marker), ... )
+        for i, table in enumerate(self.__graphs):
+            ax.plot(table[0],                           # x-axis
+                    table[1],                           # y-axis
+                    color=self.getColor(i),             # line color
+                    marker=self.getMarker(i),           # marker style
+                    markersize=self.markerSize,
+                    linewidth=self.lineWidth,
+                    linestyle=self.getLineStyle(i)
+                    )
 
-        # this is required to re-display the figure
-        fig.show()
 
-        return True
+        # set titles
+        ax.set_title(self.title)
+        ax.set_xlabel(self.labelX)
+        ax.set_ylabel(self.labelY)
+
+        # set log styles
+        if self.logX:
+            ax.semilogx()
+        if self.logY:
+            ax.semilogy()
+
+        # set grid
+        if self.grid == True:
+            # *args = [color,linstyle,linewidth]
+            ax.grid()
+
+        # set axis range manually
+        if self.rangeX != 'auto':
+            ax.set_xlim(self.rangeX)
+        if self.rangeY != 'auto':
+            ax.set_ylim(self.rangeY)
+
+
+
+
+
+        # set Legend
+        ax.legend([items[1] for items in list(self.entryDict.items())])
+
+        return fig
+
+
+    def getMarker(self, index):
+        """
+
+            Args:
+                index (int): represents an iterator marking a certain graph in
+                             .__graphs
+        """
+
+        markers = {'.': 'point', ',': 'pixel', 'o': 'circle',
+                   'v': 'triangle_down', '^': 'triangle_up',
+                   '<': 'triangle_left', '>': 'triangle_right', '1': 'tri_down',
+                   '2': 'tri_up', '3': 'tri_left', '4': 'tri_right',
+                   '8': 'octagon', 's': 'square', 'p': 'pentagon', '*': 'star',
+                   'h': 'hexagon1', 'H': 'hexagon2', '+': 'plus', 'x': 'x',
+                   'D': 'diamond', 'd': 'thin_diamond', '|': 'vline',
+                   '_': 'hline', 'P': 'plus_filled', 'X': 'x_filled',
+                   0: 'tickleft', 1: 'tickright', 2: 'tickup', 3: 'tickdown',
+                   4: 'caretleft', 5: 'caretright', 6: 'caretup',
+                   7: 'caretdown', 8: 'caretleftbase', 9: 'caretrightbase',
+                   10: 'caretupbase', 11: 'caretdownbase'}
+
+        counter = self.markerSet[index]
+
+        if isinstance(counter, int):
+            return list(markers.keys())[counter]
+        elif isinstance(counter, str):
+            return markers[counter]
+        else:
+            raise ValueError("Unkown 'marker set' input.")
+
+
+    def getColor(self, index):
+
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+
+        counter = self.colorSet[index]
+
+        if isinstance(counter, int):
+            return colors[counter]
+        elif isinstance(counter, str) and counter in colors:
+            return counter
+        else:
+            raise ValueError("Unkown 'color set' input.")
+
+
+    def getLineStyle(self, index):
+
+        lines = ['-', '--', '-.', ':']
+
+        if isinstance(self.lineStyle, int):
+            return lines[self.lineStyle]
+        elif isinstance(self.lineStyle, str):
+            counter = self.extractList(self.lineStyle)[index]
+            if counter > len(lines)-1:
+                raise ValueError("Unkown line style.")
+            return lines[counter]
 
 
     def getGraphList(self):
@@ -191,13 +288,13 @@ class KITMatplotlib(object):
         tempGraphs = graphList
 
         # normalization for CV plots
-        if self.norm == "1/C^{2}":
-            for graph in graphList:
-                for y in graph[1]:
+        if self.norm in ["1/C^{2}", "CV"]:
+            for i, graph in enumerate(graphList):
+                for y in graph:
                     tempList = []
                     for val in y:
                         tempList.append(1/(val*val))
-                    y = tempList
+                graph[1] = tempList
 
         # no normalization
         elif self.norm == 'off':
@@ -206,9 +303,8 @@ class KITMatplotlib(object):
         # normalization via list of factors
         else:
             for fac in self.extractList(self.norm):
-                facList.append(float(fac))
-
-            if len(self.__files) != len(FacList):
+                facList.append(fac)
+            if len(graphList) != len(facList):
                 raise ValueError("Invalid normalization input! Number of "
                                  "factors differs from the number of graphs.")
             for i, graph in enumerate(graphList):
@@ -216,15 +312,42 @@ class KITMatplotlib(object):
                     tempList = []
                     for val in y:
                         tempList.append(val/facList[i])
-                    y = tempList
+                graph[1] = tempList
 
         return graphList
 
 
-    def extractList(self, string):
+    def extractList(self, string, output="int"):
+        """ Turns a 'string(list)' into a list. Converts its elements into
+            floats if possible. Real input strings are just returned as they
+            are.
+
+            Args:
+                string (str): original value of respective key in cfg dict
+                output (str): determines the output type of the list elements
+        """
+
+        if output not in ["int", "float"]:
+            raise ValueError("Unexpected argument.")
 
         if string[0] == '[' and string[-1] == ']':
-            return string.replace("[","").replace("]","").split(",")
+            if ':' in string:
+                string_list = string.replace("[","").replace("]","").split(":")
+            elif ',' in string:
+                string_list = string.replace("[","").replace("]","").split(",")
+            else:
+                raise ValueError("Unkown input. Cfg parameter needs to be a"
+                                 " string. Accepted seperations are ',' and "
+                                 "':'. ")
+            try:
+                if output == "int":
+                    new_list = [int(string) for string in string_list]
+                elif output == "float":
+                    new_list = [float(string) for string in string_list]
+
+                return new_list
+            except:
+                return string_list
         else:
             return string
 
