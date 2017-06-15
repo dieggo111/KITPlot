@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 # try to load plot engines
 try:
@@ -6,11 +7,27 @@ except:
     raise ImportError("Failed to import ROOT.")
 from .KITConfig import KITConfig
 from .KITLegend import KITLegend
+from .kitdata import KITData
 from collections import OrderedDict
+
 
 class KITroot(object):
 
-    def __init__(self, fileList):
+    def __init__(self, cfg=None):
+
+        self.__graphs = []
+
+        if cfg == None:
+            pass
+        elif isinstance(cfg, KITConfig):
+            try:
+                self.__initStyle(cfg)
+            except:
+                raise ValueError("cfg-file does not look like expected.")
+        else:
+            raise ValueError("Unexpected argument. KITMatplotlib needs "
+                             "dictionary from cfg file.")
+
 
     def __initStyle(self):
         """ Loads and sets various parameters from cfg file which are then used
@@ -19,37 +36,36 @@ class KITroot(object):
         """
 
         # Title options
-        ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
-        ROOT.gStyle.SetTitleY(self.__cfg.get('Title','Y0'))
-        ROOT.gStyle.SetTitleH(self.__cfg.get('Title','H'))
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('Title','Font'), "")
+        ROOT.gStyle.SetTitleX(cfg.get('Title','X0'))
+        ROOT.gStyle.SetTitleY(cfg.get('Title','Y0'))
+        ROOT.gStyle.SetTitleH(cfg.get('Title','H'))
+        ROOT.gStyle.SetTitleFont(cfg.get('Title','Font'), "")
 
         # Axis Options
-        ROOT.gStyle.SetTitleSize(self.__cfg.get('XAxis','Size'), "X")
-        ROOT.gStyle.SetTitleSize(self.__cfg.get('YAxis','Size'), "Y")
-        ROOT.gStyle.SetTitleOffset(self.__cfg.get('XAxis','Offset'), "X")
-        ROOT.gStyle.SetTitleOffset(self.__cfg.get('YAxis','Offset'), "Y")
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('XAxis','Font'), "X")
-        ROOT.gStyle.SetTitleFont(self.__cfg.get('YAxis','Font'), "Y")
-        ROOT.gStyle.SetLabelFont(self.__cfg.get('XAxis','Font'),"X")
-        ROOT.gStyle.SetLabelFont(self.__cfg.get('YAxis','Font'),"Y")
-        ROOT.gStyle.SetLabelSize(self.__cfg.get('XAxis','Size'),"X")
-        ROOT.gStyle.SetLabelSize(self.__cfg.get('YAxis','Size'),"Y")
-        ROOT.TGaxis.SetMaxDigits(self.__cfg.get('Canvas','MaxDigits'))
+        ROOT.gStyle.SetTitleSize(cfg.get('XAxis','Size'), "X")
+        ROOT.gStyle.SetTitleSize(cfg.get('YAxis','Size'), "Y")
+        ROOT.gStyle.SetTitleOffset(cfg.get('XAxis','Offset'), "X")
+        ROOT.gStyle.SetTitleOffset(cfg.get('YAxis','Offset'), "Y")
+        ROOT.gStyle.SetTitleFont(cfg.get('XAxis','Font'), "X")
+        ROOT.gStyle.SetTitleFont(cfg.get('YAxis','Font'), "Y")
+        ROOT.gStyle.SetLabelFont(cfg.get('XAxis','Font'),"X")
+        ROOT.gStyle.SetLabelFont(cfg.get('YAxis','Font'),"Y")
+        ROOT.gStyle.SetLabelSize(cfg.get('XAxis','Size'),"X")
+        ROOT.gStyle.SetLabelSize(cfg.get('YAxis','Size'),"Y")
+        ROOT.TGaxis.SetMaxDigits(cfg.get('Canvas','MaxDigits'))
 
         # Canvas Options
-        ROOT.gStyle.SetPadBottomMargin(self.__cfg.get('Canvas','PadBMargin'))
-        ROOT.gStyle.SetPadLeftMargin(self.__cfg.get('Canvas','PadLMargin'))
+        ROOT.gStyle.SetPadBottomMargin(cfg.get('Canvas','PadBMargin'))
+        ROOT.gStyle.SetPadLeftMargin(cfg.get('Canvas','PadLMargin'))
 
         # Marker Options
-        ROOT.gStyle.SetMarkerSize(self.__cfg.get('Marker','Size'))
-        self.markerSet = self.__cfg['Marker','Set'].replace("[","").replace("]","").split(",")
+        ROOT.gStyle.SetMarkerSize(cfg.get('Marker','Size'))
+        self.markerSet = self.extractList(cfg['Marker','Set'])
 
         #Line options
-        self.noLine = self.__cfg['Line','NoLine']
-        self.colorSet = self.__cfg['Line','Color'].replace("[","").replace("]","").split(",")
-        self.lineWidth = self.__cfg['Line','Width']
-        self.lineStyle = self.__cfg['Line','Style']
+        self.colorSet = self.extractList(cfg['Line','Color'])
+        self.lineWidth = cfg['Line','Width']
+        self.lineStyle = cfg['Line','Style']
 
         # Pad Options
         ROOT.gStyle.SetPadGridX(True)
@@ -57,11 +73,15 @@ class KITroot(object):
         ROOT.gStyle.SetGridColor(17)
 
         # KITPlot specific options
-        self.ColorShades = self.__cfg['Misc','ColorShades']
-        self.absX = self.__cfg['XAxis','Abs']
-        self.absY = self.__cfg['YAxis','Abs']
-        self.logX = self.__cfg['XAxis','Log']
-        self.logY = self.__cfg['YAxis','Log']
+        self.ColorShades = cfg['Misc','ColorShades']
+        self.absX = cfg['XAxis','Abs']
+        self.absY = cfg['YAxis','Abs']
+        self.logX = cfg['XAxis','Log']
+        self.logY = cfg['YAxis','Log']
+        self.norm = self.extractList(cfg['Misc','Normalization'])
+
+
+
         KITPlot.__init = True
 
         return True
@@ -76,12 +96,11 @@ class KITroot(object):
         Args: x, y or KITData
 
         """
-
+        # TODO
         # args: x, y or KITData
 
         if isinstance(args[0], KITData):
-            #TODO: there is no getDic() method in KITData
-            if KITData.getDic() == None:
+            if KITData.getRPunchDict() == None:
                 self.__files.append(args[0])
 
                 if self.absX:
@@ -162,12 +181,13 @@ class KITroot(object):
         else:
             pass
 
-        if self.__cfg.get('Line','NoLine') == True and "L" in arg:
-            arg = arg.replace("L","")
-        elif self.__cfg.get('Line','NoLine') == False and "L" not in arg:
-            arg = arg + "L"
-        else:
-            pass
+        #TODO if 0 -> no line
+        # if cfg.get('Line','NoLine') == True and "L" in arg:
+        #     arg = arg.replace("L","")
+        # elif cfg.get('Line','NoLine') == False and "L" not in arg:
+        #     arg = arg + "L"
+        # else:
+        #     pass
 
         if len(self.__graphs) == 0:
             print("No graphs to draw")
@@ -175,14 +195,14 @@ class KITroot(object):
 
         # init canvas
         self.canvas = ROOT.TCanvas("c1","c1",
-                                   int(self.__cfg.get('Canvas','SizeX')),
-                                   int(self.__cfg.get('Canvas','SizeY')))
+                                   int(cfg.get('Canvas','SizeX')),
+                                   int(cfg.get('Canvas','SizeY')))
         self.canvas.cd()
 
         # apply plot styles
-        self.plotStyles(self.__cfg.get('XAxis','Title'),
-                        self.__cfg.get('YAxis','Title'),
-                        self.__cfg.get('Title','Title'))
+        self.plotStyles(cfg.get('XAxis','Title'),
+                        cfg.get('YAxis','Title'),
+                        cfg.get('Title','Title'))
 
         # set log scale if
         if self.logX:
@@ -200,11 +220,11 @@ class KITroot(object):
         # Set legend (always at the very end!)
 
         # LegH = LegHandler()
-        # LegH.setKITLegend(self.__cfg.get('Legend'),
+        # LegH.setKITLegend(cfg.get('Legend'),
         #                   self.__graphs,
         #                   self.__files,
-        #                   self.__cfg.get('Canvas','SizeX'),
-        #                   self.__cfg.get('Canvas','SizeY'),
+        #                   cfg.get('Canvas','SizeX'),
+        #                   cfg.get('Canvas','SizeY'),
         #                   self.Scale)
         # self.leg = LegH.getLegend()
         # # self.leg.SetHeader("n-in-p FZ, 240#mum")
@@ -282,6 +302,41 @@ class KITroot(object):
         KITPlot.__color %= 8
 
         return int(self.colorSet[KITPlot.__color-1])
+
+
+    def extractList(self, string, output="int"):
+        """ Turns a 'string(list)' into a list. Converts its elements into
+            floats if possible. Real input strings are just returned as they
+            are.
+
+            Args:
+                string (str): original value of respective key in cfg dict
+                output (str): determines the output type of the list elements
+        """
+
+        if output not in ["int", "float"]:
+            raise ValueError("Unexpected argument.")
+
+        if string[0] == '[' and string[-1] == ']':
+            if ':' in string:
+                string_list = string.replace("[","").replace("]","").split(":")
+            elif ',' in string:
+                string_list = string.replace("[","").replace("]","").split(",")
+            else:
+                raise ValueError("Unkown input. Cfg parameter needs to be a"
+                                 " string. Accepted seperations are ',' and "
+                                 "':'. ")
+            try:
+                if output == "int":
+                    new_list = [int(string) for string in string_list]
+                elif output == "float":
+                    new_list = [float(string) for string in string_list]
+
+                return new_list
+            except:
+                return string_list
+        else:
+            return string
 
 
 if __name__ == '__main__':

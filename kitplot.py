@@ -230,6 +230,9 @@ class KITPlot(object):
 
     def __init__(self, dataInput=None, cfgFile=None):
 
+        # supported plot engines
+        self.__engines = ['matplotlib', 'ROOT']
+
         # init lists
         self.__files = []
         self.__graphs = []
@@ -316,10 +319,10 @@ class KITPlot(object):
                               'EntryList'    : ''           },
                 #  'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
                  'Marker'  :{ 'Set'          : "[1,2,3,4,5,6,7]",
-                              'Size'         : 1.5,         },
-                 'Line'    :{ 'NoLine'       : False,
-                            #   'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
-                              'Color'        : "[0,1,2,3,4,5,6,7]",
+                            #   'Size'         : 1.5,         },
+                              'Size'         : 6,         },
+                #  'Line'    :{ 'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
+                 'Line'    :{ 'Color'        : "[0,1,2,3,4,5,6,7]",
                             #   'Style'        : 1,
                               'Style'        : 0,
                               'Width'        : 2            },
@@ -480,7 +483,6 @@ class KITPlot(object):
         self.markerSet = self.__cfg['Marker','Set'].replace("[","").replace("]","").split(",")
 
         #Line options
-        self.noLine = self.__cfg['Line','NoLine']
         self.colorSet = self.__cfg['Line','Color'].replace("[","").replace("]","").split(",")
         self.lineWidth = self.__cfg['Line','Width']
         self.lineStyle = self.__cfg['Line','Style']
@@ -655,18 +657,23 @@ class KITPlot(object):
         """
 
         # set engine
-        engineSet = ['matplotlib', 'ROOT']
         if engine == None:
-            engine = engineSet[0]
-        elif engine not in engineSet:
+            engine = self.__engines[0]
+        elif engine not in self.__engines:
             raise ValueError("Unkown plot engine. Supported engines are: \n"
-                             + engineSet[0] + " and " + engineSet[1])
+                             + self.__engines[0] + " and " + self.__engines[1])
         else:
             pass
 
-        # create plot
-        if engine == engineSet[0]:
+        # create and save canvas
+        if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
+
+            png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
+            pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
+
+            self.canvas.savefig(png_out)
+            self.canvas.savefig(pdf_out)
         else:
             pass
 
@@ -728,20 +735,9 @@ class KITPlot(object):
         # display figure
         self.canvas.show()
 
-        self.saveAs(self.cfgPath.replace("cfg/","").replace(".cfg",""))
+
 
         return True
-
-
-    def saveAs(self, fileName):
-
-        if not os.path.exists("output"):
-            os.makedirs("output")
-        self.canvas.SaveAs("output/%s.png" %(fileName))
-        self.canvas.SaveAs("output/%s.pdf" %(fileName))
-
-
-
 
 
 
@@ -750,7 +746,7 @@ class KITPlot(object):
 #####################
 
     def arrangeFileList(self):
-        """ The KITData files in 'self.__files' are somewhat arbitrarily
+        """ The KITData files in .__files are somewhat arbitrarily
         ordered at first. This method pre-orders them in respect of their names.
 
         """
@@ -862,10 +858,10 @@ class KITPlot(object):
 
 
     def readEntryList(self):
-        """'EntryList' makes all graphs, their names and order accessible. This
+        """'EntryList' makes the names and order of all graphs accessible. This
         subsection is read every time KITPlot is executed. An empty value ("")
         can be used to reset the entry to its default value (the original order
-        and names given by the file list).
+        and names given by the .__files).
 
         """
 

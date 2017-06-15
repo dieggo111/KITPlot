@@ -10,7 +10,6 @@ from .kitdata import KITData
 from collections import OrderedDict
 
 
-
 class KITMatplotlib(object):
 
     def __init__(self, cfg=None):
@@ -18,7 +17,7 @@ class KITMatplotlib(object):
         self.__graphs = []
 
         if cfg == None:
-            print("Use default cfg")
+            pass
         elif isinstance(cfg, KITConfig):
             try:
                 self.__initStyle(cfg)
@@ -68,7 +67,6 @@ class KITMatplotlib(object):
         self.markerSet = self.extractList(cfg['Marker','Set'])
 
         #Line options
-        self.noLine = cfg['Line','NoLine']
         self.colorSet = self.extractList(cfg['Line','Color'])
         self.lineWidth = cfg['Line','Width']
         self.lineStyle = cfg['Line','Style']
@@ -210,10 +208,6 @@ class KITMatplotlib(object):
         if self.rangeY != 'auto':
             ax.set_ylim(self.rangeY)
 
-
-
-
-
         # set Legend
         ax.legend([items[1] for items in list(self.entryDict.items())])
 
@@ -228,20 +222,13 @@ class KITMatplotlib(object):
                              .__graphs
         """
 
-        markers = {'.': 'point', ',': 'pixel', 'o': 'circle',
-                   'v': 'triangle_down', '^': 'triangle_up',
-                   '<': 'triangle_left', '>': 'triangle_right', '1': 'tri_down',
-                   '2': 'tri_up', '3': 'tri_left', '4': 'tri_right',
-                   '8': 'octagon', 's': 'square', 'p': 'pentagon', '*': 'star',
-                   'h': 'hexagon1', 'H': 'hexagon2', '+': 'plus', 'x': 'x',
-                   'D': 'diamond', 'd': 'thin_diamond', '|': 'vline',
-                   '_': 'hline', 'P': 'plus_filled', 'X': 'x_filled',
-                   0: 'tickleft', 1: 'tickright', 2: 'tickup', 3: 'tickdown',
-                   4: 'caretleft', 5: 'caretright', 6: 'caretup',
-                   7: 'caretdown', 8: 'caretleftbase', 9: 'caretrightbase',
-                   10: 'caretupbase', 11: 'caretdownbase'}
+        markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
+                   '<': 'triangle_left', '>': 'triangle_right',
+                   '8': 'octagon', 'p': 'pentagon', '*': 'star',
+                   'h': 'hexagon1', 'H': 'hexagon2',
+                   'D': 'diamond', 'd': 'thin_diamond', 'P': 'plus_filled', 'X': 'x_filled'}
 
-        counter = self.markerSet[index]
+        counter = self.counter_loop(self.markerSet, index)
 
         if isinstance(counter, int):
             return list(markers.keys())[counter]
@@ -253,29 +240,40 @@ class KITMatplotlib(object):
 
     def getColor(self, index):
 
-        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 
-        counter = self.colorSet[index]
-
-        if isinstance(counter, int):
+        # if colors in .colorset are defined by integers
+        if isinstance(self.colorSet[0], int):
+            counter = self.counter_loop(self.colorSet, index)
             return colors[counter]
+        # if colors in .colorset are defined by strings they dont need to be looped
         elif isinstance(counter, str) and counter in colors:
             return counter
         else:
-            raise ValueError("Unkown 'color set' input.")
+            raise ValueError("Unkown color.")
 
 
     def getLineStyle(self, index):
 
-        lines = ['-', '--', '-.', ':']
+        lines = ['None', '-', '--', '-.', ':']
 
         if isinstance(self.lineStyle, int):
             return lines[self.lineStyle]
         elif isinstance(self.lineStyle, str):
-            counter = self.extractList(self.lineStyle)[index]
-            if counter > len(lines)-1:
+            counter = self.counter_loop(self.extractList(self.lineStyle), index)
+            if counter >= len(lines):
                 raise ValueError("Unkown line style.")
             return lines[counter]
+
+
+    def counter_loop(self, List, index):
+
+        if index >= len(List):
+            counter = List[index%len(List)]
+        else:
+            counter = List[index]
+
+        return counter
 
 
     def getGraphList(self):
@@ -344,7 +342,6 @@ class KITMatplotlib(object):
                     new_list = [int(string) for string in string_list]
                 elif output == "float":
                     new_list = [float(string) for string in string_list]
-
                 return new_list
             except:
                 return string_list
