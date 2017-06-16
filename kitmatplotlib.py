@@ -8,6 +8,7 @@ from .KITConfig import KITConfig
 from .KITLegend import KITLegend
 from .kitdata import KITData
 from collections import OrderedDict
+from .kitutils import KITUtils
 
 
 class KITMatplotlib(object):
@@ -44,8 +45,8 @@ class KITMatplotlib(object):
         # Axis Options
         self.labelX = cfg.get('XAxis','Title')
         self.labelY = cfg.get('YAxis','Title')
-        self.rangeX = self.extractList(cfg.get('XAxis','Range'), "float")
-        self.rangeY = self.extractList(cfg.get('YAxis','Range'), "float")
+        self.rangeX = KITUtils().extractList(cfg.get('XAxis','Range'), "float")
+        self.rangeY = KITUtils().extractList(cfg.get('YAxis','Range'), "float")
         # ROOT.gStyle.SetTitleSize(cfg.get('XAxis','Size'), "X")
         # ROOT.gStyle.SetTitleSize(cfg.get('YAxis','Size'), "Y")
         # ROOT.gStyle.SetTitleOffset(cfg.get('XAxis','Offset'), "X")
@@ -64,10 +65,10 @@ class KITMatplotlib(object):
 
         # Marker Options
         self.markerSize = cfg.get('Marker','Size')
-        self.markerSet = self.extractList(cfg['Marker','Set'])
+        self.markerSet = KITUtils().extractList(cfg['Marker','Set'])
 
         #Line options
-        self.colorSet = self.extractList(cfg['Line','Color'])
+        self.colorSet = KITUtils().extractList(cfg['Line','Color'])
         self.lineWidth = cfg['Line','Width']
         self.lineStyle = cfg['Line','Style']
 
@@ -81,7 +82,7 @@ class KITMatplotlib(object):
         self.absY = cfg['YAxis','Abs']
         self.logX = cfg['XAxis','Log']
         self.logY = cfg['YAxis','Log']
-        self.norm = self.extractList(cfg['Misc','Normalization'])
+        self.norm = KITUtils().extractList(cfg['Misc','Normalization'])
 
         # legend options
         self.entryDict = cfg['Legend','EntryList']
@@ -164,7 +165,7 @@ class KITMatplotlib(object):
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
         # apply user defined normalization or manipulation of y values of each graph
-        self.manipulate(self.__graphs)
+        KITUtils().manipulate(self.__graphs, self.norm)
 
         # apply user order
         #TODO
@@ -174,7 +175,7 @@ class KITMatplotlib(object):
         # specify (nrows, ncols, axnum)
         ax = fig.add_subplot(1, 1, 1)
 
-        # plot graph from __.graphs: (x, y, str(color+marker), ... )
+        # plot graph from __.graphs
         for i, table in enumerate(self.__graphs):
             ax.plot(table[0],                           # x-axis
                     table[1],                           # y-axis
@@ -182,8 +183,8 @@ class KITMatplotlib(object):
                     marker=self.getMarker(i),           # marker style
                     markersize=self.markerSize,
                     linewidth=self.lineWidth,
-                    linestyle=self.getLineStyle(i)
-                    )
+                    linestyle=self.getLineStyle(i),
+                    label=self.getLabel(i))
 
 
         # set titles
@@ -210,8 +211,27 @@ class KITMatplotlib(object):
 
         # set Legend
         ax.legend([items[1] for items in list(self.entryDict.items())])
+        handles,labels = ax.get_legend_handles_labels()
+        # reorder legend items according to 'EntryList'
+        handles = self.adjustOrder(handles)
+        labels = self.adjustOrder(labels)
+        ax.legend(handles,labels)
 
         return fig
+
+
+    def adjustOrder(self, List):
+
+        userOrder = [int(item[0]) for item in list(self.entryDict.items())]
+        List = [y for (x,y) in sorted(zip(userOrder, List))]
+
+        return List
+
+
+    def getLabel(self, index):
+
+        label = [items[1] for items in list(self.entryDict.items())]
+        return label[index]
 
 
     def getMarker(self, index):
@@ -228,7 +248,7 @@ class KITMatplotlib(object):
                    'h': 'hexagon1', 'H': 'hexagon2',
                    'D': 'diamond', 'd': 'thin_diamond', 'P': 'plus_filled', 'X': 'x_filled'}
 
-        counter = self.counter_loop(self.markerSet, index)
+        counter = KITUtils().counter_loop(self.markerSet, index)
 
         if isinstance(counter, int):
             return list(markers.keys())[counter]
@@ -244,7 +264,7 @@ class KITMatplotlib(object):
 
         # if colors in .colorset are defined by integers
         if isinstance(self.colorSet[0], int):
-            counter = self.counter_loop(self.colorSet, index)
+            counter = KITUtils().counter_loop(self.colorSet, index)
             return colors[counter]
         # if colors in .colorset are defined by strings they dont need to be looped
         elif isinstance(counter, str) and counter in colors:
@@ -260,115 +280,11 @@ class KITMatplotlib(object):
         if isinstance(self.lineStyle, int):
             return lines[self.lineStyle]
         elif isinstance(self.lineStyle, str):
-            counter = self.counter_loop(self.extractList(self.lineStyle), index)
+            counter = KITUtils().counter_loop(KITUtils().extractList(self.lineStyle), index)
             if counter >= len(lines):
                 raise ValueError("Unkown line style.")
             return lines[counter]
 
 
-    def counter_loop(self, List, index):
-
-        if index >= len(List):
-            counter = List[index%len(List)]
-        else:
-            counter = List[index]
-
-        return counter
-
-
     def getGraphList(self):
         return self.__graphs
-
-
-    def manipulate(self, graphList):
-
-        facList = []
-        tempGraphs = graphList
-
-        # normalization for CV plots
-        if self.norm in ["1/C^{2}", "CV"]:
-            for i, graph in enumerate(graphList):
-                for y in graph:
-                    tempList = []
-                    for val in y:
-                        tempList.append(1/(val*val))
-                graph[1] = tempList
-
-        # no normalization
-        elif self.norm == 'off':
-            pass
-
-        # normalization via list of factors
-        else:
-            for fac in self.extractList(self.norm):
-                facList.append(fac)
-            if len(graphList) != len(facList):
-                raise ValueError("Invalid normalization input! Number of "
-                                 "factors differs from the number of graphs.")
-            for i, graph in enumerate(graphList):
-                for y in graph:
-                    tempList = []
-                    for val in y:
-                        tempList.append(val/facList[i])
-                graph[1] = tempList
-
-        return graphList
-
-
-    def extractList(self, string, output="int"):
-        """ Turns a 'string(list)' into a list. Converts its elements into
-            floats if possible. Real input strings are just returned as they
-            are.
-
-            Args:
-                string (str): original value of respective key in cfg dict
-                output (str): determines the output type of the list elements
-        """
-
-        if output not in ["int", "float"]:
-            raise ValueError("Unexpected argument.")
-
-        if string[0] == '[' and string[-1] == ']':
-            if ':' in string:
-                string_list = string.replace("[","").replace("]","").split(":")
-            elif ',' in string:
-                string_list = string.replace("[","").replace("]","").split(",")
-            else:
-                raise ValueError("Unkown input. Cfg parameter needs to be a"
-                                 " string. Accepted seperations are ',' and "
-                                 "':'. ")
-            try:
-                if output == "int":
-                    new_list = [int(string) for string in string_list]
-                elif output == "float":
-                    new_list = [float(string) for string in string_list]
-                return new_list
-            except:
-                return string_list
-        else:
-            return string
-
-
-
-
-
-    def test(self, x, y):
-
-        plot = plt.plot(x, y)
-        plt.setp(plot, color='r', linewidth='2.')
-        plt.show()
-
-        return True
-
-
-
-
-if __name__ == '__main__':
-
-    x = [0,2,5,8]
-    y = [1,3,4,5]
-    k1 = KITMatplotlib(x,y)
-    k1.test()
-
-
-    input()
