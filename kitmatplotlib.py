@@ -35,18 +35,36 @@ class KITMatplotlib(object):
 
         """
 
+        # Canvas Options
+        self.canvasSize = KITUtils().extractList(cfg['Canvas','CanvasSize'], 'float')
+
+        # Pad Options
+        self.grid = True
+        self.gridOptions = ('w', '-', '0.5')
+        self.padSize = KITUtils().extractList(cfg['Canvas','PadSize'], 'float')
+
         # Title options
         self.title = cfg.get('Title','Title')
         self.titleX0 = cfg.get('Title','X0')
         self.titleY0 = cfg.get('Title','Y0')
         self.titleH = cfg.get('Title','H')
         self.titleFont = cfg.get('Title','Font')
+        self.titleFontSize = cfg.get('Title','FontSize')
+        self.titleFontStyle = cfg.get('Title','FontStyle')
+
 
         # Axis Options
         self.labelX = cfg.get('XAxis','Title')
         self.labelY = cfg.get('YAxis','Title')
         self.rangeX = KITUtils().extractList(cfg.get('XAxis','Range'), "float")
         self.rangeY = KITUtils().extractList(cfg.get('YAxis','Range'), "float")
+        self.fontX = cfg.get('XAxis','Font')
+        self.fontY = cfg.get('YAxis','Font')
+        self.fontSizeX = cfg.get('XAxis','FontSize')
+        self.fontSizeY = cfg.get('YAxis','FontSize')
+        self.fontStyleX = cfg.get('XAxis','FontStyle')
+        self.fontStyleY = cfg.get('YAxis','FontStyle')
+
         # ROOT.gStyle.SetTitleSize(cfg.get('XAxis','Size'), "X")
         # ROOT.gStyle.SetTitleSize(cfg.get('YAxis','Size'), "Y")
         # ROOT.gStyle.SetTitleOffset(cfg.get('XAxis','Offset'), "X")
@@ -59,10 +77,6 @@ class KITMatplotlib(object):
         # ROOT.gStyle.SetLabelSize(cfg.get('YAxis','Size'),"Y")
         # ROOT.TGaxis.SetMaxDigits(cfg.get('Canvas','MaxDigits'))
 
-        # Canvas Options
-        # ROOT.gStyle.SetPadBottomMargin(cfg.get('Canvas','PadBMargin'))
-        # ROOT.gStyle.SetPadLeftMargin(cfg.get('Canvas','PadLMargin'))
-
         # Marker Options
         self.markerSize = cfg.get('Marker','Size')
         self.markerSet = KITUtils().extractList(cfg['Marker','Set'])
@@ -71,10 +85,6 @@ class KITMatplotlib(object):
         self.colorSet = KITUtils().extractList(cfg['Line','Color'])
         self.lineWidth = cfg['Line','Width']
         self.lineStyle = cfg['Line','Style']
-
-        # Pad Options
-        self.grid = True
-        self.gridOptions = ('w', '-', '0.5')
 
         # KITPlot specific options
         self.ColorShades = cfg['Misc','ColorShades']
@@ -85,7 +95,7 @@ class KITMatplotlib(object):
         self.norm = KITUtils().extractList(cfg['Misc','Normalization'])
 
         # legend options
-        self.entryDict = cfg['Legend','EntryList']
+        self.__entryDict = cfg['Legend','EntryList']
 
         # KITPlot.__init = True
 
@@ -167,13 +177,14 @@ class KITMatplotlib(object):
         # apply user defined normalization or manipulation of y values of each graph
         KITUtils().manipulate(self.__graphs, self.norm)
 
-        # apply user order
-        #TODO
+        # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
+        fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
 
-        # create an empty canvas
-        fig = plt.figure()
         # specify (nrows, ncols, axnum)
         ax = fig.add_subplot(1, 1, 1)
+
+        # adjust pad size: [left, bottom, width, height]
+        ax.set_position(self.padSize)
 
         # plot graph from __.graphs
         for i, table in enumerate(self.__graphs):
@@ -186,11 +197,17 @@ class KITMatplotlib(object):
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
 
-
         # set titles
-        ax.set_title(self.title)
-        ax.set_xlabel(self.labelX)
-        ax.set_ylabel(self.labelY)
+        # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
+        ax.set_title(self.title,
+                     fontsize=self.titleFontSize,
+                     fontweight=self.titleFontStyle)
+        ax.set_xlabel(self.labelX,
+                      fontsize=self.fontSizeX,
+                      fontweight=self.fontStyleX)
+        ax.set_ylabel(self.labelY,
+                      fontsize=self.fontSizeY,
+                      fontweight=self.fontStyleY)
 
         # set log styles
         if self.logX:
@@ -210,7 +227,7 @@ class KITMatplotlib(object):
             ax.set_ylim(self.rangeY)
 
         # set Legend
-        ax.legend([items[1] for items in list(self.entryDict.items())])
+        ax.legend([items[1] for items in list(self.__entryDict.items())])
         handles,labels = ax.get_legend_handles_labels()
         # reorder legend items according to 'EntryList'
         handles = self.adjustOrder(handles)
@@ -222,7 +239,7 @@ class KITMatplotlib(object):
 
     def adjustOrder(self, List):
 
-        userOrder = [int(item[0]) for item in list(self.entryDict.items())]
+        userOrder = [int(item[0]) for item in list(self.__entryDict.items())]
         List = [y for (x,y) in sorted(zip(userOrder, List))]
 
         return List
@@ -230,7 +247,7 @@ class KITMatplotlib(object):
 
     def getLabel(self, index):
 
-        label = [items[1] for items in list(self.entryDict.items())]
+        label = [items[1] for items in list(self.__entryDict.items())]
         return label[index]
 
 
