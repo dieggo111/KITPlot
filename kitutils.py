@@ -1,14 +1,14 @@
 
 class KITUtils(object):
 
-    def counter_loop(self, List, index):
+    def counter_loop(self, List, x):
 
-        if index >= len(List):
-            counter = List[index%len(List)]
-        else:
-            counter = List[index]
+        for i, counter in enumerate(itertools.cycle(List)):
+            if x == i:
+                return counter
+            else:
+                pass
 
-        return counter
 
     def manipulate(self, graphList, arg):
 
@@ -45,35 +45,35 @@ class KITUtils(object):
         return graphList
 
 
-    def extractList(self, string, output="int"):
-        """ Turns a 'string(list)' into a list. Converts its elements into
-            floats if possible. Real input strings are just returned as they
-            are.
+    def extractList(self, arg, output="int"):
+        """ Turns a 'str(list)' into a list. Converts its elements into
+            floats if possible. Real strings as well as other types are just
+            returned as they are.
 
             Args:
-                string (str): original value of respective key in cfg dict
+                arg: original value of respective key in cfg dict
                 output (str): determines the output type of the list elements
         """
 
         if output not in ["int", "float"]:
             raise ValueError("Unexpected argument.")
 
-        if string[0] == '[' and string[-1] == ']':
-            if ':' in string:
-                string_list = string.replace("[","").replace("]","").split(":")
-            elif ',' in string:
-                string_list = string.replace("[","").replace("]","").split(",")
+        if isinstance(arg, str) and arg[0] == '[' and arg[-1] == ']':
+            if ':' in arg:
+                str_list = arg.replace("[","").replace("]","").split(":")
+            elif ',' in arg:
+                str_list = arg.replace("[","").replace("]","").split(",")
             else:
                 raise ValueError("Unkown input. Cfg parameter needs to be a"
                                  " string. Accepted seperations are ',' and "
                                  "':'. ")
             try:
                 if output == "int":
-                    new_list = [int(string) for string in string_list]
+                    new_list = [int(string) for string in str_list]
                 elif output == "float":
-                    new_list = [float(string) for string in string_list]
+                    new_list = [float(string) for string in str_list]
                 return new_list
             except:
-                return string_list
+                return str_list
         else:
-            return string
+            return arg

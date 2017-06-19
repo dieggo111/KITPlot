@@ -272,7 +272,6 @@ class KITPlot(object):
             self.__cfg.write(dataInput)
             print("%s.cfg has been created" %dataInput)
 
-        self.__initStyle()
 
 #        a = self.__cfg['General','Measurement']
         a = "probe"
@@ -294,14 +293,14 @@ class KITPlot(object):
                  'Title'   :{ 'Title'        : 'Title',
                               'X0'           : 0.5,
                               'Y0'           : 0.97,
-                              'H'            : 0.05,
+                            #   'H'            : 0.05,
                               'FontSize'     : 14,
                               'FontStyle'    : 'bold',
                               'Font'         : 62,          },
                  'XAxis'   :{ 'Title'        : 'X Value',
                             #   'Size'         : 0.05,
-                              'Offset'       : 1.1,
-                              'LabelSize'    : 0.04,
+                            #   'Offset'       : 1.1,
+                            #   'LabelSize'    : 0.04,
                               'FontSize'     : 14,
                               'FontStyle'    : 'bold',
                               'Font'         : 62,
@@ -310,8 +309,8 @@ class KITPlot(object):
                               'Range'        : 'auto',      },
                  'YAxis'   :{ 'Title'        : 'Y Value',
                             #   'Size'         : 0.05,
-                              'Offset'       : 1.1,
-                              'LabelSize'    : 0.04,
+                            #   'Offset'       : 1.1,
+                            #   'LabelSize'    : 0.04,
                               'FontSize'     : 14,
                               'FontStyle'    : 'bold',
                               'Font'         : 62,
@@ -328,13 +327,14 @@ class KITPlot(object):
                             #   'Size'         : 1.5,         },
                               'Size'         : 6,         },
                 #  'Line'    :{ 'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
-                 'Line'    :{ 'Color'        : "[0,1,2,3,4,5,6,7]",
+                 'Line'    :{ 'ColorPalette' : "KIT",
+                              'Color'        : "[0,1,2,3,4,5,6,7]",
                               'Style'        : 1,
                               'Width'        : 2            },
                  'Canvas'  :{ 'CanvasSize'   : "[16.26,12.19]",
                               'PadSize'      : "[0.1,0.11,0.86,0.80]"},
                  'Misc'    :{ 'GraphGroup'   : 'off',
-                              'ColorShades'  : False,
+                            #   'ColorShades'  : False,
                               'Normalization': 'off'       }
         }
 
@@ -451,58 +451,6 @@ class KITPlot(object):
     #####################
 
 
-    def __initStyle(self):
-        """ Loads and sets various parameters from cfg file which are then used
-            to create the desired plot.
-
-        """
-        #
-        # # Title options
-        # ROOT.gStyle.SetTitleX(self.__cfg.get('Title','X0'))
-        # ROOT.gStyle.SetTitleY(self.__cfg.get('Title','Y0'))
-        # ROOT.gStyle.SetTitleH(self.__cfg.get('Title','H'))
-        # ROOT.gStyle.SetTitleFont(self.__cfg.get('Title','Font'), "")
-        #
-        # # Axis Options
-        # ROOT.gStyle.SetTitleSize(self.__cfg.get('XAxis','Size'), "X")
-        # ROOT.gStyle.SetTitleSize(self.__cfg.get('YAxis','Size'), "Y")
-        # ROOT.gStyle.SetTitleOffset(self.__cfg.get('XAxis','Offset'), "X")
-        # ROOT.gStyle.SetTitleOffset(self.__cfg.get('YAxis','Offset'), "Y")
-        # ROOT.gStyle.SetTitleFont(self.__cfg.get('XAxis','Font'), "X")
-        # ROOT.gStyle.SetTitleFont(self.__cfg.get('YAxis','Font'), "Y")
-        # ROOT.gStyle.SetLabelFont(self.__cfg.get('XAxis','Font'),"X")
-        # ROOT.gStyle.SetLabelFont(self.__cfg.get('YAxis','Font'),"Y")
-        # ROOT.gStyle.SetLabelSize(self.__cfg.get('XAxis','Size'),"X")
-        # ROOT.gStyle.SetLabelSize(self.__cfg.get('YAxis','Size'),"Y")
-        # ROOT.TGaxis.SetMaxDigits(self.__cfg.get('Canvas','MaxDigits'))
-        #
-        # # Canvas Options
-        # ROOT.gStyle.SetPadBottomMargin(self.__cfg.get('Canvas','PadBMargin'))
-        # ROOT.gStyle.SetPadLeftMargin(self.__cfg.get('Canvas','PadLMargin'))
-
-        # Marker Options
-        # ROOT.gStyle.SetMarkerSize(self.__cfg.get('Marker','Size'))
-        self.markerSet = self.__cfg['Marker','Set'].replace("[","").replace("]","").split(",")
-
-        #Line options
-        self.colorSet = self.__cfg['Line','Color'].replace("[","").replace("]","").split(",")
-        self.lineWidth = self.__cfg['Line','Width']
-        self.lineStyle = self.__cfg['Line','Style']
-
-        # Pad Options
-        # ROOT.gStyle.SetPadGridX(True)
-        # ROOT.gStyle.SetPadGridY(True)
-        # ROOT.gStyle.SetGridColor(17)
-
-        # KITPlot specific options
-        self.ColorShades = self.__cfg['Misc','ColorShades']
-        self.absX = self.__cfg['XAxis','Abs']
-        self.absY = self.__cfg['YAxis','Abs']
-        self.logX = self.__cfg['XAxis','Log']
-        self.logY = self.__cfg['YAxis','Log']
-        KITPlot.__init = True
-
-        return True
 
 
     def addFiles(self, dataInput=None, measurement="probe"):
@@ -519,6 +467,10 @@ class KITPlot(object):
             measurement(str): probe station and ALiBaVa measurements must be
                 handled differently due to different database paramters
         """
+
+        #TODO: handle multiple KITPlot objects to create canvas with multiple subplots
+        # if isinstance(dataInput, KITPlot):
+
 
         # Load KITData
         if isinstance(dataInput, KITData):
@@ -679,65 +631,8 @@ class KITPlot(object):
         else:
             pass
 
-        # if arg == None:
-        #     arg = "APL"
-        # else:
-        #     pass
-        #
-        # if self.__cfg.get('Line','NoLine') == True and "L" in arg:
-        #     arg = arg.replace("L","")
-        # elif self.__cfg.get('Line','NoLine') == False and "L" not in arg:
-        #     arg = arg + "L"
-        # else:
-        #     pass
-        #
-        # if len(self.__graphs) == 0:
-        #     print("No graphs to draw")
-        #     return False
-        #
-        # # init canvas
-        # self.canvas = ROOT.TCanvas("c1","c1",
-        #                            int(self.__cfg.get('Canvas','SizeX')),
-        #                            int(self.__cfg.get('Canvas','SizeY')))
-        # self.canvas.cd()
-        #
-        # # apply plot styles
-        # self.plotStyles(self.__cfg.get('XAxis','Title'),
-        #                 self.__cfg.get('YAxis','Title'),
-        #                 self.__cfg.get('Title','Title'))
-        #
-        # # set log scale if
-        # if self.logX:
-        #     self.canvas.SetLogx()
-        # if self.logY:
-        #     self.canvas.SetLogy()
-        #
-        # # Draw plots
-        # for n,graph in enumerate(self.__graphs):
-        #     if n==0:
-        #         graph.Draw(arg)
-        #     else:
-        #         graph.Draw(arg.replace("A","") + "SAME")
-        #
-        # # Set legend (always at the very end!)
-        #
-        # # LegH = LegHandler()
-        # # LegH.setKITLegend(self.__cfg.get('Legend'),
-        # #                   self.__graphs,
-        # #                   self.__files,
-        # #                   self.__cfg.get('Canvas','SizeX'),
-        # #                   self.__cfg.get('Canvas','SizeY'),
-        # #                   self.Scale)
-        # # self.leg = LegH.getLegend()
-        # # # self.leg.SetHeader("n-in-p FZ, 240#mum")
-        # self.leg.Draw()
-        # self.canvas.Update()
-
-
         # display figure
         self.canvas.show()
-
-
 
         return True
 

@@ -9,6 +9,7 @@ from .KITLegend import KITLegend
 from .kitdata import KITData
 from collections import OrderedDict
 from .kitutils import KITUtils
+import itertools
 
 
 class KITMatplotlib(object):
@@ -16,7 +17,6 @@ class KITMatplotlib(object):
     def __init__(self, cfg=None):
 
         self.__graphs = []
-
         if cfg == None:
             pass
         elif isinstance(cfg, KITConfig):
@@ -26,7 +26,7 @@ class KITMatplotlib(object):
                 raise ValueError("cfg-file does not look like expected.")
         else:
             raise ValueError("Unexpected argument. KITMatplotlib needs "
-                             "dictionary from cfg file.")
+                             "dictionary containing parameters from cfg file.")
 
 
     def __initStyle(self, cfg):
@@ -47,7 +47,6 @@ class KITMatplotlib(object):
         self.title = cfg.get('Title','Title')
         self.titleX0 = cfg.get('Title','X0')
         self.titleY0 = cfg.get('Title','Y0')
-        self.titleH = cfg.get('Title','H')
         self.titleFont = cfg.get('Title','Font')
         self.titleFontSize = cfg.get('Title','FontSize')
         self.titleFontStyle = cfg.get('Title','FontStyle')
@@ -65,29 +64,18 @@ class KITMatplotlib(object):
         self.fontStyleX = cfg.get('XAxis','FontStyle')
         self.fontStyleY = cfg.get('YAxis','FontStyle')
 
-        # ROOT.gStyle.SetTitleSize(cfg.get('XAxis','Size'), "X")
-        # ROOT.gStyle.SetTitleSize(cfg.get('YAxis','Size'), "Y")
-        # ROOT.gStyle.SetTitleOffset(cfg.get('XAxis','Offset'), "X")
-        # ROOT.gStyle.SetTitleOffset(cfg.get('YAxis','Offset'), "Y")
-        # ROOT.gStyle.SetTitleFont(cfg.get('XAxis','Font'), "X")
-        # ROOT.gStyle.SetTitleFont(cfg.get('YAxis','Font'), "Y")
-        # ROOT.gStyle.SetLabelFont(cfg.get('XAxis','Font'),"X")
-        # ROOT.gStyle.SetLabelFont(cfg.get('YAxis','Font'),"Y")
-        # ROOT.gStyle.SetLabelSize(cfg.get('XAxis','Size'),"X")
-        # ROOT.gStyle.SetLabelSize(cfg.get('YAxis','Size'),"Y")
-        # ROOT.TGaxis.SetMaxDigits(cfg.get('Canvas','MaxDigits'))
-
         # Marker Options
         self.markerSize = cfg.get('Marker','Size')
         self.markerSet = KITUtils().extractList(cfg['Marker','Set'])
 
         #Line options
+        self.colorPalette = cfg['Line','ColorPalette']
         self.colorSet = KITUtils().extractList(cfg['Line','Color'])
         self.lineWidth = cfg['Line','Width']
-        self.lineStyle = cfg['Line','Style']
+        self.lineStyle = KITUtils().extractList(cfg['Line','Style'])
 
         # KITPlot specific options
-        self.ColorShades = cfg['Misc','ColorShades']
+        self.graphGroup = cfg['Misc','GraphGroup']
         self.absX = cfg['XAxis','Abs']
         self.absY = cfg['YAxis','Abs']
         self.logX = cfg['XAxis','Log']
@@ -97,7 +85,16 @@ class KITMatplotlib(object):
         # legend options
         self.__entryDict = cfg['Legend','EntryList']
 
-        # KITPlot.__init = True
+        # sets
+        self.markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
+                        '<': 'triangle_left', '>': 'triangle_right',
+                        '8': 'octagon', 'p': 'pentagon', '*': 'star',
+                        'h': 'hexagon1', 'H': 'hexagon2',
+                        'D': 'diamond', 'd': 'thin_diamond', 'P': 'plus_filled',
+                        'X': 'x_filled'}
+        self.lines = ['None', '-', '--', '-.', ':']
+        self.colors = self.__initColor()
+
 
         return True
 
@@ -135,7 +132,7 @@ class KITMatplotlib(object):
                                      "4 (x,y,dx,dy) coordinates are allowed.")
             # Rpunch
             else:
-                raise ValueError("Dictinary error")
+                raise ValueError("Dictionary error")
 
         elif len(args) in [2,4] and isinstance(args[0], list):
             if self.absX:
@@ -174,6 +171,7 @@ class KITMatplotlib(object):
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
+
         # apply user defined normalization or manipulation of y values of each graph
         KITUtils().manipulate(self.__graphs, self.norm)
 
@@ -185,6 +183,9 @@ class KITMatplotlib(object):
 
         # adjust pad size: [left, bottom, width, height]
         ax.set_position(self.padSize)
+
+        # check GraphGroup
+        self.graphGroup = self.getGG(self.graphGroup)
 
         # plot graph from __.graphs
         for i, table in enumerate(self.__graphs):
@@ -227,19 +228,59 @@ class KITMatplotlib(object):
             ax.set_ylim(self.rangeY)
 
         # set Legend
-        ax.legend([items[1] for items in list(self.__entryDict.items())])
-        handles,labels = ax.get_legend_handles_labels()
-        # reorder legend items according to 'EntryList'
-        handles = self.adjustOrder(handles)
-        labels = self.adjustOrder(labels)
-        ax.legend(handles,labels)
+        self.setLegend(ax)
 
         return fig
 
 
-    def adjustOrder(self, List):
+    def setLegend(self, obj):
 
+        obj.legend([items[1] for items in list(self.__entryDict.items())])
+        handles,labels = obj.get_legend_handles_labels()
+        # reorder legend items according to 'EntryList'
+        handles = self.adjustOrder(handles)
+        labels = self.adjustOrder(labels)
+        obj.legend(handles,labels)
+
+        return True
+
+
+    def getGG(self, arg):
+
+        if arg != "off":
+            # extract sub groups and convert them into list of lists
+            gg = arg[1:-1].split("],[")
+            try:
+                gg = [list(x.split(",")) for x in gg]
+                # convert items of sub lists into integers
+                gg = [[int(x) for x in sub] for sub in gg]
+            except:
+                raise ValueError("Invalid 'GraphGroup' input.")
+
+            # check if number of elements in gg is equal to number of graphs
+            l = sum([len(x) for x in gg])
+
+            if l > len(self.__graphs):
+                raise ValueError("Number of graphs ("+str(len(self.__graphs))+
+                                 ") and elements in 'GraphGroup' ("+str(l)+")"
+                                 " must be equal.")
+            return gg
+        else:
+            return arg
+
+
+    def adjustOrder(self, List):
+        """ Adjusts order of list according to the changes made in 'EntryList'.
+            This will order the legend entrys.
+
+            Args:
+                List (list): list that you want to reorder (original list of
+                             graph names)
+        """
+
+        # extract desired order from 'EntryList'
         userOrder = [int(item[0]) for item in list(self.__entryDict.items())]
+        # reorder the list
         List = [y for (x,y) in sorted(zip(userOrder, List))]
 
         return List
@@ -252,56 +293,210 @@ class KITMatplotlib(object):
 
 
     def getMarker(self, index):
-        """
+        """ Returns a valid marker value for matplotlib's plot() function. If
+        'MarkerSet' is a list, the method will cycle the list's items until all
+        graphs are taken care of.
 
             Args:
                 index (int): represents an iterator marking a certain graph in
                              .__graphs
         """
 
-        markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
-                   '<': 'triangle_left', '>': 'triangle_right',
-                   '8': 'octagon', 'p': 'pentagon', '*': 'star',
-                   'h': 'hexagon1', 'H': 'hexagon2',
-                   'D': 'diamond', 'd': 'thin_diamond', 'P': 'plus_filled', 'X': 'x_filled'}
-
-        counter = KITUtils().counter_loop(self.markerSet, index)
-
-        if isinstance(counter, int):
-            return list(markers.keys())[counter]
-        elif isinstance(counter, str):
-            return markers[counter]
-        else:
-            raise ValueError("Unkown 'marker set' input.")
+        try:
+            # assign same marker to all graphs
+            if isinstance(self.markerSet, int):
+                return list(self.markers.keys())[self.markerSet]
+            # cycle list of strings
+            elif all(isinstance(item, str) for item in self.markerSet):
+                for i, item in enumerate(itertools.cycle(self.markerSet)):
+                    if index == i:
+                        return item
+            # cycle list of integers
+            elif all(isinstance(item, int) for item in self.markerSet):
+                for i, item in enumerate(itertools.cycle(self.markerSet)):
+                    if index == i:
+                        return list(self.markers.keys())[item]
+        except:
+            print("Warning:::Invalid value in 'MarkerSet'. Using default instead.")
+            return list(self.markers.keys())[index]
 
 
     def getColor(self, index):
 
-        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        # color = self.color_gen(self.color_iter, )
 
-        # if colors in .colorset are defined by integers
-        if isinstance(self.colorSet[0], int):
-            counter = KITUtils().counter_loop(self.colorSet, index)
-            return colors[counter]
-        # if colors in .colorset are defined by strings they dont need to be looped
-        elif isinstance(counter, str) and counter in colors:
-            return counter
+        if self.graphGroup == False:
+            # if colors in 'ColorSet' is defined by integers
+            try:
+                if all(isinstance(item, int) for item in self.colorSet) \
+                            and isinstance(self.colorSet, list):
+                    for i, item in enumerate(itertools.cycle(self.colorSet)):
+                        if index == i:
+                            return self.colors[item]
+                # if colors in 'ColorSet' are defined by strings then they dont need to be cycled
+                elif all(isinstance(item, str) for item in self.colorSet) \
+                            and isinstance(self.colorSet, list):
+                    for i, item in enumerate(itertools.cycle(self.colorSet)):
+                        if item not in self.colors:
+                            raise ValueError
+                        if index == i and item in self.colors:
+                            return item
+            except:
+                print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
+                for i, color in enumerate(itertools.cycle(self.colors)):
+                    if i == index:
+                        return self.colors[index]
         else:
-            raise ValueError("Unkown color.")
+            sub = [sub for sub in self.graphGroup if index in sub][0]
+            try:
+                sub_index = self.graphGroup.index(sub)
+                sub_counter = len(self.graphGroup[sub_index])
+            except:
+                sub_index = self.graphGroup.index(sub)
+                sub_counter = len(self.graphGroup[sub_index])
+
+            print(sub_counter)
+            # if self.sub_current == None:
+            # self.sub_current = sub_index
+            shade_iter = iter(self.shade_keys)
+
+            color = self.color_gen(sub_index)
+            return color
 
 
     def getLineStyle(self, index):
 
-        lines = ['None', '-', '--', '-.', ':']
-
-        if isinstance(self.lineStyle, int):
-            return lines[self.lineStyle]
-        elif isinstance(self.lineStyle, str):
-            counter = KITUtils().counter_loop(KITUtils().extractList(self.lineStyle), index)
-            if counter >= len(lines):
-                raise ValueError("Unkown line style.")
-            return lines[counter]
+        try:
+            if isinstance(self.lineStyle, int):
+                return self.lines[self.lineStyle]
+            elif all(isinstance(item, str) for item in self.lineStyle) \
+                    and isinstance(self.lineStyle, list):
+                for i, item in enumerate(itertools.cycle(self.lineStyle)):
+                    if item not in self.lines:
+                        raise ValueError
+                    if index == i:
+                        return item
+            elif all(isinstance(item, int) for item in self.lineStyle) \
+                    and isinstance(self.lineStyle, list):
+                for i, item in enumerate(itertools.cycle(self.lineStyle)):
+                    if index == i:
+                        return self.lines[item]
+        except:
+            print("Warning:::Invalid value in 'LineStyle'. Using default instead.")
+            return self.lines[1]
 
 
     def getGraphList(self):
         return self.__graphs
+
+
+    def color_gen(self, index=None, List=None):
+
+        if self.graphGroup == "off":
+            color_iter = iter(self.color_keys)
+            color = next(color_iter)
+            return self.colors[color][0][1]
+        else:
+            shade_iter = iter(self.shade_keys)
+            shade = next(shade_iter)
+            print(shade)
+            return self.colors[self.color_keys[index]][shade][1]
+
+
+    def __initColor(self):
+
+        mpl_std = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+
+        KITColor = OrderedDict()
+
+
+        # KITColor = {"KITred" :      {
+        #                                 "r0" : (191./255, 35./255, 41./255),
+        #                                 "r1" : (205./255, 85./255, 75./255),
+        #                                 "r2" : (220./255, 130./255, 110./255),
+        #                                 "r3" : (230./255, 175./255, 160./255),
+        #                                 "r4" : (245./255, 215./255, 200./255)
+        #                             },
+        #             "KITgreen" :    {
+        #                                 "g0" :  (0./255, 169./255, 144./255),
+        #                                 "g1" :  (75./255, 195./255, 165./255),
+        #                                 "g2" :  (125./255, 210./255, 185./255),
+        #                                 "g3" :  (180./255, 230./255, 210./255),
+        #                                 "g4" :  (215./255, 240./255, 230./255)
+        #                             },
+        #             "KITorange" :   {
+        #                                 "o0" :  (247./255, 145./255, 16./255),
+        #                                 "o1" :  (249./255, 174./255, 73./255),
+        #                                 "o2" :  (251./255, 195./255, 118./255),
+        #                                 "o3" :  (252./255, 218./255, 168./255),
+        #                                 "o4" :  (254./255, 236./255, 211./255)
+        #                             },
+        #             "KITblue" :     {
+        #                                 "b0" :  (67./255, 115./255, 194./255),
+        #                                 "b1" :  (120./255, 145./255, 210./255),
+        #                                 "b2" :  (155./255, 170./255, 220./255),
+        #                                 "b3" :  (195./255, 200./255, 235./255),
+        #                                 "b4" :  (225./255, 225./255, 245./255)
+        #                             },
+        #             "KITpurple" :   {
+        #                                 "p0" :  (188./255, 12./255, 141./255),
+        #                                 "p1" :  (205./255, 78./255, 174./255),
+        #                                 "p2" :  (218./255, 125./255, 197./255),
+        #                                 "p3" :  (232./255, 175./255, 220./255),
+        #                                 "p4" :  (243./255, 215./255, 237./255)
+        #                             },
+        #             "KITbrown" :    {
+        #                                 "b0" :  (170./255, 127./255, 36./255),
+        #                                 "b1" :  (193./255, 157./255, 82./255),
+        #                                 "b2" :  (208./255, 181./255, 122./255),
+        #                                 "b3" :  (226./255, 208./255, 169./255),
+        #                                 "b4" :  (241./255, 231./255, 210./255)
+        #                             },
+        #             "KITmay" :      {
+        #                                 "m0" :  (102./255, 196./255, 48./255),
+        #                                 "m1" :  (148./255, 213./255, 98./255),
+        #                                 "m2" :  (178./255, 225./255, 137./255),
+        #                                 "m3" :  (209./255, 237./255, 180./255),
+        #                                 "m4" :  (232./255, 246./255, 217./255)
+        #                             },
+        #             "KITcyan" :     {
+        #                                 "c0" : (28./255, 174./255, 236./255),
+        #                                 "c1" : (95./255, 197./255, 241./255),
+        #                                 "c2" : (140./255, 213./255, 245./255),
+        #                                 "c3" : (186./255, 229./255, 249./255),
+        #                                 "c4" : (221./255, 242./255, 252./255),
+        #                             },
+        #             }
+        # yellow removed because it looks shitty
+
+        KITColor = {"KITred" :      [   ("r0" , (191./255, 35./255, 41./255)),
+                                        ("r1" , (205./255, 85./255, 75./255)),
+                                        ("r2" , (220./255, 130./255, 110./255)),
+                                        ("r3" , (230./255, 175./255, 160./255)),
+                                        ("r4" , (245./255, 215./255, 200./255))
+                                    ],
+                    "KITgreen" :    [
+                                        ("g0" ,  (0./255, 169./255, 144./255)),
+                                        ("g1" ,  (75./255, 195./255, 165./255)),
+                                        ("g2" ,  (125./255, 210./255, 185./255)),
+                                        ("g3" ,  (180./255, 230./255, 210./255)),
+                                        ("g4" ,  (215./255, 240./255, 230./255))
+                                    ],
+                    "KITorange" :   [
+                                        ("o0" ,  (247./255, 145./255, 16./255)),
+                                        ("o1" ,  (249./255, 174./255, 73./255)),
+                                        ("o2" ,  (251./255, 195./255, 118./255)),
+                                        ("o3" ,  (252./255, 218./255, 168./255)),
+                                        ("o4" ,  (254./255, 236./255, 211./255))
+                                    ]
+                    }
+
+        if self.colorPalette == "std":
+            return mpl_std
+        elif self.colorPalette == "KIT":
+            self.color_keys = list(KITColor.keys())
+            self.shade_keys = iter([0,1,2,3,4])
+            return KITColor
+        else:
+            print("Warning:::Invalid 'ColorPalette' value. Using default")
+            return KITColor
