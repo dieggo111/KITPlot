@@ -301,7 +301,7 @@ class KITPlot(object):
                             #   'Size'         : 0.05,
                             #   'Offset'       : 1.1,
                             #   'LabelSize'    : 0.04,
-                              'FontSize'     : 14,
+                              'FontSize'     : 12,
                               'FontStyle'    : 'bold',
                               'Font'         : 62,
                               'Abs'          : True,
@@ -311,12 +311,13 @@ class KITPlot(object):
                             #   'Size'         : 0.05,
                             #   'Offset'       : 1.1,
                             #   'LabelSize'    : 0.04,
-                              'FontSize'     : 14,
+                              'FontSize'     : 12,
                               'FontStyle'    : 'bold',
                               'Font'         : 62,
                               'Abs'          : True,
                               'Log'          : False,
                               'Range'        : 'auto'       },
+                #  'Legend'  :{ 'SortPara'     : 'list',
                  'Legend'  :{ 'SortPara'     : 'list',
                               'Position'     : 'auto',
                               'TextSize'     : 0.03,
@@ -335,7 +336,8 @@ class KITPlot(object):
                               'PadSize'      : "[0.1,0.11,0.86,0.80]"},
                  'Misc'    :{ 'GraphGroup'   : 'off',
                             #   'ColorShades'  : False,
-                              'Normalization': 'off'       }
+                              'Normalization': 'off',
+                              "SplitGraph": "False"       }
         }
 
         self.__cfg.init(pDict)
@@ -625,6 +627,23 @@ class KITPlot(object):
 
             png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
             pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
+
+            # x = [1e14,6e14,1e15,1.5e15]
+            # y = [0.005501724289581,
+            #     0.029080298301582,
+            #     0.047264463226503,
+            #     0.065046216659378]
+            #
+            # m, b = np.polyfit(x, y, 1)
+            # m, b = float(m), float(b)
+            # b = 12000
+            # t = np.arange(0,400,1)
+            # f = m*x+b
+
+            # self.canvas.add_subplot(1, 1, 1).plot(t,f,color='c',linewidth=3)
+            # self.canvas.add_subplot(1, 1, 1).plot([0,400],[0,12000],color='c',linewidth=3)
+            # self.canvas.add_subplot(1, 1, 1).axvline(y=12000)
+            # self.canvas.add_subplot(1, 1, 1).axhline(y=12000,color='c',linewidth=3)
 
             self.canvas.savefig(png_out)
             self.canvas.savefig(pdf_out)
