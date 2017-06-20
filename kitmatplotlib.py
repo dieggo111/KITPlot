@@ -8,8 +8,9 @@ from .KITConfig import KITConfig
 from .KITLegend import KITLegend
 from .kitdata import KITData
 from collections import OrderedDict
-from .kitutils import KITUtils
+from .kitutils import KITUtils, Lodger
 import itertools
+
 
 
 class KITMatplotlib(object):
@@ -17,6 +18,7 @@ class KITMatplotlib(object):
     def __init__(self, cfg=None):
 
         self.__graphs = []
+        self.__lodgers = []
         if cfg == None:
             pass
         elif isinstance(cfg, KITConfig):
@@ -44,31 +46,31 @@ class KITMatplotlib(object):
         self.padSize = KITUtils().extractList(cfg['Canvas','PadSize'], 'float')
 
         # Title options
-        self.title = cfg.get('Title','Title')
-        self.titleX0 = cfg.get('Title','X0')
-        self.titleY0 = cfg.get('Title','Y0')
-        self.titleFont = cfg.get('Title','Font')
-        self.titleFontSize = cfg.get('Title','FontSize')
-        self.titleFontStyle = cfg.get('Title','FontStyle')
+        self.title = cfg['Title','Title']
+        self.titleX0 = cfg['Title','X0']
+        self.titleY0 = cfg['Title','Y0']
+        self.titleFont = cfg['Title','Font']
+        self.titleFontSize = cfg['Title','FontSize']
+        self.titleFontStyle = cfg['Title','FontStyle']
 
         # Axis Options
-        self.labelX = cfg.get('XAxis','Title')
-        self.labelY = cfg.get('YAxis','Title')
-        self.rangeX = KITUtils().extractList(cfg.get('XAxis','Range'), "float")
-        self.rangeY = KITUtils().extractList(cfg.get('YAxis','Range'), "float")
-        self.fontX = cfg.get('XAxis','Font')
-        self.fontY = cfg.get('YAxis','Font')
-        self.fontSizeX = cfg.get('XAxis','FontSize')
-        self.fontSizeY = cfg.get('YAxis','FontSize')
-        self.fontStyleX = cfg.get('XAxis','FontStyle')
-        self.fontStyleY = cfg.get('YAxis','FontStyle')
+        self.labelX = cfg['XAxis','Title']
+        self.labelY = cfg['YAxis','Title']
+        self.rangeX = KITUtils().extractList(cfg['XAxis','Range'], "float")
+        self.rangeY = KITUtils().extractList(cfg['YAxis','Range'], "float")
+        self.fontX = cfg['XAxis','Font']
+        self.fontY = cfg['YAxis','Font']
+        self.fontSizeX = cfg['XAxis','FontSize']
+        self.fontSizeY = cfg['YAxis','FontSize']
+        self.fontStyleX = cfg['XAxis','FontStyle']
+        self.fontStyleY = cfg['YAxis','FontStyle']
         self.absX = cfg['XAxis','Abs']
         self.absY = cfg['YAxis','Abs']
         self.logX = cfg['XAxis','Log']
         self.logY = cfg['YAxis','Log']
 
         # Marker Options
-        self.markerSize = cfg.get('Marker','Size')
+        self.markerSize = cfg['Marker','Size']
         self.markerSet = KITUtils().extractList(cfg['Marker','Set'])
 
         #Line options
@@ -99,8 +101,10 @@ class KITMatplotlib(object):
         return True
 
 
-    def addGraph(self, *args):
-        """
+    def addGraph(self, arg):
+        """ Converts data of KITData objects or lists into a respective formate
+        and writes them into .__graphs.
+
         Args: x, y or KITData
 
         """
@@ -109,55 +113,68 @@ class KITMatplotlib(object):
         y = []
         dx = []
         dy = []
-        if isinstance(args[0], KITData):
+        if isinstance(arg, KITData):
             if KITData().getRPunchDict() == None:
-                # self.__files.append(args[0])
+                # self.__files.append(arg)
                 # toggle absolute mode
                 if self.absX:
-                    x = list(np.absolute(args[0].getX()))
+                    x = list(np.absolute(arg.getX()))
                 else:
-                    x = args[0].getX()
+                    x = arg.getX()
                 if self.absY:
-                    y = list(np.absolute(args[0].getY()))
+                    y = list(np.absolute(arg.getY()))
                 else:
-                    y = args[0].getY()
+                    y = arg.getY()
                 # get error bars if present
-                if args[0].getdX() != [] and args[0].getdY() != []:
-                    dx = args[0].getdX()
-                    dy = args[0].getdY()
-                elif args[0].getdX() == [] and args[0].getdY() == []:
+                if arg.getdX() != [] and arg.getdY() != []:
+                    dx = arg.getdX()
+                    dy = arg.getdY()
+                elif arg.getdX() == [] and arg.getdY() == []:
                     pass
                 else:
                     raise ValueError("Check data table. Only 2 (x,y) or "
                                      "4 (x,y,dx,dy) coordinates are allowed.")
+                # create graph list
+                if dx == [] and dy == []:
+                    self.__graphs.append([x, y])
+                elif dx != [] and dy != []:
+                    self.__graphs.append([x, y, dx, dy])
+                else:
+                    raise ValueError("z-error not implemented yet")
             # Rpunch
             else:
                 raise ValueError("Dictionary error")
 
-        elif len(args) in [2,4] and isinstance(args[0], list):
+        elif isinstance(arg, list) and len(arg) in [2,4]:
+
             if self.absX:
-                x = list(np.absolute(args[0]))
+                x = list(np.absolute(arg[0]))
             else:
-                x = args[0]
+                x = arg
             if self.absY:
-                y = list(np.absolute(args[1]))
+                y = list(np.absolute(arg[1]))
             else:
-                y = args[1]
+                y = arg[1]
             if len(args) == 4:
-                dx = args[2]
-                dy = args[3]
+                dx = arg[2]
+                dy = arg[3]
+
+            # create graph list
+            if dx == [] and dy == []:
+                self.__graphs.append([x, y])
+            elif dx != [] and dy != []:
+                self.__graphs.append([x, y, dx, dy])
+            else:
+                raise ValueError("z-error not implemented yet")
+
+        # add lodger
+        elif isinstance(arg, Lodger):
+            self.__lodgers.append(arg)
 
         else:
-            raise ValueError("Cant add graph. Check data table. Only 2 (x,y) or"
-                             "4 (x,y,dx,dy) coordinates are allowed."   )
+            raise ValueError("Cant add following graph: " + str(arg))
 
-        # create graph list
-        if dx == [] and dy == []:
-            self.__graphs.append([x, y])
-        elif dx != [] and dy != []:
-            self.__graphs.append([x, y, dx, dy])
-        else:
-            raise ValueError("z-error not implemented yet")
+
 
         return True
 
@@ -192,7 +209,6 @@ class KITMatplotlib(object):
 
         # check GraphGroup
         self.graphGroup = self.getGG(self.graphGroup)
-        # plot graph from __.graphs
 
         for i, table in enumerate(self.__graphs):
             # if i in [0,1]:
@@ -204,19 +220,27 @@ class KITMatplotlib(object):
                     color=self.getColor(i),             # line color
                     marker=self.getMarker(i),           # marker style
                     markersize=self.markerSize,
-                    markerfacecolor=markerface,
+                    # markerfacecolor=markerface,
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
-                    # label="test"+str(i))
 
-        # error bars
+        # set error bars
         for i, table in enumerate(self.__graphs):
             if len(table) == 4:
                 ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
                             color=self.getColor(i),
                             elinewidth=1)
 
+        # add lodgers to party
+        for l in self.__lodgers:
+            lab = None
+            if l.getName():
+                lab = l.getName()
+            if l.getX() and l.getY():
+                ax.plot(l.getX(),l.getY(),label=lab)
+            # if l.getHLine != None:
+            #     ax.axhline(y=1.5,color='c',linewidth=3,label=lab)
 
         # set titles
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
@@ -249,8 +273,9 @@ class KITMatplotlib(object):
 
         # ax.xaxis.get_children()[1].set_size(13)
 
-        # set Legend
+
         self.setLegend(ax)
+
         # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
@@ -265,16 +290,26 @@ class KITMatplotlib(object):
         # reorder legend items according to 'EntryList'
         handles = self.adjustOrder(handles)
         labels = self.adjustOrder(labels)
+
         if self.legPosition == "auto":
             obj.legend(handles,labels)
         elif self.legPosition == "TL":
             obj.legend(handles,labels,loc='upper left')
-        # elif self.legPosition == "TL":
-        # obj.legend(handles,labels,bbox_to_anchor=(0., 1.17, 1., .102), loc='upper right',
-                #    ncol=3, mode="expand", borderaxespad=0.)
+        elif self.legPosition == "BL":
+            obj.legend(handles,labels,loc='bottom left')
+        elif self.legPosition == "TR":
+            obj.legend(handles,labels,loc='top right')
+        elif self.legPosition == "BR":
+            obj.legend(handles,labels,loc='bottom right')
+        elif self.legPosition == "test2":
+            obj.legend(handles,labels,bbox_to_anchor=(0., 1.17, 1., .102),
+                       loc='upper right',ncol=3, mode="expand", borderaxespad=0.)
+        elif self.legPosition == "test":
+            obj.legend(handles,labels,bbox_to_anchor=(0., 0.,1.,1.),
+                       loc='lower left',ncol=3, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102), loc='lower center',
-                       ncol=3, mode="expand", borderaxespad=0.)
+            obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102),
+                       loc='lower center',ncol=3, mode="expand", borderaxespad=0.)
         return True
 
 
@@ -356,34 +391,31 @@ class KITMatplotlib(object):
 
     def getColor(self, index):
 
-        # color = self.color_gen(self.color_iter, )
-        # if self.graphGroup == "off":
-            # if colors in 'ColorSet' is defined by integers
-        # try:
-        # self.colors represents color_keys in KITcolor
-        if all(isinstance(item, int) for item in self.colorSet) \
-                    and isinstance(self.colorSet, list):
-            for i, item in enumerate(itertools.cycle(self.colorSet)):
-                if i == index:
-                    color = self.KITcolor[self.colors[item]][0][1]
-                    # self.KITcolor[self.colors[0]][0][1])
-                    # color = self.color_gen()
-                    return color
+        try:
+            # self.colors represents color_keys in KITcolor
+            if all(isinstance(item, int) for item in self.colorSet) \
+                        and isinstance(self.colorSet, list):
+                for i, item in enumerate(itertools.cycle(self.colorSet)):
+                    if i == index:
+                        color = self.KITcolor[self.colors[item]][0][1]
+                        # self.KITcolor[self.colors[0]][0][1])
+                        # color = self.color_gen()
+                        return color
 
-        # if colors in 'ColorSet' are defined by strings then they dont need to be cycled
-        elif all(isinstance(item, str) for item in self.colorSet) \
-                    and isinstance(self.colorSet, list):
-            for i, item in enumerate(itertools.cycle(self.colorSet)):
-                if item not in self.colors:
-                    raise ValueError
-                else:
-                    return item
-        else:
-    # except:
+            # if colors in 'ColorSet' are defined by strings then they dont need to be cycled
+            elif all(isinstance(item, str) for item in self.colorSet) \
+                        and isinstance(self.colorSet, list):
+                print(self.colorSet)
+                for i, item in enumerate(itertools.cycle(self.colorSet)):
+                    if item not in self.colors:
+                        raise ValueError
+                    else:
+                        return item
+        except:
             print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
                 if i == index:
-                    return self.KITcolor[self.colors[index] ] [0][1]
+                    return self.KITcolor[color][0][1]
 
         # else:
         #     sub = [sub for sub in self.graphGroup if index in sub][0]
@@ -394,7 +426,6 @@ class KITMatplotlib(object):
         #     shade_iter = iter(self.shade_keys)
         #
         #     color = self.color_gen(sub_index)
-            return color
 
 
     def getLineStyle(self, index):
@@ -422,22 +453,6 @@ class KITMatplotlib(object):
     def getGraphList(self):
         return self.__graphs
 
-
-    def color_gen(self, color_list=None, index=None):
-
-        if self.graphGroup == "off" and self.colorPalette == "KIT":
-            color_iter = iter(self.colors)
-            color = next(color_iter)
-            return self.KITcolor[color][0][1]
-        elif self.graphGroup != "off" and self.colorPalette == "KIT":
-            shade_iter = iter(self.shade_keys)
-            shade = next(shade_iter)
-
-            return self.colors[keys[index]][shade][1]
-        else:
-            color_iter = iter(color_list)
-            color = next(color_iter)
-            return color
 
     def __initColor(self):
 
@@ -517,3 +532,21 @@ class KITMatplotlib(object):
         else:
             print("Warning:::Invalid 'ColorPalette' value. Using default")
             return mpl_std
+
+
+
+    def color_gen(self, color_list=None, index=None):
+
+        if self.graphGroup == "off" and self.colorPalette == "KIT":
+            color_iter = iter(self.colors)
+            color = next(color_iter)
+            return self.KITcolor[color][0][1]
+        elif self.graphGroup != "off" and self.colorPalette == "KIT":
+            shade_iter = iter(self.shade_keys)
+            shade = next(shade_iter)
+
+            return self.colors[keys[index]][shade][1]
+        else:
+            color_iter = iter(color_list)
+            color = next(color_iter)
+            return color

@@ -210,7 +210,8 @@ from .KITConfig import KITConfig
 from .KITLegend import KITLegend
 from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
-
+from matplotlib.patches import Rectangle
+from .kitutils import Lodger
 
 class KITPlot(object):
 
@@ -239,7 +240,6 @@ class KITPlot(object):
 
         # init colors
         if self.__init == False:
-            self.__initColor()
             self.cfg_initialized = False
         else:
             pass
@@ -534,7 +534,7 @@ class KITPlot(object):
                     else:
                         pass
 
-                self.arrangeFileList()
+                # self.arrangeFileList()
                 # self.addNorm()
 
             # Load file
@@ -555,7 +555,7 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
 
-                    self.arrangeFileList()
+                    # self.arrangeFileList()
 
                     # for i,File in enumerate(self.__files):
                     #     if "Ramp" in File.getParaY():
@@ -615,43 +615,32 @@ class KITPlot(object):
         # set engine
         if engine == None:
             engine = self.__engines[0]
-        elif engine not in self.__engines:
+        if engine not in self.__engines:
             raise ValueError("Unkown plot engine. Supported engines are: \n"
                              + self.__engines[0] + " and " + self.__engines[1])
-        else:
-            pass
 
-        # create and save canvas
+        # create graphs and canvas
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
 
             png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
             pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
 
-            # x = [1e14,6e14,1e15,1.5e15]
-            # y = [0.005501724289581,
-            #     0.029080298301582,
-            #     0.047264463226503,
-            #     0.065046216659378]
-            #
-            # m, b = np.polyfit(x, y, 1)
-            # m, b = float(m), float(b)
-            # b = 12000
-            # t = np.arange(0,400,1)
-            # f = m*x+b
 
             # self.canvas.add_subplot(1, 1, 1).plot(t,f,color='c',linewidth=3)
             # self.canvas.add_subplot(1, 1, 1).plot([0,400],[0,12000],color='c',linewidth=3)
             # self.canvas.add_subplot(1, 1, 1).axvline(y=12000)
-            # self.canvas.add_subplot(1, 1, 1).axhline(y=12000,color='c',linewidth=3)
+            # self.canvas.add_subplot(1, 1, 1).axhline(y=1.5,color='c',linewidth=3)
+            # handles, labels = self.canvas.add_subplot(1, 1, 1).get_legend_handles_labels()
+            # handles.append(Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0))
+            # labels.append("test")
+            # self.canvas.add_subplot(1, 1, 1).legend(handles,labels)
+
 
             self.canvas.savefig(png_out)
             self.canvas.savefig(pdf_out)
         else:
             pass
-
-        # display figure
-        self.canvas.show()
 
         return True
 
@@ -660,6 +649,28 @@ class KITPlot(object):
 #####################
 ### Fancy methods ###
 #####################
+
+
+    def addLodger(self, x=None, y=None, name=None):
+
+        if x == None and y == None:
+            print("Lodger arrived with an empty suitcase. Goodbye")
+        elif y == None and isinstance(x, (int, float)):
+            print("Draw vertical line at x = "+ str(x))
+            self.__files.append(Lodger(hline=x,name="test"))
+            self.draw()
+        elif x == None and isinstance(x, (int, float)):
+            print("Draw horizontal line at x = "+ str(y))
+        elif isinstance(y, list) and isinstance(x, list):
+            print("Draw graph.")
+            self.__files.append(Lodger(x=x,y=y,name="test"))
+            self.draw()
+        return True
+
+
+    def showCanvas(self):
+        self.canvas.show()
+        return True
 
     def arrangeFileList(self):
         """ The KITData files in .__files are somewhat arbitrarily
@@ -701,110 +712,24 @@ class KITPlot(object):
         self.__files = TempList1
 
 
-    def __autoScaling(self):
-        # Get min and max value and write it into list [xmin, xmax, ymin, ymax]
+        def readEntryList(self):
+            """'EntryList' makes the names and order of all graphs accessible. This
+            subsection is read every time KITPlot is executed. An empty value ("")
+            can be used to reset the entry to its default value (the original order
+            and names given by the .__files).
+            """
 
-        self.perc = 0.05
-        ListX = [0]
-        ListY = [0]
+            # sets entry list to default
+            if self.__cfg['Legend','EntryList'] == "":
+                self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
+                print("Entry list was set back to default!")
+                self.__EntryList = self.getDefaultEntryList()
 
-        if self.__cfg.get('Misc','Normalization')[0] == "[" and self.__cfg.get('Misc','Normalization')[-1] == "]":
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += self.manipulate(inputFile.getY(),i)
-        elif self.__cfg.get('Misc','Normalization') == "1/C^{2}":
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += self.manipulate(inputFile.getY(),i)
-        else:
-            for i,inputFile in enumerate(self.__files):
-                ListX += inputFile.getX()
-                ListY += inputFile.getY()
-
-        if self.absX:
-            ListX = np.absolute(ListX)
-        else:
-            pass
-        if self.absY:
-            ListY = np.absolute(ListY)
-        else:
-            pass
-
-        if self.absX:
-            self.Scale.append(min(ListX)*(1.-self.perc))
-            self.Scale.append(min(ListY)*(1.-self.perc))
-            self.Scale.append(max(ListX)*(1.+self.perc))
-            self.Scale.append(max(ListY)*(1.+self.perc))
-
-        if not self.absX:
-            self.Scale.append(min(ListX)*(1.+self.perc))
-            self.Scale.append(min(ListY)*(1.-self.perc))
-            self.Scale.append(max(ListX)*(1.+self.perc))
-            self.Scale.append(max(ListY)*(1.+self.perc))
-
-        #if (self.Scale[2]/self.Scale[3]) > 1e-4:
-        #    self.logY = True
-
-        return True
-
-
-    def checkTitleLenght(self, Title):
-
-        # adapt title size in case it's too long
-        if len(Title) > 30 and float(self.__cfg.get('Title','Y0')) <= 0.97:
-            ROOT.gStyle.SetTitleY(0.99)
-            #self.__writeSpecifics(self.cfgPath, "Title", "y0", 0.99)
-        else:
-            pass
-
-        return Title
-
-
-    def setAutoTitles(self):
-        """ Writes certain labels into the cfg.
-
-        """
-
-        self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-        self.__cfg['Title','Title'] = self.autotitle
-        self.__cfg['XAxis','Title'] = self.autotitleX
-        self.__cfg['YAxis','Title'] = self.autotitleY
-
-        return True
-
-
-    def readEntryList(self):
-        """'EntryList' makes the names and order of all graphs accessible. This
-        subsection is read every time KITPlot is executed. An empty value ("")
-        can be used to reset the entry to its default value (the original order
-        and names given by the .__files).
-
-        """
-
-        # sets entry list to default
-        if self.__cfg['Legend','EntryList'] == "":
-            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-            print("Entry list was set back to default!")
-            self.__EntryList = self.getDefaultEntryList()
-
-        #read out all the changes the user made
-        else:
-            self.__EntryList = self.getEntryList()
-
-        return True
-
-
-    def changeOrder(self, counter):
-
-        for i, key in enumerate(self.__EntryList):
-            if int(key) == counter:
-
-                return i
+            #read out all the changes the user made
             else:
-                pass
+                self.__EntryList = self.getEntryList()
 
-        return 0
-
+            return True
 
     def interpolate(self, x=None, y=None):
 
@@ -828,7 +753,6 @@ class KITPlot(object):
 
         return v
 
-
     def makeFit(self, List, print_fit, draw_fit):
 
         x = []
@@ -850,60 +774,6 @@ class KITPlot(object):
         else:
             #TODO non-kitdata objects
             pass
-
-
-    def getLineStyle(self, i):
-
-        l = len(self.__files)
-        lineSet = []
-
-        if isinstance(self.lineStyle, int):
-            return self.lineStyle
-        if isinstance(self.lineStyle, str):
-            lineSet = self.lineStyle.replace("[","").replace("]","").split(",")
-            for j, string in enumerate(lineSet):
-                lineSet[j] = int(lineSet[j].replace("'",""))
-            if l != len(lineSet):
-                raise ValueError("Number of elements in 'line style' doesn't"
-                                 " match the number of graphs!")
-            else:
-                return lineSet[i]
-        else:
-            raise ValueError("Line style needs to be either a single integer"
-                             " or something like '[x,y,z,...]'")
-
-
-
-#####################
-### Legend method ###
-#####################
-
-
-    # def setLegend(self):
-    #     """ The whole legend handling is outsourced and done by the 'leghandler'
-    #     module. As a result, all the legend options (stored inside the 'Legend'
-    #     dictionary), the 'self.__graph' list (containing all graphs as ROOT
-    #     objects) and the'self.__files' list (containing the respective KITData
-    #     objects) have to be given as arguments when calling 'leghandler'
-    #     methods.
-    #
-    #     """
-    #
-    #     LegH = LegHandler()
-    #
-    #     LegH.fillKITLegend(self.__cfg.get('Legend'),
-    #                        self.__graphs,
-    #                        self.__files)
-    #
-    #     LegH.setOptions(self.__cfg.get('Legend'))
-    #
-    #     LegH.moveLegend(int(self.__cfg.get('Canvas','SizeX')),
-    #                     int(self.__cfg.get('Canvas','SizeY')),
-    #                     self.__cfg.get('Legend'),
-    #                     self.__files,
-    #                     self.Scale)
-    #
-    #     return LegH.getLegend()
 
 
 
@@ -936,7 +806,6 @@ class KITPlot(object):
         self.__RDict = dic
 
         return self.__RDict
-
 
     def getEntryList(self):
         """ Loads names and order in respect to the 'EntryList' section in cfg
@@ -971,8 +840,6 @@ class KITPlot(object):
 
         return EntryList
 
-
-
     def getDefaultEntryList(self):
         """ Loads default names and order in respect to the KITData objects
         in 'self.__files' list. Both keys and values of the dictionary must be
@@ -988,300 +855,24 @@ class KITPlot(object):
 
         return EntryList
 
+    def readEntryList(self):
+        """'EntryList' makes the names and order of all graphs accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
+        and names given by the .__files).
+        """
 
-    def setRanges(self):
+        # sets entry list to default
+        if self.__cfg['Legend','EntryList'] == "":
+            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
+            print("Entry list was set back to default!")
+            self.__EntryList = self.getDefaultEntryList()
 
-        # Scale is always filled ROOT oriantated (xmin, ymin, xmax, ymax)
-        self.Scale = []
-        self.__autoScaling()
-
-        if self.__cfg.get('XAxis','Range') == "auto":
-            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[2])
-        elif ":" in self.__cfg.get('XAxis','Range'):
-            Temp = self.__cfg.get('XAxis','Range').split(":")
-            self.Scale[0] = float(Temp[0].replace("[",""))
-            self.Scale[2] = float(Temp[1].replace("]",""))
-            if self.Scale[0] > self.Scale[2]:
-                sys.exit("Invalid X-axis range! xmin > xmax?!")
-            else:
-                pass
-            self.__graphs[0].GetXaxis().SetLimits(self.Scale[0],self.Scale[2])
+        #read out all the changes the user made
         else:
-            sys.exit("Invalid X-axis range! Try 'auto' or '[float:float]'!")
-
-        if self.__cfg.get('YAxis','Range') == "auto":
-            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
-        elif ":" in self.__cfg.get('YAxis','Range'):
-            Temp = self.__cfg.get('YAxis','Range').split(":")
-            self.Scale[1] = float(Temp[0].replace("[",""))
-            self.Scale[3] = float(Temp[1].replace("]",""))
-            if self.Scale[1] > self.Scale[3]:
-                sys.exit("Invalid Y-axis range! ymin > ymax?!")
-            else:
-                pass
-            self.__graphs[0].GetYaxis().SetRangeUser(self.Scale[1],self.Scale[3])
-        else:
-            sys.exit("Invalid Y-axis range! Try 'auto' or '[float:float]'!")
-
-
-
-    def setMarkerStyles(self):
-
-        for i, graph in enumerate(self.__graphs):
-            if "[" and "]" in self.__cfg.get('Misc','GraphGroup'):
-                break
-            elif self.__cfg.get('Misc','GraphGroup') == "off":
-                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerStyle(i))
-            elif self.__cfg.get('Misc','GraphGroup') == "name":
-                self.__graphs[self.changeOrder(i)].SetMarkerStyle(self.getMarkerShade(i))
-
-
-            else:
-                sys.exit("Invalid group parameter! Try 'off', 'name' or define user groups with '[...],[...],...'!")
-
-        # User Groups
-        if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
-            self.getGroupList()
-
-            j = 0
-
-            if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
-                raise ValueError("Insufficient UserGroup. Numbers do not match!")
-            else:
-                pass
-            for elem in self.__GroupList:
-                if elem == 666:
-                    j = 0
-                else:
-                    self.__graphs[elem].SetMarkerStyle(self.getMarkerStyle(j))
-                    j += 1
-        else:
-            pass
-
-
-
-    # def setGraphColor(self):
-    #
-    #     for i, graph in enumerate(self.__graphs):
-    #         if self.__cfg.get('Misc','GraphGroup') == "off" :
-    #             self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-    #             self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-    #             self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-    #             self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-    #         elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == False:
-    #             self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColor(i))
-    #             self.__graphs[self.changeOrder(i)].SetLineColor(self.getColor(i))
-    #             self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-    #             self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-    #         elif self.__cfg.get('Misc','GraphGroup') == "name" and self.ColorShades == True:
-    #              self.__graphs[self.changeOrder(i)].SetMarkerColor(self.getColorShades(i))
-    #              self.__graphs[self.changeOrder(i)].SetLineColor(self.getColorShades(i))
-    #              self.__graphs[self.changeOrder(i)].SetLineWidth(self.lineWidth)
-    #              self.__graphs[self.changeOrder(i)].SetLineStyle(self.getLineStyle(i))
-    #         elif self.__cfg.get('Misc','GraphGroup')[0] == "[" and self.__cfg.get('Misc','GraphGroup')[-1] == "]" and self.ColorShades == True:
-    #             break
-    #         elif self.__cfg.get('Misc','GraphGroup') == "off" and self.ColorShades == True:
-    #             raise ValueError("Need GraphGroups for applying shades!")
-    #
-    #     # User Groups
-    #     if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
-    #
-    #         self.getGroupList()
-    #         colorcount = 0
-    #         shadecount = 0
-    #
-    #         if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
-    #             raise ValueError("Insufficient UserGroup. Numbers do not match!")
-    #         else:
-    #             pass
-    #         for elem in self.__GroupList:
-    #             if elem == 666:
-    #                 colorcount += 1
-    #                 shadecount = 0
-    #             elif self.ColorShades == True:
-    #                     self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
-    #                     self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
-    #                     self.__graphs[elem].SetLineWidth(self.lineWidth)
-    #                     self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
-    #                     shadecount += 1
-    #             elif self.ColorShades == False:
-    #                     self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
-    #                     self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
-    #                     self.__graphs[elem].SetLineWidth(self.lineWidth)
-    #                     self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
-    #             else:
-    #                 pass
-    #     else:
-    #         pass
-
-    #
-    # def setTitles(self):
-    #
-    #     self.__graphs[0].GetXaxis().SetTitle(self.__cfg.get('XAxis','Title'))
-    #     self.__graphs[0].GetYaxis().SetTitle(self.__cfg.get('YAxis','Title'))
-    #     self.__graphs[0].SetTitle(self.checkTitleLenght(self.__cfg.get('Title','Title')))
-
-    #
-    # def setAxisTitleSize(self, size):
-    #
-    #     ROOT.gStyle.SetTitleSize(size,"X")
-    #     ROOT.gStyle.SetTitleSize(size,"Y")
-    #
-    #     return True
-    #
-    # def setAxisTitleOffset(self, offset):
-    #
-    #     ROOT.gStyle.SetTitleOffset(offset,"X")
-    #     ROOT.gStyle.SetTitleOffset(offset,"Y")
-    #
-    #     return True
-
-
-    def getMarkerStyle(self, index):
-
-        if index >= 9:
-            return int(self.markerSet[index % 8])
-        else:
-            return int(self.markerSet[index])
-
-
-    def getMarkerShade(self, index):
-
-        self.getShadeList()
-        MarkerShade = []
-        color_num = self.ShadeList[0]
-
-        for i, shade in enumerate(self.ShadeList):
-            if not self.ShadeList[i]-color_num > 9:
-                MarkerShade.append(self.ShadeList[i]-color_num)
-            if self.ShadeList[i]-color_num > 9:
-                color_num += 100
-                MarkerShade.append(self.ShadeList[i]-color_num)
-
-        return int(self.markerSet[MarkerShade[index]])
-
-
-    def getGroupList(self):
-
-        self.__GroupList = []
-        TempList = []
-        UserList = []
-        for i, Element in enumerate(self.__files):
-            if self.__cfg.get('Misc','GraphGroup') == "name":
-                TempList.append(self.__files[i].getName()[:5])
-            elif self.__cfg.get('Misc','GraphGroup') == "fluence":
-                TempList.append(self.__files[i].getFluenceP())
-            else:
-                pass
-
-        if (self.__cfg.get('Misc','GraphGroup')[0] == "[" and
-           self.__cfg.get('Misc','GraphGroup')[-1] == "]"):
-           for char in self.__cfg.get('Misc','GraphGroup'):
-                if char.isdigit() == True:
-                    self.__GroupList.append(int(char))
-                elif char == "[" or char == ",":
-                    pass
-                else:
-                    self.__GroupList.append(666)
-
-        for i, TempElement in enumerate(TempList):
-            if TempElement not in self.__GroupList:
-                  self.__GroupList.append(TempList[i])
-
-        return self.__GroupList
-
-
-#####################
-### Color methods ###
-#####################
-
-    def __initColor(self):
-
-        # self.__kitGreen.append(ROOT.TColor(1100, 0./255, 169./255, 144./255))
-        # self.__kitGreen.append(ROOT.TColor(1101,75./255, 195./255, 165./255))
-        # self.__kitGreen.append(ROOT.TColor(1102,125./255, 210./255, 185./255))
-        # self.__kitGreen.append(ROOT.TColor(1103,180./255, 230./255, 210./255))
-        # self.__kitGreen.append(ROOT.TColor(1104,215./255, 240./255, 230./255))
-        #
-        # self.__kitRed.append(ROOT.TColor(1200, 191./255, 35./255, 41./255))
-        # self.__kitRed.append(ROOT.TColor(1201, 205./255, 85./255, 75./255))
-        # self.__kitRed.append(ROOT.TColor(1202, 220./255, 130./255, 110./255))
-        # self.__kitRed.append(ROOT.TColor(1203, 230./255, 175./255, 160./255))
-        # self.__kitRed.append(ROOT.TColor(1204, 245./255, 215./255, 200./255))
-        #
-        # self.__kitOrange.append(ROOT.TColor(1300, 247./255, 145./255, 16./255))
-        # self.__kitOrange.append(ROOT.TColor(1301, 249./255, 174./255, 73./255))
-        # self.__kitOrange.append(ROOT.TColor(1302, 251./255, 195./255, 118./255))
-        # self.__kitOrange.append(ROOT.TColor(1303, 252./255, 218./255, 168./255))
-        # self.__kitOrange.append(ROOT.TColor(1304, 254./255, 236./255, 211./255))
-        #
-        # self.__kitBlue.append(ROOT.TColor(1400, 67./255, 115./255, 194./255))
-        # self.__kitBlue.append(ROOT.TColor(1401, 120./255, 145./255, 210./255))
-        # self.__kitBlue.append(ROOT.TColor(1402, 155./255, 170./255, 220./255))
-        # self.__kitBlue.append(ROOT.TColor(1403, 195./255, 200./255, 235./255))
-        # self.__kitBlue.append(ROOT.TColor(1404, 225./255, 225./255, 245./255))
-        #
-        # self.__kitPurple.append(ROOT.TColor(1500, 188./255, 12./255, 141./255))
-        # self.__kitPurple.append(ROOT.TColor(1501, 205./255, 78./255, 174./255))
-        # self.__kitPurple.append(ROOT.TColor(1502, 218./255, 125./255, 197./255))
-        # self.__kitPurple.append(ROOT.TColor(1503, 232./255, 175./255, 220./255))
-        # self.__kitPurple.append(ROOT.TColor(1504, 243./255, 215./255, 237./255))
-        #
-        # self.__kitBrown.append(ROOT.TColor(1600, 170./255, 127./255, 36./255))
-        # self.__kitBrown.append(ROOT.TColor(1601, 193./255, 157./255, 82./255))
-        # self.__kitBrown.append(ROOT.TColor(1602, 208./255, 181./255, 122./255))
-        # self.__kitBrown.append(ROOT.TColor(1603, 226./255, 208./255, 169./255))
-        # self.__kitBrown.append(ROOT.TColor(1604, 241./255, 231./255, 210./255))
-        #
-        # self.__kitMay.append(ROOT.TColor(1700, 102./255, 196./255, 48./255))
-        # self.__kitMay.append(ROOT.TColor(1701, 148./255, 213./255, 98./255))
-        # self.__kitMay.append(ROOT.TColor(1702, 178./255, 225./255, 137./255))
-        # self.__kitMay.append(ROOT.TColor(1703, 209./255, 237./255, 180./255))
-        # self.__kitMay.append(ROOT.TColor(1704, 232./255, 246./255, 217./255))
-        #
-        # self.__kitCyan.append(ROOT.TColor(1800, 28./255, 174./255, 236./255))
-        # self.__kitCyan.append(ROOT.TColor(1801, 95./255, 197./255, 241./255))
-        # self.__kitCyan.append(ROOT.TColor(1802, 140./255, 213./255, 245./255))
-        # self.__kitCyan.append(ROOT.TColor(1803, 186./255, 229./255, 249./255))
-        # self.__kitCyan.append(ROOT.TColor(1804, 221./255, 242./255, 252./255))
-
-        # yellow removed because it looks shitty
-
-        KITPlot.__init = True
+            self.__EntryList = self.getEntryList()
 
         return True
-
-
-    # def getColor(self, index):
-    #
-    #     KITPlot.__color = index + 1
-    #     KITPlot.__color %= 8
-    #
-    #     return int(self.colorSet[KITPlot.__color-1])
-
-
-    def getShadeList(self):
-
-        self.ShadeList = []
-        shade_counter = 0
-        j = 0
-
-        for File in self.__files:
-            if File.getName()[:5] == self.getGroupList()[j]:
-                self.ShadeList.append(int(self.colorSet[j])+shade_counter)
-                shade_counter += 1
-            if File.getName()[:5] != self.getGroupList()[j]:
-                shade_counter = 0
-                if j <= len(self.getGroupList())-1:
-                    j += 1
-                self.ShadeList.append(int(self.colorSet[j])+shade_counter)
-                shade_counter += 1
-
-        return True
-
-    def getColorShades(self, index):
-        self.getShadeList()
-        return self.ShadeList[index]
 
 
 ###################
@@ -1324,7 +915,6 @@ class KITPlot(object):
                 else:
                     return False
 
-
     def getCanvas(self):
         return self.canvas
 
@@ -1339,6 +929,7 @@ class KITPlot(object):
         for List in self.__files:
             Y.append(List.getY())
         return Y
+
 
 if __name__ == '__main__':
     plot = KITPlot(38268)

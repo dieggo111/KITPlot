@@ -77,3 +77,30 @@ class KITUtils(object):
                 return str_list
         else:
             return arg
+
+
+class Lodger(object):
+
+    def __init__(self, x=None, y=None,hline=None,vline=None,name=None):
+
+        self.__x = x
+        self.__y = y
+        self.__name = name
+        self.__vline = vline
+        self.__hline = hline
+
+
+    def getX(self):
+        return self.__x
+
+    def getY(self):
+        return self.__y
+
+    def getName(self):
+        return self.__name
+
+    def getHLine(self):
+        return self.__hline
+
+    def getVLine(self):
+        return self.__vline
