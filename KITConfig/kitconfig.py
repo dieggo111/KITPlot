@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-import os, platform
+import os
+import re
 import json
+import logging
 from collections import OrderedDict
 
 class KITConfig(object):
@@ -12,7 +14,10 @@ class KITConfig(object):
 
     """
 
-    def __init__(self,cfg=None):
+    defaultConfig = {}
+    configDir = ""
+    
+    def __init__(self, cfg=None, **kwargs):
         """ Initialize KITConfig by loading the config file.
 
         The __init__ method sets the working directory to ./cfg and loads the
@@ -22,46 +27,33 @@ class KITConfig(object):
             cfg (str): The config file that is loaded
 
         """
-        self.__dir = ""
+        self.__dir = KITConfig.configDir
+        self.__cfgFile = ""
+        
+        self.__cfg = {}
+        self.__default = KITConfig.defaultConfig
+        
+        self.__setupLogger()
+        
         if cfg is not None:
-            self.name = self.getCfgName(cfg)
-            self.__cfg = self.__load(cfg)
+            self.load(cfg)
 
-    def __load(self,cfg='default.cfg'):
-        self.name = self.getCfgName(cfg)
+            
+    def Default(self, fName='default.cfg'):
         try:
-            print(self.__dir+self.name)
-            with open(self.__dir+self.name) as cfgFile:
-                return json.load(cfgFile, object_pairs_hook=OrderedDict)
-        except:
-            raise OSError("No file found")
+            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
+                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        except Exception:
+            pass
 
-    def get(self,sec=None,par=None):
-        """ Get the value of (par)ameter in the given (sec)tion
+        try:
+            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
+                KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        except Exception:
+            raise OSError("Default config file not found")
 
-        Args:
-            sec (str): Section where the parameter is located.
-            par (str): Parameter
-
-        """
-
-        # Return whole dictionary
-        if sec==None:
-            return self.__cfg
-        # Return one section
-        elif sec!=None and par==None:
-            try:
-                return self.__cfg[sec]
-            except:
-                raise IOError("Section not found!")
-        else:
-            try:
-                return self.__cfg[sec][par]
-            except:
-                raise IOError("Section and/or parameter not found")
-
-
-    def setDir(self,directory='cfg/'):
+        
+    def Dir(self, directory='cfg/'):
         """ Set the working directory
 
         Args:
@@ -69,92 +61,148 @@ class KITConfig(object):
                 located
 
         """
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        try:
+            self.__dir = os.path.join(os.getcwd(), directory.lstrip('/\\'))
+        except Exception:
+            KITConfig.configDir = os.path.join(os.getcwd(), directory.lstrip('/\\'))
+    
+        
+            
+    def __getitem__(self, keys):
 
-        self.__dir = directory
+        # Looking for key in config file
+        try:
+            return self.__getFromDict(self.__cfg, keys)
+        except:
+            pass
 
-    def load(self,cfg='default.cfg'):
+        # If key is not present in config use default value instead
+        # and save that value in the config file
+        if len(self.__default):
+            try:
+                value = self.__getFromDict(self.__default, keys)
+                try:
+                    self.__setitem__(keys, value)
+                except Exception:
+                    raise KeyError("Couldn't update Cfg with default value")
+                return value
+            except Exception:
+                raise KeyError("Key is not present in Cfg and default file")
+        raise OSError("No default file present")
+
+    
+    def __setitem__(self, keys, value):
+        """ Set or change a value of a new or existing parameter
+
+        Args:
+            key (dict): List of keys with unlimited levels
+            value (): Value that will be set
+
+        """
+
+        self.__setInDict(self.__cfg, keys, value)
+        self.write(self.__cfgFile)
+    
+
+    def load(self, cfg='default', **kwargs):
+
+
         """ Load config file
 
         Args:
             cfg (str): Name of cfg file inside the working directory
 
         """
-        self.__cfg = self.__load(cfg)
+        if self.__cfgFile is "":
+            self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
 
-    def setValue(self,mapList,value):
-        """ Set or change a value of a new or existing parameter
-
-        Args:
-            mapList (dict): Dictionary with unlimited levels
-            value (): Value that will be set
-
-        """
-        self.__setInDict(self.__cfg,mapList,value)
-
+        try:
+            with open(self.__cfgFile) as cfgFile:
+                self.__cfg = json.load(cfgFile, object_pairs_hook=OrderedDict)
+            print("Found {0}".format(self.__cfgFile))
+        except Exception: 
+            if len(self.__default):
+                self.__cfg = self.__default
+                self.write(self.__cfgFile)
+            else:
+                raise OSError("Cfg not found and no default config specified")
+            
+        
     def write(self, cfg='default.cfg'):
-        self.name = self.getCfgName(cfg)
-        with open(os.path.join(self.__dir, self.name),'w') as cfgFile:
+
+        if self.__dir != "" and not os.path.exists(self.__dir):
+            os.makedirs(self.__dir)
+        
+        self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
+        with open(self.__cfgFile, 'w') as cfgFile:
             json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=True)
+
+
+    def setDefaultCfg(self, fName='default.cfg'):
+        try:
+            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
+                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        except Exception:
+            raise OSError("Default config file not found")
 
 
     def setDict(self, dictionary):
         self.__cfg = dictionary
-
-
-    def __getitem__(self,keys):
-        try:
-            return self.__cfg[keys]
-        except:
-            pass
-
-        try:
-            return self.__getFromDict(self.__cfg,keys)
-        except:
-            raise KeyError("Key not found")
-
-
-    def __setitem__(self, key, value):
-        self.__setInDict(self.__cfg,key,value)
-        self.write(self.name)
-
-
-    def getCfgName(self, name='default'):
+        
+        
+    def __getfName(self, name='default'):
         if os.path.isdir(str(name)):
-            if platform.system() == 'Windows':
-                return os.path.normpath(str(name)).split("\\")[-1] + ".cfg"
-            else:
-                return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
-
+            #return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
+            return re.split(r'[/\\]', os.path.normpath(str(name)))[-1]+".cfg"
         else:
             return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
-
+    
+            
     # Get data from a dictionary with position provided as a list
     def __getFromDict(self, dataDict, mapList):
-        for k in mapList: dataDict = dataDict[k]
-        return dataDict
+        try:
+            for key in mapList:
+                dataDict = dataDict[key]
 
+            return dataDict
+        except Exception:
+            raise KeyError("Couln't find {0}".format(mapList))
+    
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):
         # Set new value if key already exists
         try:
-            for key in mapList[:-1]: dataDict = dataDict[key]
-            dataDict[mapList[-1]] = value
+            for key in mapList[:-1]:
+                dataDict = dataDict[key]
+                dataDict[mapList[-1]] = value
         except:
-            pass
+            for i, key in enumerate(mapList[:1]):
+                dataDict[key] = mapList[i+1]
+                dataDict[mapList[-1]] = value
+        #except Exception:
+        #    raise AssertionError("Couldn't set parameter")
 
-        # Set key in a multilevel dictionary
-        #print("InputSubKey: " + str(mapList))
-        #print("Subkeys: %s" %self.existingSubKeys(dataDict,mapList))
 
+    def get(keyList, defaultValue):
+        try:
+            return self.__cfg[keyList]
+        except Exception:
+            return defaultValue
 
-#        try:
-#            for k in mapList[:-1]: dataDict = dataDict.setdefault(k,{})
-#            dataDict[mapList[-1]] = value
-#        except:
-#            raise Exception("Couldn't set parameter")
+        
+    def __setupLogger(self):
+        self.__log = logging.getLogger(__name__)
+        self.__log.setLevel(logging.DEBUG)
 
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setLevel(logging.DEBUG)
+
+        consoleFormatter = logging.Formatter('%(levelname)s - %(message)s')
+        consoleHandler.setFormatter(consoleFormatter)
+
+        self.__log.addHandler(consoleHandler)
+
+        
     # Old API
 
     def init(self, dictionary):
@@ -164,83 +212,17 @@ class KITConfig(object):
         self.__cfg[sec][key] = val
         self.write(cfg)
 
+    def setValue(self, mapList, value):
+        """ Set or change a value of a new or existing parameter
 
-    # Everything for the update function down here
-
-    def update(self, comparison):
-
-        # Get the key lists
-        if isinstance(comparison,dict):
-            compDict = KITConfig()
-            compDict.setDict(comparison)
-        else:
-            compDict = KITConfig(comparison)
-
-        compKeys = compDict.keys()
-
-        print(self.keys())
-        print(compKeys)
-
-        for key in compKeys:
-            if key not in self.keys():
-                self.__setInDict(self.__cfg,key,compDict[key])
-            else:
-                print("Present: %s" %key)
-
-        print(self.keys())
-        print(compKeys)
-
-    def existingSubKeys(self, dataDict, keyList):
-        existingKeys = []
-        for key in keyList:
-            existingKeys.append(key)
-            try:
-                self.__getFromDict(dataDict,existingKeys)
-            except:
-                return existingKeys
-
-
-    def keys(self):
-        return(self.flatten(self.loop(self.__cfg)))
-
-    def loop(self,dataDict):
-        keys = []
-        for key in dataDict:
-            if not isinstance(self.__getFromDict(dataDict,key),dict):
-                keys.append(key)
-            else:
-                for addKey in self.loop(self.__getFromDict(dataDict,key)):
-                    keys.append([key,addKey])
-        return keys
-
-    def flatten(self,dataList):
-        """ Flatten multi level list down to two levels
+        Args:
+            mapList (dict): Dictionary with unlimited levels
+            value (): Value that will be set
 
         """
+        self.__setInDict(self.__cfg, mapList, value)
 
-        flattened = []
-        for item in dataList:
-            if not isinstance(item,list):
-                flattened.append(item)
-            else:
-                flattened.append(self.__flatten(item))
-
-        return flattened
-
-    def __flatten(self,dataList):
-        """ Completely flatten a multi level list
-
-        """
-        flattened = []
-        for item in dataList:
-            if not isinstance(item,list):
-                flattened.append(item)
-            else:
-                for subItem in self.__flatten(item):
-                    flattened.append(subItem)
-
-        return flattened
-
+           
 
 if __name__ == '__main__':
 
