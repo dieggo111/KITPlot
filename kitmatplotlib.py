@@ -437,7 +437,6 @@ class KITMatplotlib(object):
             # if colors in 'ColorSet' are defined by strings then they dont need to be cycled
             elif all(isinstance(item, str) for item in self.colorSet) \
                         and isinstance(self.colorSet, list):
-                print(self.colorSet)
                 for i, item in enumerate(itertools.cycle(self.colorSet)):
                     if item not in self.colors:
                         raise ValueError

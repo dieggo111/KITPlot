@@ -11,6 +11,7 @@ def adjustOrder(List, entryDict, len_total):
     """
 
     # extract desired order from 'EntryList'
+    userOrder = []
     userOrder = [int(item[0]) for item in list(entryDict.items())]
 
     # adjust length of userOrder to not loose lodgers while zipping
@@ -23,6 +24,7 @@ def adjustOrder(List, entryDict, len_total):
     #         userOrder.append(len(userOrder))
 
     # reorder the list
+    # print(userOrder, List)
     List = [y for (x,y) in sorted(zip(userOrder, List))]
 
     return List

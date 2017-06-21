@@ -644,11 +644,56 @@ class KITPlot(object):
 
     def addLodgerEntry(self):
 
-        keys = [int(key) for key in self.__entryDict.keys()]
-        keys.append(max(keys)+1)
+        # self.__cfg['Lodgers'] = {"graph" : "x=x, y=y, name=name, color=color"}
+
+        return True
+
+    def fixEntryDict(self):
+
+        keys = [key for key in self.__entryDict.keys()]
+        # print(keys)
         sort_list = list(range(len(keys)))
         ordered_keys = [y for (x,y) in sorted(zip(keys, sort_list))]
-        
+        values = list(self.__entryDict.values())
+        # print("here",ordered_keys,values)
+        newDict = dict(zip(ordered_keys, values))
+
+        # print(newDict)
+        # test = self.__entryDict
+        # print(test.update(newDict))
+        # self.__cfg['Legend','EntryList'] = self.__entryDict.update(newDict)
+
+
+    def readEntryDict(self):
+        """'EntryList' makes the names and order of all graphs accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
+        and names given by the .__files).
+        """
+
+        # sets entry dict to default if value is ""
+        if self.__cfg['Legend','EntryList'] == "":
+            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
+            print("EntryDict list was set back to default!")
+            self.__entryDict = self.getDefaultEntryList()
+
+        # check entry dict
+        else:
+            try:
+                amount_lodgers = len(self.__cfg['Lodgers'].items())
+            except:
+                amount_lodgers = 0
+
+            self.__entryDict = self.__cfg['Legend','EntryList']
+            # print("there", self.__entryDict)
+            if len(self.__entryDict) != len(self.__files)+amount_lodgers:
+                raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                               "entries does not match or a key is used more than"
+                               "once. Adjust or reset 'EntryList'.")
+
+            # correct entry keys in case they are messed up
+            # self.fixEntryDict()
+
         return True
 
     def showCanvas(self):
@@ -700,35 +745,6 @@ class KITPlot(object):
         for index in IndexList:
             TempList1.append(self.__files[index])
         self.__files = TempList1
-
-    def readEntryDict(self):
-        """'EntryList' makes the names and order of all graphs accessible. This
-        subsection is read every time KITPlot is executed. An empty value ("")
-        can be used to reset the entry to its default value (the original order
-        and names given by the .__files).
-        """
-
-        # sets entry dict to default if value is ""
-        if self.__cfg['Legend','EntryList'] == "":
-            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-            print("Entry list was set back to default!")
-            self.__entryDict = self.getDefaultEntryList()
-
-        # check entry dict
-        else:
-            try:
-                amount_lodgers = len(self.__cfg['Lodgers'].items())
-            except:
-                amount_lodgers = 0
-
-            self.__entryDict = self.__cfg['Legend','EntryList']
-
-            if len(self.__entryDict) != len(self.__files)+amount_lodgers:
-                raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
-                               "entries does not match or a key is used more than"
-                               "once. Adjust or reset 'EntryList'.")
-
-        return True
 
     def interpolate(self, x=None, y=None):
 
