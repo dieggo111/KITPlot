@@ -211,7 +211,8 @@ from .KITLegend import KITLegend
 from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from matplotlib.patches import Rectangle
-from .kitutils import Lodger
+from .kitlodger import KITLodger
+from . import kitutils
 
 class KITPlot(object):
 
@@ -247,8 +248,10 @@ class KITPlot(object):
         # Load parameters and apply default style
         self.__cfg = KITConfig()
         self.__cfg.Default("default.cfg")
-        self.__cfg.Dir("cfg/")
-        # self.cfgPath = self.__cfg.getCfgName(dataInput)
+        self.__cfg.Dir("cfg")
+
+        # extract name from data input
+        self.__inputName = self.getDataName(dataInput)
 
         # Load cfg file given in initial argument
         if cfgFile is not None:
@@ -454,8 +457,6 @@ class KITPlot(object):
     #####################
 
 
-
-
     def addFiles(self, dataInput=None, measurement="probe"):
         """ Depending on the type, the 'self.__files' list is filled with
         KITData objects. An integer represents a single probe ID. A string
@@ -598,11 +599,10 @@ class KITPlot(object):
 
         if self.cfg_initialized == True:
             self.MeasurementType()
-            self.setAutoTitles()
         else:
             pass
 
-        self.readEntryList()
+        self.readEntryDict()
 
         return True
 
@@ -622,26 +622,10 @@ class KITPlot(object):
 
         # create graphs and canvas
         if engine == self.__engines[0]:
-            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
+            self.canvas, trigger = KITMatplotlib(self.__cfg).draw(self.__files)
+            if trigger != 0:
+                self.addLodgerEntry()
 
-            # png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
-            # pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
-
-
-            # self.canvas.add_subplot(1, 1, 1).plot(t,f,color='c',linewidth=3)
-            # self.canvas.add_subplot(1, 1, 1).plot([0,400],[0,12000],color='c',linewidth=3)
-            # self.canvas.add_subplot(1, 1, 1).axvline(y=12000)
-            # self.canvas.add_subplot(1, 1, 1).axhline(y=1.5,color='c',linewidth=3)
-            # handles, labels = self.canvas.add_subplot(1, 1, 1).get_legend_handles_labels()
-            # handles.append(Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0))
-            # labels.append("test")
-            # self.canvas.add_subplot(1, 1, 1).legend(handles,labels)
-
-
-            # self.canvas.savefig(png_out)
-            # self.canvas.savefig(pdf_out)
-        else:
-            pass
 
         return True
 
@@ -651,26 +635,31 @@ class KITPlot(object):
 ### Fancy methods ###
 #####################
 
+    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
 
-    def addLodger(self, x=None, y=None, name=None):
+        self.__files.append(KITLodger(x=x,y=y,name=name,color=color,style=style,width=width))
+        self.draw()
 
-        if x == None and y == None:
-            print("Lodger arrived with an empty suitcase. Goodbye")
-        elif y == None and isinstance(x, (int, float)):
-            print("Draw vertical line at x = "+ str(x))
-            self.__files.append(Lodger(hline=x,name="test"))
-            self.draw()
-        elif x == None and isinstance(x, (int, float)):
-            print("Draw horizontal line at x = "+ str(y))
-        elif isinstance(y, list) and isinstance(x, list):
-            print("Draw graph.")
-            self.__files.append(Lodger(x=x,y=y,name="test"))
-            self.draw()
         return True
 
+    def addLodgerEntry(self):
+
+        keys = [int(key) for key in self.__entryDict.keys()]
+        keys.append(max(keys)+1)
+        sort_list = list(range(len(keys)))
+        ordered_keys = [y for (x,y) in sorted(zip(keys, sort_list))]
+        
+        return True
 
     def showCanvas(self):
         self.canvas.show()
+        return True
+
+    def saveCanvas(self):
+        png_out = os.path.join("output", self.__inputName) + ".png"
+        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
+        self.canvas.savefig(png_out)
+        self.canvas.savefig(pdf_out)
         return True
 
     def arrangeFileList(self):
@@ -712,25 +701,34 @@ class KITPlot(object):
             TempList1.append(self.__files[index])
         self.__files = TempList1
 
+    def readEntryDict(self):
+        """'EntryList' makes the names and order of all graphs accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
+        and names given by the .__files).
+        """
 
-        def readEntryList(self):
-            """'EntryList' makes the names and order of all graphs accessible. This
-            subsection is read every time KITPlot is executed. An empty value ("")
-            can be used to reset the entry to its default value (the original order
-            and names given by the .__files).
-            """
+        # sets entry dict to default if value is ""
+        if self.__cfg['Legend','EntryList'] == "":
+            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
+            print("Entry list was set back to default!")
+            self.__entryDict = self.getDefaultEntryList()
 
-            # sets entry list to default
-            if self.__cfg['Legend','EntryList'] == "":
-                self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-                print("Entry list was set back to default!")
-                self.__EntryList = self.getDefaultEntryList()
+        # check entry dict
+        else:
+            try:
+                amount_lodgers = len(self.__cfg['Lodgers'].items())
+            except:
+                amount_lodgers = 0
 
-            #read out all the changes the user made
-            else:
-                self.__EntryList = self.getEntryList()
+            self.__entryDict = self.__cfg['Legend','EntryList']
 
-            return True
+            if len(self.__entryDict) != len(self.__files)+amount_lodgers:
+                raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                               "entries does not match or a key is used more than"
+                               "once. Adjust or reset 'EntryList'.")
+
+        return True
 
     def interpolate(self, x=None, y=None):
 
@@ -782,7 +780,6 @@ class KITPlot(object):
 ### Set/get methods ###
 #######################
 
-
     def getRDict(self, kdata):
 
         dic = OrderedDict()
@@ -808,39 +805,6 @@ class KITPlot(object):
 
         return self.__RDict
 
-    def getEntryList(self):
-        """ Loads names and order in respect to the 'EntryList' section in cfg
-        in 'self.__files' list. Keys and values of the dictionary and the cfg
-        are strings by default.
-
-        """
-
-        EntryList = self.__cfg['Legend','EntryList']
-
-        List = []
-
-        for key in EntryList:
-            List.append(int(key))
-
-        if len(EntryList) != len(self.__files):
-            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
-                           "entries does not match or a key is used more than"
-                           "once. Adjust or reset 'EntryList'.")
-        else:
-            pass
-        if min(List) != 0:
-            raise KeyError("Unexpected 'EntryList' value! First element must "
-                           "start with a '0'.")
-        else:
-            pass
-        if len(EntryList)-1 != max(List):
-            raise KeyError("Unexpected 'EntryList' value! Skipping numbers is "
-                           "forbidden.")
-        else:
-            pass
-
-        return EntryList
-
     def getDefaultEntryList(self):
         """ Loads default names and order in respect to the KITData objects
         in 'self.__files' list. Both keys and values of the dictionary must be
@@ -856,24 +820,7 @@ class KITPlot(object):
 
         return EntryList
 
-    def readEntryList(self):
-        """'EntryList' makes the names and order of all graphs accessible. This
-        subsection is read every time KITPlot is executed. An empty value ("")
-        can be used to reset the entry to its default value (the original order
-        and names given by the .__files).
-        """
 
-        # sets entry list to default
-        if self.__cfg['Legend','EntryList'] == "":
-            self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-            print("Entry list was set back to default!")
-            self.__EntryList = self.getDefaultEntryList()
-
-        #read out all the changes the user made
-        else:
-            self.__EntryList = self.getEntryList()
-
-        return True
 
 
 ###################
@@ -930,6 +877,9 @@ class KITPlot(object):
         for List in self.__files:
             Y.append(List.getY())
         return Y
+
+    def getDataName(self, dataInput):
+        return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
 
 
 if __name__ == '__main__':

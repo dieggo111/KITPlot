@@ -1,34 +1,32 @@
 #!/usr/bin/env python3
 import numpy as np
-try:
-    import matplotlib.pyplot as plt
-except:
-    raise ImportError("Failed to import matplotlib.")
+import matplotlib.pyplot as plt
 from .KITConfig import KITConfig
-from .KITLegend import KITLegend
 from .kitdata import KITData
+from .kitlodger import KITLodger
 from collections import OrderedDict
-from .kitutils import KITUtils, Lodger
+from . import kitutils
 import itertools
 
 
 
 class KITMatplotlib(object):
 
-    def __init__(self, cfg=None):
+    def __init__(self, cfg):
 
         self.__graphs = []
         self.__lodgers = []
-        if cfg == None:
+
+        # load style parameters from cfg file
+        self.__initStyle(cfg)
+
+        # check if there is a lodgers dict in cfg file
+        try:
+            cfgLodgers = KITLodger().readCfg(self.__cfg['Lodgers'])
+            for obj in cfgLodgers:
+                self.__lodgers.append(obj)
+        except:
             pass
-        elif isinstance(cfg, KITConfig):
-            try:
-                self.__initStyle(cfg)
-            except:
-                raise ValueError("cfg-file does not look like expected.")
-        else:
-            raise ValueError("Unexpected argument. KITMatplotlib needs "
-                             "dictionary containing parameters from cfg file.")
 
 
     def __initStyle(self, cfg):
@@ -36,19 +34,17 @@ class KITMatplotlib(object):
             to create the desired plot.
 
         """
-
+        self.cfg = cfg
         # Canvas Options
-        self.canvasSize = KITUtils().extractList(cfg['Canvas','CanvasSize'], 'float')
+        self.canvasSize = kitutils.extractList(cfg['Canvas','CanvasSize'], 'float')
 
         # Pad Options
         self.grid = True
         self.gridOptions = ('w', '-', '0.5')
-        self.padSize = KITUtils().extractList(cfg['Canvas','PadSize'], 'float')
+        self.padSize = kitutils.extractList(cfg['Canvas','PadSize'], 'float')
 
         # Title options
         self.title = cfg['Title','Title']
-        self.titleX0 = cfg['Title','X0']
-        self.titleY0 = cfg['Title','Y0']
         self.titleFont = cfg['Title','Font']
         self.titleFontSize = cfg['Title','FontSize']
         self.titleFontStyle = cfg['Title','FontStyle']
@@ -56,8 +52,8 @@ class KITMatplotlib(object):
         # Axis Options
         self.labelX = cfg['XAxis','Title']
         self.labelY = cfg['YAxis','Title']
-        self.rangeX = KITUtils().extractList(cfg['XAxis','Range'], "float")
-        self.rangeY = KITUtils().extractList(cfg['YAxis','Range'], "float")
+        self.rangeX = kitutils.extractList(cfg['XAxis','Range'], "float")
+        self.rangeY = kitutils.extractList(cfg['YAxis','Range'], "float")
         self.fontX = cfg['XAxis','Font']
         self.fontY = cfg['YAxis','Font']
         self.fontSizeX = cfg['XAxis','FontSize']
@@ -68,20 +64,22 @@ class KITMatplotlib(object):
         self.absY = cfg['YAxis','Abs']
         self.logX = cfg['XAxis','Log']
         self.logY = cfg['YAxis','Log']
+        self.tickX = cfg['XAxis','SciTick']
+        self.tickY = cfg['YAxis','SciTick']
 
         # Marker Options
         self.markerSize = cfg['Marker','Size']
-        self.markerSet = KITUtils().extractList(cfg['Marker','Set'])
+        self.markerSet = kitutils.extractList(cfg['Marker','Set'])
 
         #Line options
         self.colorPalette = cfg['Line','ColorPalette']
-        self.colorSet = KITUtils().extractList(cfg['Line','Color'])
+        self.colorSet = kitutils.extractList(cfg['Line','Color'])
         self.lineWidth = cfg['Line','Width']
-        self.lineStyle = KITUtils().extractList(cfg['Line','Style'])
+        self.lineStyle = kitutils.extractList(cfg['Line','Style'])
 
         # KITPlot specific options
         self.graphGroup = cfg['Misc','GraphGroup']
-        self.norm = KITUtils().extractList(cfg['Misc','Normalization'])
+        self.norm = kitutils.extractList(cfg['Misc','Normalization'])
         self.splitGraph = cfg['Misc','SplitGraph']
 
         # legend options
@@ -168,13 +166,11 @@ class KITMatplotlib(object):
                 raise ValueError("z-error not implemented yet")
 
         # add lodger
-        elif isinstance(arg, Lodger):
+        elif isinstance(arg, KITLodger):
             self.__lodgers.append(arg)
 
         else:
             raise ValueError("Cant add following graph: " + str(arg))
-
-
 
         return True
 
@@ -195,7 +191,7 @@ class KITMatplotlib(object):
 
 
         # apply user defined normalization or manipulation of y values of each graph
-        KITUtils().manipulate(self.__graphs, self.norm)
+        kitutils.manipulate(self.__graphs, self.norm)
 
         # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
         fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
@@ -205,7 +201,12 @@ class KITMatplotlib(object):
 
         # adjust pad size: [left, bottom, width, height]
         ax.set_position(self.padSize)
-        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
+        # adjust axis tick
+        if self.tickX:
+            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        if self.tickY:
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
         # check GraphGroup
         self.graphGroup = self.getGG(self.graphGroup)
@@ -233,14 +234,26 @@ class KITMatplotlib(object):
                             elinewidth=1)
 
         # add lodgers to party
-        for l in self.__lodgers:
-            lab = None
-            if l.getName():
-                lab = l.getName()
-            if l.getX() and l.getY():
-                ax.plot(l.getX(),l.getY(),label=lab)
-            # if l.getHLine != None:
-            #     ax.axhline(y=1.5,color='c',linewidth=3,label=lab)
+        for lodger in self.__lodgers:
+            if lodger.vline() != None:
+                ax.axvline(x=lodger.vline(),color=self.getColor(lodger.color()),
+                linewidth=lodger.width(),label=lodger.name())
+            elif lodger.hline() != None:
+                ax.axvline(y=lodger.hline(),color=self.getColor(lodger.color()),
+                linewidth=lodger.width(),label=lodger.name())
+            if lodger.vgraph() != None:
+                ax.axvline(x=lodger.vgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
+                label=lodger.name(),linestyle=self.lines[lodger.style()])
+            elif lodger.hgraph() != None:
+                ax.axvline(y=lodger.hgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
+                label=lodger.name(),linestyle=self.lines[lodger.style()])
+            elif lodger.func() != None:
+                print("func", lodger.x(), lodger.y())
+                # ax.plot()
+            elif lodger.x() != None and lodger.y() != None:
+                ax.plot(lodger.x(),lodger.y(),color=self.getColor(lodger.color()),
+                linewidth=lodger.width(),linestyle=self.lines[lodger.style()],label=lodger.name())
+
 
         # set titles
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
@@ -273,23 +286,34 @@ class KITMatplotlib(object):
 
         # ax.xaxis.get_children()[1].set_size(13)
 
-
         self.setLegend(ax)
 
         # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
 
-        return fig
+        return fig, len(self.__lodgers)
 
 
     def setLegend(self, obj):
 
-        obj.legend([items[1] for items in list(self.__entryDict.items())])
-        handles,labels = obj.get_legend_handles_labels()
+        # get names from cfg and lodger labels
+        graphEntries = [items[1] for items in list(self.__entryDict.items())]
+        lodgerEntries = [entry.name() for entry in self.__lodgers if entry.name() != None]
+        total_len = len(self.__graphs+self.__lodgers)
+        # check if there are already entries for lodgers in cfg
+        if len(graphEntries) == total_len:
+            obj.legend(graphEntries)
+        else:
+            obj.legend(graphEntries+lodgerEntries)
+
         # reorder legend items according to 'EntryList'
-        handles = self.adjustOrder(handles)
-        labels = self.adjustOrder(labels)
+        handles,labels = obj.get_legend_handles_labels()
+        # handles = self.adjustOrder(handles)
+        # labels = self.adjustOrder(labels)
+        handles = kitutils.adjustOrder(handles, self.__entryDict, total_len)
+        labels = kitutils.adjustOrder(labels, self.__entryDict, total_len)
+
 
         if self.legPosition == "auto":
             obj.legend(handles,labels)
@@ -337,21 +361,29 @@ class KITMatplotlib(object):
             return arg
 
 
-    def adjustOrder(self, List):
-        """ Adjusts order of list according to the changes made in 'EntryList'.
-            This will order the legend entrys.
-
-            Args:
-                List (list): list that you want to reorder (original list of
-                             graph names)
-        """
-
-        # extract desired order from 'EntryList'
-        userOrder = [int(item[0]) for item in list(self.__entryDict.items())]
-        # reorder the list
-        List = [y for (x,y) in sorted(zip(userOrder, List))]
-
-        return List
+    # def adjustOrder(self, List):
+    #     """ Adjusts order of list according to the changes made in 'EntryList'.
+    #         This will order the legend entrys.
+    #
+    #         Args:
+    #             List (list): list that you want to reorder (original list of
+    #                          graph names)
+    #     """
+    #
+    #     # extract desired order from 'EntryList'
+    #     userOrder = [int(item[0]) for item in list(self.__entryDict.items())]
+    #
+    #     # adjust length of userOrder to not loose lodgers while zipping
+    #     while len(userOrder)<len(self.__graphs+self.__lodgers):
+    #         # appended elements must be higher then the max value to avoide doublings
+    #         if len(userOrder)<max(userOrder):
+    #             userOrder.append(max(userOrder)+1)
+    #         else:
+    #             userOrder.append(len(userOrder))
+    #     # reorder the list
+    #     List = [y for (x,y) in sorted(zip(userOrder, List))]
+    #
+    #     return List
 
 
     def getLabel(self, index):
@@ -532,21 +564,3 @@ class KITMatplotlib(object):
         else:
             print("Warning:::Invalid 'ColorPalette' value. Using default")
             return mpl_std
-
-
-
-    def color_gen(self, color_list=None, index=None):
-
-        if self.graphGroup == "off" and self.colorPalette == "KIT":
-            color_iter = iter(self.colors)
-            color = next(color_iter)
-            return self.KITcolor[color][0][1]
-        elif self.graphGroup != "off" and self.colorPalette == "KIT":
-            shade_iter = iter(self.shade_keys)
-            shade = next(shade_iter)
-
-            return self.colors[keys[index]][shade][1]
-        else:
-            color_iter = iter(color_list)
-            color = next(color_iter)
-            return color
