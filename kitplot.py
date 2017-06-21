@@ -246,8 +246,9 @@ class KITPlot(object):
 
         # Load parameters and apply default style
         self.__cfg = KITConfig()
-        self.__cfg.setDir("cfg/")
-        self.cfgPath = self.__cfg.getCfgName(dataInput)
+        self.__cfg.Default("default.cfg")
+        self.__cfg.Dir("cfg/")
+        # self.cfgPath = self.__cfg.getCfgName(dataInput)
 
         # Load cfg file given in initial argument
         if cfgFile is not None:
@@ -623,8 +624,8 @@ class KITPlot(object):
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
 
-            png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
-            pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
+            # png_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".png"))
+            # pdf_out = os.path.join("output", self.cfgPath.replace("cfg/","").replace(".cfg",".pdf"))
 
 
             # self.canvas.add_subplot(1, 1, 1).plot(t,f,color='c',linewidth=3)
@@ -637,8 +638,8 @@ class KITPlot(object):
             # self.canvas.add_subplot(1, 1, 1).legend(handles,labels)
 
 
-            self.canvas.savefig(png_out)
-            self.canvas.savefig(pdf_out)
+            # self.canvas.savefig(png_out)
+            # self.canvas.savefig(pdf_out)
         else:
             pass
 
