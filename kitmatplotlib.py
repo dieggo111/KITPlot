@@ -292,7 +292,7 @@ class KITMatplotlib(object):
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
 
-        return fig, len(self.__lodgers)
+        return fig
 
 
     def setLegend(self, obj):

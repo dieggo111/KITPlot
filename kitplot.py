@@ -499,22 +499,24 @@ class KITPlot(object):
                     print("Input interpreted as single file")
                     self.__files.append(KITData(dataInput))
 
-
-        if self.is_cfg_new == True:
-            self.MeasurementType()
-        else:
-            pass
-
-        self.readEntryDict()
-
         return True
 
 
-    def draw(self, engine=None, arg=None):
+    def draw(self, engine=None, add_lodger=False):
         """
         doc
 
         """
+
+        # if dataInput comes from database then apply titles according to measurement type
+        if self.is_cfg_new == True:
+            self.MeasurementType()
+
+        # read and adjsut .__entryDict before drawing
+        if add_lodger == True:
+            self.readEntryDict(add_lodger=True)
+        else:
+            self.readEntryDict()
 
         # set engine
         if engine == None:
@@ -525,8 +527,8 @@ class KITPlot(object):
 
         # create graphs and canvas
         if engine == self.__engines[0]:
-            self.canvas, trigger = KITMatplotlib(self.__cfg).draw(self.__files)
-            if trigger != 0:
+            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
+            if add_lodger == True:
                 self.addLodgerEntry()
 
         return True
@@ -540,13 +542,13 @@ class KITPlot(object):
     def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
 
         self.__files.append(KITLodger(x=x,y=y,name=name,color=color,style=style,width=width))
-        self.draw()
+        self.draw(add_lodger=True)
 
         return True
 
     def addLodgerEntry(self):
 
-        # self.__cfg['Lodgers'] = {"graph" : "x=x, y=y, name=name, color=color"}
+        # self.__cfg["Lodgers"] = {"graph" : "x=x, y=y, name=name, color=color"}
 
         return True
 
@@ -556,22 +558,7 @@ class KITPlot(object):
 #########################
 
 
-    def fixEntryDict(self):
-
-        keys = [key for key in self.__entryDict.keys()]
-        # print(keys)
-        sort_list = list(range(len(keys)))
-        ordered_keys = [y for (x,y) in sorted(zip(keys, sort_list))]
-        values = list(self.__entryDict.values())
-        # print("here",ordered_keys,values)
-        newDict = dict(zip(ordered_keys, values))
-        print(newDict)
-
-        # test = self.__entryDict
-        # print(test.update(newDict))
-        # self.__cfg['Legend','EntryList'] = self.__entryDict.update(newDict)
-
-    def readEntryDict(self):
+    def readEntryDict(self, add_lodger=False):
         """'EntryList' makes the names and order of all graphs accessible. This
         subsection is read every time KITPlot is executed. An empty value ("")
         can be used to reset the entry to its default value (the original order
@@ -593,16 +580,39 @@ class KITPlot(object):
                 amount_lodgers = 0
 
             self.__entryDict = self.__cfg['Legend','EntryList']
-            # print("there", self.__entryDict)
-            if len(self.__entryDict) != len(self.__files)+amount_lodgers:
-                raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
-                               "entries does not match or a key is used more than"
-                               "once. Adjust or reset 'EntryList'.")
+            print("readEntry -> entryDict", self.__entryDict)
+            add_lodger
+            if add_lodger == False:
+                if len(self.__entryDict) != len(self.__files)+amount_lodgers:
+                    raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                                   "entries does not match or a key is used more than"
+                                   "once. Adjust or reset 'EntryList'.")
+            else:
+                if len(self.__entryDict) != len(self.__files)+amount_lodgers-1:
+                    raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                                   "entries does not match or a key is used more than"
+                                   "once. Adjust or reset 'EntryList'.")
+
 
             # correct entry keys in case they are messed up
             self.fixEntryDict()
 
         return True
+
+    def fixEntryDict(self):
+
+        keys = [key for key in self.__entryDict.keys()]
+        # print(keys)
+        sort_list = list(range(len(keys)))
+        ordered_keys = [y for (x,y) in sorted(zip(keys, sort_list))]
+        values = list(self.__entryDict.values())
+        # print("here",ordered_keys,values)
+        newDict = dict(zip(ordered_keys, values))
+        print(newDict)
+
+        # test = self.__entryDict
+        # print(test.update(newDict))
+        # self.__cfg['Legend','EntryList'] = self.__entryDict.update(newDict)
 
     def getDefaultEntryList(self):
         """ Loads default names and order in respect to the KITData objects
