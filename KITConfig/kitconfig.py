@@ -100,6 +100,10 @@ class KITConfig(object):
 
         """
 
+        if isinstance(keys, str):
+            keys = [keys]
+
+        #print("KEYTYPE: {0}".format(keys))
         self.__setInDict(self.__cfg, keys, value)
         self.write(self.__cfgFile)
             
@@ -172,7 +176,9 @@ class KITConfig(object):
     def __setInDict(self, dataDict, mapList, value):
         # Set new value if key already exists
 
-        #print("\ndict at call: {}".format(dataDict))
+        #print("Dict at call: {0}".format(dataDict))
+        #print("Maplist at call: {0}".format(mapList))
+        #print("Maplist Type: {0}".format(type(mapList)))
         
         for i, key in enumerate(mapList[:-1]):
             
