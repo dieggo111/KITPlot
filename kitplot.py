@@ -231,7 +231,7 @@ class KITPlot(object):
     __color = 0
 
     def __init__(self, dataInput=None, cfgFile=None):
-
+        self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
 
@@ -513,10 +513,14 @@ class KITPlot(object):
             self.MeasurementType()
 
         # read and adjsut .__entryDict before drawing
-        if add_lodger == True:
-            self.readEntryDict(add_lodger=True)
-        else:
-            self.readEntryDict()
+        # if add_lodger == True:
+        #     self.readEntryDict(add_lodger=True)
+        # else:
+        #     self.readEntryDict()
+
+        # get lodgers from cfg wenn KITPlot object is initialized
+        if add_lodger == False:
+                self.getLodgers()
 
         # set engine
         if engine == None:
@@ -528,8 +532,8 @@ class KITPlot(object):
         # create graphs and canvas
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
-            if add_lodger == True:
-                self.addLodgerEntry()
+            # if add_lodger == True:
+            #     self.addLodgerEntry()
 
         return True
 
@@ -538,20 +542,56 @@ class KITPlot(object):
 ### Lodger methods ###
 ######################
 
+    def getLodgers(self):
+        """ Read the cfg and create a lodger object for every entry in
+            'Lodgers'.
+        """
+        cfgLodgers = []
+        for lodger in self.__cfg['Lodgers']:
+            paraDict = dict(self.__cfg['Lodgers'][lodger])
+            # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
+            x = paraDict.get('x', None)
+            y = paraDict.get('y', None)
+            name = paraDict.get('name', None)
+            color = paraDict.get('color', None)
+            width = paraDict.get('width', None)
+            style = paraDict.get('style', None)
+
+            self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
+                                              style=style,width=width))
+        return True
 
     def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
 
-        self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
-                                      style=style,width=width).init())
+        # add new lodger from main
+        newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
+                              width=width)
+        self.__files.append(newLodger)
+        self.addLodgerEntry(newLodger)
         self.draw(add_lodger=True)
-
         return True
 
-    def addLodgerEntry(self):
+    def addLodgerEntry(self, newLodger):
 
-        self.__cfg["Lodgers"] = {"graph" : {"x" : "x",
-                                            "y" : "aeufgksdhbfks"}}
-
+        key = next(self.iter)
+        try:
+            self.__cfg["Lodgers"].update({key : {"x"    : newLodger.x(),
+                                                 "y"    : newLodger.y(),
+                                                 "name" : newLodger.name(),
+                                                 "style": newLodger.style(),
+                                                 "width": newLodger.width(),
+                                                 "color": newLodger.color()
+                                                }
+                                            })
+        except:
+            self.__cfg["Lodgers"] = {key : {"x"    : newLodger.x(),
+                                                 "y"    : newLodger.y(),
+                                                 "name" : newLodger.name(),
+                                                 "style": newLodger.style(),
+                                                 "width": newLodger.width(),
+                                                 "color": newLodger.color()
+                                            }
+                                    }
         return True
 
 
@@ -576,10 +616,11 @@ class KITPlot(object):
 
         # check entry dict
         else:
-            try:
-                amount_lodgers = len(self.__cfg['Lodgers'].items())
-            except:
-                amount_lodgers = 0
+            # try:
+            print("lodgers items", len(self.__cfg['Lodgers'].items()))
+            amount_lodgers = len(self.__cfg['Lodgers'].items())
+            # except:
+            # amount_lodgers = 0
 
             self.__entryDict = self.__cfg['Legend','EntryList']
             # print("readEntry -> entryDict", self.__entryDict)

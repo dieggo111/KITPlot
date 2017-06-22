@@ -20,20 +20,6 @@ class KITMatplotlib(object):
         # load style parameters from cfg file
         self.__initStyle(cfg)
 
-        # check if there is a lodgers dict in cfg file
-        # try:
-        # print(cfg['Lodgers'])
-        print(cfg.getDict()['Lodgers'])
-        print(cfg['Lodgers'])
-
-        # cfgLodgers = KITLodger().readCfg(cfg['Lodgers'])
-        # print("__init__", cfgLodgers)
-            # for obj in cfgLodgers:
-                # self.__lodgers.append(obj)
-                # print(obj.name())
-        # except:
-            # pass
-
 
     def __initStyle(self, cfg):
         """ Loads and sets various parameters from cfg file which are then used
@@ -107,7 +93,8 @@ class KITMatplotlib(object):
 
     def addGraph(self, arg):
         """ Converts data of KITData objects or lists into a respective formate
-        and writes them into .__graphs.
+        and writes them into .__graphs. Lodgers are seperated and written into
+        .__lodgers.
 
         Args: x, y or KITData
 
@@ -187,10 +174,11 @@ class KITMatplotlib(object):
 
         """
 
+
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
-
+        print(self.__graphs, self.__lodgers)
         # if self.splitGraph is True:
         #     self.__graphs = [list(item) for item in zip(self.__graphs[0][0],self.__graphs[0][1])]
         #     print(len(self.__graphs))

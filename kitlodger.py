@@ -14,9 +14,6 @@ class KITLodger(object):
         self.__width = kwargs.get('width', 2)
         self.__style = kwargs.get('style', 1)
 
-    def init(self):
-        """ interpret arguments
-        """
 
         if self.__x == None and self.__y == None:
             # print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
@@ -39,20 +36,22 @@ class KITLodger(object):
             print("Lodger:::Draw graph according to x->list and y->function.")
             self.__func = self.__y
 
-    def readCfg(self, **kwargs):
-
-        print(kwargs)
-
-        # eDict["x"] = x
-        # eDict["y"] = y
-        # eDict["color"] = color
-        # eDict["width"] = width
-        # eDict["style"] = style
-        # eDict["name"] = name
-
-        # init()
-
-        return True
+    # def readCfg(self, lDict):
+    #     print("kitlodgers", *lDict)
+    #
+    #     paraDict = lDict["graph"]
+    #     print("kitlodgers", paraDict["x"])
+    #     # will only work if these keys are in dict
+    #     x = paraDict["x"]
+    #     y = paraDict["y"]
+    #     name = paraDict["name"]
+    #     color = paraDict["color"]
+    #     width = paraDict["width"]
+    #     style = paraDict["style"]
+    #
+    #     # x=x,y=y,name=name,color=color,width=width,style=style
+    #
+    #     return True
 
 
     def x(self):
