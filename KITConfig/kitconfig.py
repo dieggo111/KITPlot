@@ -102,8 +102,8 @@ class KITConfig(object):
 
         self.__setInDict(self.__cfg, keys, value)
         self.write(self.__cfgFile)
-    
-
+            
+        
     def load(self, cfg='default', **kwargs):
 
 
@@ -171,17 +171,29 @@ class KITConfig(object):
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):
         # Set new value if key already exists
-        try:
-            for key in mapList[:-1]:
-                dataDict = dataDict[key]
-                dataDict[mapList[-1]] = value
-        except:
-            for i, key in enumerate(mapList[:1]):
-                dataDict[key] = mapList[i+1]
-                dataDict[mapList[-1]] = value
-        #except Exception:
-        #    raise AssertionError("Couldn't set parameter")
 
+        #print("\ndict at call: {}".format(dataDict))
+        
+        for i, key in enumerate(mapList[:-1]):
+            
+            prevDict = dataDict
+            try:
+                #print("Before: {0}".format(dataDict))
+                #print("Key: {0}".format(key))
+                dataDict = dataDict[key]
+                #print("After: {0} \ntype: {1}".format(dataDict, type(dataDict)))
+            except KeyError:
+                dataDict[key] = {mapList[i+1]: None}
+                dataDict = dataDict[key]
+                #print("Created {0}".format(key))
+
+            if not (isinstance(dataDict, dict) or isinstance(dataDict, OrderedDict)):
+                #print("Not of type OrderedDict or dict\n")
+                dataDict = prevDict                
+                dataDict[key] = {mapList[i+1]: None}
+                dataDict = dataDict[key]
+                
+        dataDict[mapList[-1]] = value
 
     def get(keyList, defaultValue):
         try:
