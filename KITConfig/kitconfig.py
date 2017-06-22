@@ -66,7 +66,8 @@ class KITConfig(object):
         except Exception:
             KITConfig.configDir = os.path.join(os.getcwd(), directory.lstrip('/\\'))
     
-        
+    def getDict(self):
+        return self.__cfg
             
     def __getitem__(self, keys):
 
