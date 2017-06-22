@@ -14,7 +14,10 @@ class KITLodger(object):
         self.__width = kwargs.get('width', 2)
         self.__style = kwargs.get('style', 1)
 
-        # interpret x,y arguments
+    def init(self):
+        """ interpret arguments
+        """
+
         if self.__x == None and self.__y == None:
             # print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
             pass
@@ -36,6 +39,20 @@ class KITLodger(object):
             print("Lodger:::Draw graph according to x->list and y->function.")
             self.__func = self.__y
 
+    def readCfg(self, **kwargs):
+
+        print(kwargs)
+
+        # eDict["x"] = x
+        # eDict["y"] = y
+        # eDict["color"] = color
+        # eDict["width"] = width
+        # eDict["style"] = style
+        # eDict["name"] = name
+
+        # init()
+
+        return True
 
 
     def x(self):
@@ -70,6 +87,3 @@ class KITLodger(object):
 
     def hgraph(self):
         return self.__hgraph
-
-    def readCfg(self, arg):
-        return True

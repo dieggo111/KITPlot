@@ -21,12 +21,17 @@ class KITMatplotlib(object):
         self.__initStyle(cfg)
 
         # check if there is a lodgers dict in cfg file
-        try:
-            cfgLodgers = KITLodger().readCfg(self.__cfg['Lodgers'])
-            for obj in cfgLodgers:
-                self.__lodgers.append(obj)
-        except:
-            pass
+        # try:
+        # print(cfg['Lodgers'])
+        print(cfg.__cfg)
+
+        cfgLodgers = KITLodger().readCfg(cfg['Lodgers'])
+        # print("__init__", cfgLodgers)
+            # for obj in cfgLodgers:
+                # self.__lodgers.append(obj)
+                # print(obj.name())
+        # except:
+            # pass
 
 
     def __initStyle(self, cfg):

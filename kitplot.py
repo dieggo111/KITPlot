@@ -541,14 +541,16 @@ class KITPlot(object):
 
     def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
 
-        self.__files.append(KITLodger(x=x,y=y,name=name,color=color,style=style,width=width))
+        self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
+                                      style=style,width=width).init())
         self.draw(add_lodger=True)
 
         return True
 
     def addLodgerEntry(self):
 
-        # self.__cfg["Lodgers"] = {"graph" : "x=x, y=y, name=name, color=color"}
+        self.__cfg["Lodgers"] = {"graph" : {"x" : "x",
+                                            "y" : "aeufgksdhbfks"}}
 
         return True
 
@@ -580,8 +582,7 @@ class KITPlot(object):
                 amount_lodgers = 0
 
             self.__entryDict = self.__cfg['Legend','EntryList']
-            print("readEntry -> entryDict", self.__entryDict)
-            add_lodger
+            # print("readEntry -> entryDict", self.__entryDict)
             if add_lodger == False:
                 if len(self.__entryDict) != len(self.__files)+amount_lodgers:
                     raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
@@ -592,7 +593,6 @@ class KITPlot(object):
                     raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                                    "entries does not match or a key is used more than"
                                    "once. Adjust or reset 'EntryList'.")
-
 
             # correct entry keys in case they are messed up
             self.fixEntryDict()
