@@ -71,6 +71,9 @@ class KITConfig(object):
             
     def __getitem__(self, keys):
 
+        if isinstance(keys, str):
+            keys = [keys]
+        
         # Looking for key in config file
         try:
             return self.__getFromDict(self.__cfg, keys)
