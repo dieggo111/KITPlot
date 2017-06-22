@@ -23,9 +23,10 @@ class KITMatplotlib(object):
         # check if there is a lodgers dict in cfg file
         # try:
         # print(cfg['Lodgers'])
-        print(cfg.__cfg)
+        print(cfg.getDict()['Lodgers'])
+        print(cfg['Lodgers'])
 
-        cfgLodgers = KITLodger().readCfg(cfg['Lodgers'])
+        # cfgLodgers = KITLodger().readCfg(cfg['Lodgers'])
         # print("__init__", cfgLodgers)
             # for obj in cfgLodgers:
                 # self.__lodgers.append(obj)
