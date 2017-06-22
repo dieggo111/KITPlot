@@ -239,12 +239,6 @@ class KITPlot(object):
         self.__files = []
         self.__graphs = []
 
-        # init colors
-        if self.__init == False:
-            self.cfg_initialized = False
-        else:
-            pass
-
         # Load parameters and apply default style
         self.__cfg = KITConfig()
         self.__cfg.Default("default.cfg")
@@ -253,28 +247,14 @@ class KITPlot(object):
         # extract name from data input
         self.__inputName = self.getDataName(dataInput)
 
-        # Load cfg file given in initial argument
-        if cfgFile is not None:
-            self.__cfg.load(cfgFile)
-        # Empty KITPlot with existing default cfg
-        elif dataInput is None and self.__cfgPresent():
-            self.__cfg.load('default.cfg')
-            print("Initialized default.cfg")
-        # Empty KITPlot / create new default cfg
-        elif dataInput is None and self.__cfgPresent() is not True:
-            self.__initDefaultCfg()
-            self.__cfg.write()
-            print("Created new default.cfg")
-        # Load existing cfg belonging to dataInput
-        elif dataInput is not None and self.__cfgPresent(dataInput):
-            self.__cfg.load(dataInput)
-            print("Initialized cfg file: %s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]))
+        # load dict with parameters from cfg file
+        self.__cfg.load(self.__inputName)
+
+        # check if cfg is already there
+        if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
+            self.is_cfg_new = True
         else:
-            # new plot / create new cfg for dataInput
-            self.cfg_initialized = True
-            self.__initDefaultCfg()
-            self.__cfg.write(dataInput)
-            print("%s.cfg has been created" %dataInput)
+            self.is_cfg_new = False
 
 
 #        a = self.__cfg['General','Measurement']
@@ -285,83 +265,6 @@ class KITPlot(object):
             self.addFiles(dataInput, a)
         else:
             pass
-
-    #####################
-    ### ConfigHandler ###
-    #####################
-
-    def __initDefaultCfg(self):
-
-        pDict = OrderedDict()
-        pDict = {'General' :{ 'Measurement'  : 'probe'      },
-                 'Title'   :{ 'Title'        : 'Title',
-                              'X0'           : 0.5,
-                              'Y0'           : 0.97,
-                            #   'H'            : 0.05,
-                              'FontSize'     : 14,
-                              'FontStyle'    : 'bold',
-                              'Font'         : 62,          },
-                 'XAxis'   :{ 'Title'        : 'X Value',
-                            #   'Size'         : 0.05,
-                            #   'Offset'       : 1.1,
-                            #   'LabelSize'    : 0.04,
-                              'FontSize'     : 12,
-                              'FontStyle'    : 'bold',
-                              'Font'         : 62,
-                              'Abs'          : True,
-                              'Log'          : False,
-                              'Range'        : 'auto',      },
-                 'YAxis'   :{ 'Title'        : 'Y Value',
-                            #   'Size'         : 0.05,
-                            #   'Offset'       : 1.1,
-                            #   'LabelSize'    : 0.04,
-                              'FontSize'     : 12,
-                              'FontStyle'    : 'bold',
-                              'Font'         : 62,
-                              'Abs'          : True,
-                              'Log'          : False,
-                              'Range'        : 'auto'       },
-                #  'Legend'  :{ 'SortPara'     : 'list',
-                 'Legend'  :{ 'SortPara'     : 'list',
-                              'Position'     : 'auto',
-                              'TextSize'     : 0.03,
-                              'BoxPara'      : 1,
-                              'EntryList'    : ''           },
-                #  'Marker'  :{ 'Set'          : "[21,20,22,23,25,24,26,32,34]",
-                 'Marker'  :{ 'Set'          : "[1,2,3,4,5,6,7]",
-                            #   'Size'         : 1.5,         },
-                              'Size'         : 6,         },
-                #  'Line'    :{ 'Color'        : "[1400,1500,1700,1800,1100,1200,1300,1600]",
-                 'Line'    :{ 'ColorPalette' : "KIT",
-                              'Color'        : "[0,1,2,3,4,5,6,7]",
-                              'Style'        : 1,
-                              'Width'        : 2            },
-                 'Canvas'  :{ 'CanvasSize'   : "[16.26,12.19]",
-                              'PadSize'      : "[0.1,0.11,0.86,0.80]"},
-                 'Misc'    :{ 'GraphGroup'   : 'off',
-                            #   'ColorShades'  : False,
-                              'Normalization': 'off',
-                              "SplitGraph": "False"       }
-        }
-
-        self.__cfg.init(pDict)
-
-        return True
-
-
-    def __cfgPresent(self, fileName='default'):
-
-        file_path = os.path.join(os.getcwd(), "cfg")
-        if os.path.exists(file_path) == False:
-            return False
-        else:
-            if os.listdir(file_path) == []:
-                return False
-            for cfg in os.listdir(file_path):
-                if cfg == ("%s.cfg" %(os.path.splitext(os.path.basename(os.path.normpath(str(fileName))))[0])):
-                    return True
-            else:
-                return False
 
 
     ##################
@@ -442,7 +345,6 @@ class KITPlot(object):
 
         return True
 
-
     def checkPID(self, dataInput):
         # checks if PIDs are listed in the file
         if os.path.isfile(dataInput):
@@ -455,7 +357,6 @@ class KITPlot(object):
     #####################
     ### Graph methods ###
     #####################
-
 
     def addFiles(self, dataInput=None, measurement="probe"):
         """ Depending on the type, the 'self.__files' list is filled with
@@ -478,6 +379,7 @@ class KITPlot(object):
 
         # Load KITData
         if isinstance(dataInput, KITData):
+            print("Input interpreted as KITData object")
             self.__files.append(dataInput)
             # self.addGraph(dataInput.getX(),dataInput.getY())
 
@@ -496,7 +398,7 @@ class KITPlot(object):
             if dataInput.isdigit():
                 self.__files.append(KITData(dataInput))
                 if "Ramp" in self.__files[-1].getParaY():
-
+                    print("Input interpreted as ramp measurement")
                     x = []
                     y = []
                     labels = []
@@ -530,6 +432,7 @@ class KITPlot(object):
 
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
+                print("Input interpreted as folder with files")
                 for inputFile in os.listdir(dataInput):
                     if (os.path.splitext(inputFile)[1] == ".txt"):
                         self.__files.append(KITData(dataInput + inputFile))
@@ -544,7 +447,7 @@ class KITPlot(object):
 
                 # multiple PIDs
                 if self.checkPID(dataInput) == True:
-
+                    print("Input interpreted as multiple PIDs")
                     with open(dataInput) as inputFile:
                         fileList = []
                         for line in inputFile:
@@ -593,11 +496,11 @@ class KITPlot(object):
 
                 # singel file
                 else:
-                    print("single file")
+                    print("Input interpreted as single file")
                     self.__files.append(KITData(dataInput))
 
 
-        if self.cfg_initialized == True:
+        if self.is_cfg_new == True:
             self.MeasurementType()
         else:
             pass
@@ -626,14 +529,13 @@ class KITPlot(object):
             if trigger != 0:
                 self.addLodgerEntry()
 
-
         return True
 
 
+######################
+### Lodger methods ###
+######################
 
-#####################
-### Fancy methods ###
-#####################
 
     def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
 
@@ -648,6 +550,12 @@ class KITPlot(object):
 
         return True
 
+
+#########################
+### entryDict methods ###
+#########################
+
+
     def fixEntryDict(self):
 
         keys = [key for key in self.__entryDict.keys()]
@@ -657,12 +565,11 @@ class KITPlot(object):
         values = list(self.__entryDict.values())
         # print("here",ordered_keys,values)
         newDict = dict(zip(ordered_keys, values))
+        print(newDict)
 
-        # print(newDict)
         # test = self.__entryDict
         # print(test.update(newDict))
         # self.__cfg['Legend','EntryList'] = self.__entryDict.update(newDict)
-
 
     def readEntryDict(self):
         """'EntryList' makes the names and order of all graphs accessible. This
@@ -671,10 +578,11 @@ class KITPlot(object):
         and names given by the .__files).
         """
 
-        # sets entry dict to default if value is ""
+        # writes entry dict to cfg of sets it back to default if value is ""
         if self.__cfg['Legend','EntryList'] == "":
             self.__cfg['Legend','EntryList'] = self.getDefaultEntryList()
-            print("EntryDict list was set back to default!")
+            if self.is_cfg_new == False:
+                print("EntryDict was set back to default!")
             self.__entryDict = self.getDefaultEntryList()
 
         # check entry dict
@@ -692,9 +600,24 @@ class KITPlot(object):
                                "once. Adjust or reset 'EntryList'.")
 
             # correct entry keys in case they are messed up
-            # self.fixEntryDict()
+            self.fixEntryDict()
 
         return True
+
+    def getDefaultEntryList(self):
+        """ Loads default names and order in respect to the KITData objects
+        in 'self.__files' list. Both keys and values of the dictionary must be
+        strings.
+
+        """
+
+        EntryList = OrderedDict()
+
+        # write legend entries in a dict
+        for i, graph in enumerate(self.__files):
+            EntryList[str(i)] = str(graph.getName())
+
+        return EntryList
 
     def showCanvas(self):
         self.canvas.show()
@@ -707,94 +630,11 @@ class KITPlot(object):
         self.canvas.savefig(pdf_out)
         return True
 
-    def arrangeFileList(self):
-        """ The KITData files in .__files are somewhat arbitrarily
-        ordered at first. This method pre-orders them in respect of their names.
 
-        """
-        TempList1 = []
-        TempList2 = []
-        IDList = []
-        IndexList = []
+###################
+### Get methods ###
+###################
 
-        for temp in self.__files:
-            TempList1.append(temp.getName())
-            TempList2.append(temp.getName())
-
-        # if same name appears more than once...
-        for i, Name1 in enumerate(TempList1):
-            if TempList1.count(Name1) > 1:
-                Test = Name1 + "_" + "(" + str(i) + ")"
-                TempList2[i] = Test
-                TempList1[i] = Test
-            else:
-                pass
-
-        TempList2.sort()
-
-        for i,Name2 in enumerate(TempList2):
-            if Name2 == TempList1[i]:
-                IndexList.append(i)
-            else:
-                for j, Name in enumerate(TempList1):
-                    if Name == Name2:
-                        IndexList.append(j)
-
-        TempList1[:] = []
-
-        for index in IndexList:
-            TempList1.append(self.__files[index])
-        self.__files = TempList1
-
-    def interpolate(self, x=None, y=None):
-
-        v = []
-
-        if x is not None and y is not None:
-            for File in self.__files:
-                m, b = np.polyfit(x, y, 1)
-                v.append((m, b))
-
-        else:
-            x = []
-            y = []
-
-            for File in self.__files:
-                x = File.getX()
-                y = File.getY()
-                name = File.getName()
-                m, b = np.polyfit(x, y, 1)
-                v.append((name, abs(m)))
-
-        return v
-
-    def makeFit(self, List, print_fit, draw_fit):
-
-        x = []
-        y = []
-
-        print("Fit Results:")
-
-        if isinstance(List, KITData):
-            x = List.getX()
-            y = List.getY()
-
-            p0, p1 = abs(np.polyfit(x ,y, 1))
-
-
-            print("{:>8} {:>8} {:>8}".format(List.getName(),
-                                             " : m = " + str(round(p0,5)),
-                                             " ; R = " + str(round(1./p0,5))))
-
-        else:
-            #TODO non-kitdata objects
-            pass
-
-
-
-#######################
-### Set/get methods ###
-#######################
 
     def getRDict(self, kdata):
 
@@ -820,28 +660,6 @@ class KITPlot(object):
         self.__RDict = dic
 
         return self.__RDict
-
-    def getDefaultEntryList(self):
-        """ Loads default names and order in respect to the KITData objects
-        in 'self.__files' list. Both keys and values of the dictionary must be
-        strings.
-
-        """
-
-        EntryList = OrderedDict()
-
-        # write legend entries in a dict
-        for i, graph in enumerate(self.__files):
-            EntryList[str(i)] = str(graph.getName())
-
-        return EntryList
-
-
-
-
-###################
-### Get methods ###
-###################
 
     def getGraph(self, graph=None):
 

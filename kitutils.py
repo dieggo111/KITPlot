@@ -107,3 +107,87 @@ def extractList(arg, output="int"):
             return str_list
     else:
         return arg
+
+
+def arrangeFileList(List):
+    """ The KITData files in .__files are somewhat arbitrarily
+    ordered at first. This method pre-orders them in respect of their names.
+
+    """
+    TempList1 = []
+    TempList2 = []
+    IDList = []
+    IndexList = []
+
+    for temp in List:
+        TempList1.append(temp.getName())
+        TempList2.append(temp.getName())
+
+    # if same name appears more than once...
+    for i, Name1 in enumerate(TempList1):
+        if TempList1.count(Name1) > 1:
+            Test = Name1 + "_" + "(" + str(i) + ")"
+            TempList2[i] = Test
+            TempList1[i] = Test
+        else:
+            pass
+
+    TempList2.sort()
+
+    for i,Name2 in enumerate(TempList2):
+        if Name2 == TempList1[i]:
+            IndexList.append(i)
+        else:
+            for j, Name in enumerate(TempList1):
+                if Name == Name2:
+                    IndexList.append(j)
+
+    TempList1[:] = []
+
+    for index in IndexList:
+        TempList1.append(List[index])
+    List = TempList1
+
+def interpolate(List, x=None, y=None):
+
+    v = []
+
+    if x is not None and y is not None:
+        for File in List:
+            m, b = np.polyfit(x, y, 1)
+            v.append((m, b))
+
+    else:
+        x = []
+        y = []
+
+        for File in List:
+            x = File.getX()
+            y = File.getY()
+            name = File.getName()
+            m, b = np.polyfit(x, y, 1)
+            v.append((name, abs(m)))
+
+    return v
+
+def makeFit(List, print_fit, draw_fit):
+
+    x = []
+    y = []
+
+    print("Fit Results:")
+
+    if isinstance(List, KITData):
+        x = List.getX()
+        y = List.getY()
+
+        p0, p1 = abs(np.polyfit(x ,y, 1))
+
+
+        print("{:>8} {:>8} {:>8}".format(List.getName(),
+                                         " : m = " + str(round(p0,5)),
+                                         " ; R = " + str(round(1./p0,5))))
+
+    else:
+        #TODO non-kitdata objects
+        pass
