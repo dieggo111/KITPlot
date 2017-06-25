@@ -29,15 +29,16 @@ The script consists of 4 modules:
         sensor parameters.
 
     b) The KITPlot module handles the conversion of a given input type into
-       ROOT objects via pyROOT. It then handles all the plotting and drawing
-       by using parameters from a .cfg file. Eventually, the output contains:
+       KITData objects. It then calls a drawing function while using parameters
+       from a .cfg file. Eventually, the output contains:
         - 2 plot graphics (.png and .pdf file) that will be automatically
           stored in your output folder (will be created in your main
           folder if necessary)
         - and a .cfg file that will be automatically stored in your cfg folder
           (will be created in your main folder if necessary)
 
-    c) The LegHandler module handles the arrangement, position and style of the
+    c) ##### obsolete for matplotlib #####
+       The LegHandler module handles the arrangement, position and style of the
        legend box and its elements. It also uses a very rudimentary algorithm
        to search for the most convinient spot inside the canvas
        (one of the 4 corners), so that the legend doesn't cover any data points.
@@ -46,29 +47,36 @@ The script consists of 4 modules:
        Since KITPlot is console-based and has no graphical interface, the
        config file solution makes up for it.
 
+    e) kitmatpoltlib handles all the drawing.
+
 3) Installation:
     a) Create a main folder and give it a nice name (f.e. 'KITPlot')
-    b) Clone the KITPlot repository from 'https://github.com/SchellDa/KITPlot',
+    b) Inside this folder you ought to create a folder for cfg files named
+       "cfg" and for output files named "output" .Clone the KITPlot
+       repository from 'https://github.com/dieggo111/KITPlot',
        put its content inside an extra folder within your main folder and name
-       it 'modules'. If you feel the need to name it otherwise you will have to
-       append its path the sys.path list).
+       it 'KITPlot'.
     c) Download and install python 3 on your system
        (https://www.python.org/downloads/).
     d) The most recent version of python 3 contains 'pip3', a download
        manager/installer for python modules, which should be used to download
        the following modules:
        - numpy: 'pip3 install numpy'
-       - pymysql: 'pip3 install mysqlclient'
        - json: 'pip3 install simplejson'
-       (the rest should be standard python modules... there's nothing fancy
-        here.').
+       - pymysql: Download download and unzip source file from
+                  https://pypi.python.org/pypi/mysql-connector-python/2.0.4 or
+                  use the one in the
+                  repository. Open consol/terminal and go to PyMySQL-0.7.11
+                  folder. Type "python setup.py build" and then
+                  "python setup.py install".
     e) There are 2 'plot engines' you can use: ROOT or matplotlib.
-       - ROOT: Download and build ROOT v5.34/36 or 6 on your system. When
+       - matplotlib: 'pip3 install matplotlib'
+       - ###### ROOT: ###### no longger supported ######
+               Download and build ROOT v5.34/36 or 6 on your system. When
                building ROOT, make sure you enable the use of pyROOT. This is
                easy on Linux. However,doing this on Windows or Mac is a
                different story... although it's generally possible to do this
                on every system.
-       - matplotlib: 'pip3 install matplotlib'
     f) Lastly, you need login informations to access the database, which are
        stored in the 'db.cfg'. For security reasons the login file can not be
        downloaded, but must be requested from Daniel or Marius.
@@ -102,8 +110,10 @@ The script consists of 4 modules:
         kPlot1 = KITPlot(sys.argv[1])
 
 
-    kPlot1.draw("APL")
+    kPlot1.draw("matplotlib")
 
+    kPlot1.saveCanvas()
+    kPlot1.showCanvas()
     input()
 
     ####################################################
@@ -207,7 +217,6 @@ import numpy as np
 import os, sys
 from .kitdata import KITData
 from .KITConfig import KITConfig
-from .KITLegend import KITLegend
 from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from matplotlib.patches import Rectangle
@@ -247,15 +256,14 @@ class KITPlot(object):
         # extract name from data input
         self.__inputName = self.getDataName(dataInput)
 
-        # load dict with parameters from cfg file
-        self.__cfg.load(self.__inputName)
-
         # check if cfg is already there
         if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
             self.is_cfg_new = True
         else:
             self.is_cfg_new = False
 
+        # load dict with parameters from cfg file
+        self.__cfg.load(self.__inputName)
 
 #        a = self.__cfg['General','Measurement']
         a = "probe"
@@ -513,14 +521,17 @@ class KITPlot(object):
             self.MeasurementType()
 
         # read and adjsut .__entryDict before drawing
-        # if add_lodger == True:
-        #     self.readEntryDict(add_lodger=True)
-        # else:
-        #     self.readEntryDict()
+        if add_lodger == True:
+            self.readEntryDict(add_lodger=True)
+        else:
+            self.readEntryDict()
 
         # get lodgers from cfg wenn KITPlot object is initialized
         if add_lodger == False:
+            try:
                 self.getLodgers()
+            except:
+                print("No lodgers in cfg.")
 
         # set engine
         if engine == None:
@@ -614,22 +625,26 @@ class KITPlot(object):
                 print("EntryDict was set back to default!")
             self.__entryDict = self.getDefaultEntryList()
 
-        # check entry dict
+        # check if there's a 'Lodgers' section and how many entries it has
         else:
-            # try:
-            print("lodgers items", len(self.__cfg['Lodgers'].items()))
-            amount_lodgers = len(self.__cfg['Lodgers'].items())
-            # except:
-            # amount_lodgers = 0
+            try:
+                # print("lodgers items", len(self.__cfg['Lodgers'].items()))
+                amount_lodgers = len(self.__cfg['Lodgers'].items())
+            except:
+                amount_lodgers = 0
 
+            # TODO: check if lodger demands for entry
             self.__entryDict = self.__cfg['Legend','EntryList']
             # print("readEntry -> entryDict", self.__entryDict)
+
             if add_lodger == False:
+                # no new lodger added but there are lodgers in cfg
                 if len(self.__entryDict) != len(self.__files)+amount_lodgers:
                     raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                                    "entries does not match or a key is used more than"
                                    "once. Adjust or reset 'EntryList'.")
             else:
+                # ???
                 if len(self.__entryDict) != len(self.__files)+amount_lodgers-1:
                     raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                                    "entries does not match or a key is used more than"
@@ -642,18 +657,28 @@ class KITPlot(object):
 
     def fixEntryDict(self):
 
-        keys = [key for key in self.__entryDict.keys()]
-        # print(keys)
-        sort_list = list(range(len(keys)))
-        ordered_keys = [y for (x,y) in sorted(zip(keys, sort_list))]
-        values = list(self.__entryDict.values())
-        # print("here",ordered_keys,values)
-        newDict = dict(zip(ordered_keys, values))
-        print(newDict)
+        # get key list from 'EntryList'
+        keys = [int(key) for key in self.__entryDict.keys()]
+        # print("fix", keys)
 
+        # key list should start at 0 and should have a length of len(keys)
+        straight_list = list(range(len(keys)))
+        # print("fix", straight_list)
+
+        # get reference list in respect to the original order of key list
+        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
+
+        # reorder reference list so that values stay in the same order as before
+        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
+
+        # print("fix", fixed_order)
+        values = list(self.__entryDict.values())
+        # print("fix", values)
+        new = OrderedDict(zip(fixed_order, values))
+        print(new)
         # test = self.__entryDict
         # print(test.update(newDict))
-        # self.__cfg['Legend','EntryList'] = self.__entryDict.update(newDict)
+        self.__cfg['Legend','EntryList'] = new
 
     def getDefaultEntryList(self):
         """ Loads default names and order in respect to the KITData objects
@@ -666,7 +691,7 @@ class KITPlot(object):
 
         # write legend entries in a dict
         for i, graph in enumerate(self.__files):
-            EntryList[str(i)] = str(graph.getName())
+            EntryList[i] = str(graph.getName())
 
         return EntryList
 

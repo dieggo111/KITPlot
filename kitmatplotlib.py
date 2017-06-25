@@ -354,32 +354,6 @@ class KITMatplotlib(object):
         else:
             return arg
 
-
-    # def adjustOrder(self, List):
-    #     """ Adjusts order of list according to the changes made in 'EntryList'.
-    #         This will order the legend entrys.
-    #
-    #         Args:
-    #             List (list): list that you want to reorder (original list of
-    #                          graph names)
-    #     """
-    #
-    #     # extract desired order from 'EntryList'
-    #     userOrder = [int(item[0]) for item in list(self.__entryDict.items())]
-    #
-    #     # adjust length of userOrder to not loose lodgers while zipping
-    #     while len(userOrder)<len(self.__graphs+self.__lodgers):
-    #         # appended elements must be higher then the max value to avoide doublings
-    #         if len(userOrder)<max(userOrder):
-    #             userOrder.append(max(userOrder)+1)
-    #         else:
-    #             userOrder.append(len(userOrder))
-    #     # reorder the list
-    #     List = [y for (x,y) in sorted(zip(userOrder, List))]
-    #
-    #     return List
-
-
     def getLabel(self, index):
 
         label = [items[1] for items in list(self.__entryDict.items())]
