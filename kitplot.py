@@ -204,7 +204,7 @@ The script consists of 4 modules:
                                              The 'self.__initColor' function
                                              incorporates our self-made color
                                              palette.
-                                             
+
 """
 
 class KITPlot(object):
@@ -222,8 +222,19 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None, cfgFile=None):
+    def __init__(self, dataInput=None,
+                       cfgFile=None,
+                       fit=None,
+                       module=None):
 
+        # TODO: module = ROOT5/6, mathplotlib
+        self.module = "ROOT6"
+
+        # fit and terminal printing options
+        if fit == "R":
+            self.R_fit = True
+        else:
+            self.R_fit = None
 
         # init lists
         self.__files = []
@@ -558,8 +569,11 @@ class KITPlot(object):
                         self.__files.append(kdata)
 
                     self.addNorm()
-                    # for kdata in self.__files:
-                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
+                    if self.R_fit == True:
+                        for kdata in self.__files:
+                            self.makeFit(kdata)
+                    else:
+                        pass
 
                 else:
                     self.addNorm()
@@ -575,9 +589,11 @@ class KITPlot(object):
 
                 self.arrangeFileList()
                 self.addNorm()
-                for kdata in self.__files:
-                    self.makeFit(kdata, print_fit=True, draw_fit=False)
-
+                if self.R_fit == True:
+                    for kdata in self.__files:
+                        self.makeFit(kdata)
+                else:
+                    pass
             # Load file
             elif os.path.isfile(dataInput):
 
@@ -634,8 +650,12 @@ class KITPlot(object):
                 else:
                     self.__files.append(KITData(dataInput))
                     self.addNorm()
-                    # for kdata in self.__files:
-                    #     self.makeFit(kdata, print_fit=True, draw_fit=False)
+
+                    if self.R_fit == True:
+                        for kdata in self.__files:
+                            self.makeFit(kdata)
+                    else:
+                        pass
 
         if self.cfg_initialized == True:
             self.MeasurementType()
@@ -1089,7 +1109,7 @@ class KITPlot(object):
         return v
 
 
-    def makeFit(self, List, print_fit, draw_fit):
+    def makeFit(self, List):
 
         x = []
         y = []
@@ -1105,11 +1125,13 @@ class KITPlot(object):
 
             print("{:>8} {:>8} {:>8}".format(List.getName(),
                                              " : m = " + str(round(p0,5)),
-                                             " ; R = " + str(round(1./p0,5))))
+                                             " ; R = " + str(round(1./p0,0))))
 
         else:
             #TODO non-kitdata objects
             pass
+
+        return True
 
 
     def getLineStyle(self, i):
@@ -1302,7 +1324,6 @@ class KITPlot(object):
         # User Groups
         if "[" in self.__cfg.get('Misc','GraphGroup') and "]" in self.__cfg.get('Misc','GraphGroup'):
             self.getGroupList()
-
             j = 0
 
             if len(self.__GroupList)-self.__GroupList.count(666) != len(self.__graphs):
@@ -1313,7 +1334,7 @@ class KITPlot(object):
                 if elem == 666:
                     j = 0
                 else:
-                    self.__graphs[elem].SetMarkerStyle(self.getMarkerStyle(j))
+                    self.__graphs[self.changeOrder(elem)].SetMarkerStyle(self.getMarkerStyle(j))
                     j += 1
         else:
             pass
@@ -1359,16 +1380,16 @@ class KITPlot(object):
                     colorcount += 1
                     shadecount = 0
                 elif self.ColorShades == True:
-                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
-                        self.__graphs[elem].SetLineColor(int(self.colorSet[colorcount])+shadecount)
-                        self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
+                        self.__graphs[self.changeOrder(elem)].SetMarkerColor(int(self.colorSet[colorcount])+shadecount)
+                        self.__graphs[self.changeOrder(elem)].SetLineColor(int(self.colorSet[colorcount])+shadecount)
+                        self.__graphs[self.changeOrder(elem)].SetLineWidth(self.lineWidth)
+                        self.__graphs[self.changeOrder(elem)].SetLineStyle(self.getLineStyle(elem))
                         shadecount += 1
                 elif self.ColorShades == False:
-                        self.__graphs[elem].SetMarkerColor(int(self.colorSet[colorcount]))
-                        self.__graphs[elem].SetLineColor((self.colorSet[colorcount]))
-                        self.__graphs[elem].SetLineWidth(self.lineWidth)
-                        self.__graphs[elem].SetLineStyle(self.getLineStyle(elem))
+                        self.__graphs[self.changeOrder(elem)].SetMarkerColor(int(self.colorSet[colorcount]))
+                        self.__graphs[self.changeOrder(elem)].SetLineColor(int(self.colorSet[colorcount]))
+                        self.__graphs[self.changeOrder(elem)].SetLineWidth(self.lineWidth)
+                        self.__graphs[self.changeOrder(elem)].SetLineStyle(self.getLineStyle(elem))
                 else:
                     pass
         else:
