@@ -40,6 +40,7 @@ class KITMatplotlib(object):
         self.titleFont = cfg['Title','Font']
         self.titleFontSize = cfg['Title','FontSize']
         self.titleFontStyle = cfg['Title','FontStyle']
+        self.titleOffset = 1 + cfg['Title','Offset']/100.
 
         # Axis Options
         self.labelX = cfg['XAxis','Title']
@@ -62,6 +63,7 @@ class KITMatplotlib(object):
         # Marker Options
         self.markerSize = cfg['Marker','Size']
         self.markerSet = kitutils.extractList(cfg['Marker','Set'])
+        self.hollowMarker = kitutils.extractList(cfg['Marker','HollowMarker'])
 
         #Line options
         self.colorPalette = cfg['Line','ColorPalette']
@@ -178,7 +180,7 @@ class KITMatplotlib(object):
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
-        print(self.__graphs, self.__lodgers)
+        # print(self.__graphs, self.__lodgers)
         # if self.splitGraph is True:
         #     self.__graphs = [list(item) for item in zip(self.__graphs[0][0],self.__graphs[0][1])]
         #     print(len(self.__graphs))
@@ -206,16 +208,16 @@ class KITMatplotlib(object):
         self.graphGroup = self.getGG(self.graphGroup)
 
         for i, table in enumerate(self.__graphs):
-            # if i in [0,1]:
-                # markerface = 'white'
-            # else:
-                # markerface = self.getColor(i)
+            if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
+                markerface = 'white'
+            else:
+                markerface = self.getColor(i)
             ax.plot(table[0],                           # x-axis
                     table[1],                           # y-axis
                     color=self.getColor(i),             # line color
                     marker=self.getMarker(i),           # marker style
                     markersize=self.markerSize,
-                    # markerfacecolor=markerface,
+                    markerfacecolor=markerface,
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
@@ -253,6 +255,7 @@ class KITMatplotlib(object):
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
         ax.set_title(self.title,
                      fontsize=self.titleFontSize,
+                     y=self.titleOffset,
                      fontweight=self.titleFontStyle)
         ax.set_xlabel(self.labelX,
                       fontsize=self.fontSizeX,
@@ -282,9 +285,19 @@ class KITMatplotlib(object):
 
         self.setLegend(ax)
 
+        # x = [graph[0][0] for graph in self.__graphs]
+        # y = [graph[1][0] for graph in self.__graphs]
+        # print(x,y)
+        # m,b = np.polyfit(x,y,1)
+        # print(m,b)
+        # t = np.arange(1e13,1.5e15,1e13)
+        # f = m*t+b
+        # ax.plot(t, f, color='black')
         # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
+        ax.axhline(y=12000,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+        ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
 
         return fig
 
@@ -327,7 +340,7 @@ class KITMatplotlib(object):
                        loc='lower left',ncol=3, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
             obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102),
-                       loc='lower center',ncol=3, mode="expand", borderaxespad=0.)
+                       loc='lower center',ncol=2, mode="expand", borderaxespad=0.)
         return True
 
 
@@ -524,9 +537,11 @@ class KITMatplotlib(object):
             # return mpl_std
         elif self.colorPalette == "KIT":
             keys = list(self.KITcolor.keys())
-            color_keys_ordered = [item for (i,item) in sorted(zip(self.colorSet, keys))]
-            # print("color_keys_ordered", color_keys_ordered)
-            # self.shade_keys = iter([0,1,2,3,4])
+            color_keys_ordered = keys
+            # for num in self.colorSet:
+            #     color_keys_ordered.append(keys[num])
+            # print(color_keys_ordered)
+            # color_keys_ordered = [item for (i,item) in sorted(zip(self.colorSet, keys))]
             return color_keys_ordered
         else:
             print("Warning:::Invalid 'ColorPalette' value. Using default")

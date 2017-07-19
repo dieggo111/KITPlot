@@ -16,7 +16,7 @@ class KITConfig(object):
 
     defaultConfig = {}
     configDir = ""
-    
+
     def __init__(self, cfg=None, **kwargs):
         """ Initialize KITConfig by loading the config file.
 
@@ -29,16 +29,16 @@ class KITConfig(object):
         """
         self.__dir = KITConfig.configDir
         self.__cfgFile = ""
-        
+
         self.__cfg = {}
         self.__default = KITConfig.defaultConfig
-        
+
         self.__setupLogger()
-        
+
         if cfg is not None:
             self.load(cfg)
 
-            
+
     def Default(self, fName='default.cfg'):
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
@@ -52,7 +52,7 @@ class KITConfig(object):
         except Exception:
             raise OSError("Default config file not found")
 
-        
+
     def Dir(self, directory='cfg/'):
         """ Set the working directory
 
@@ -65,15 +65,15 @@ class KITConfig(object):
             self.__dir = os.path.join(os.getcwd(), directory.lstrip('/\\'))
         except Exception:
             KITConfig.configDir = os.path.join(os.getcwd(), directory.lstrip('/\\'))
-    
+
     def getDict(self):
         return self.__cfg
-            
+
     def __getitem__(self, keys):
 
         if isinstance(keys, str):
             keys = [keys]
-        
+
         # Looking for key in config file
         try:
             return self.__getFromDict(self.__cfg, keys)
@@ -94,7 +94,7 @@ class KITConfig(object):
                 raise KeyError("Key is not present in Cfg and default file")
         raise OSError("No default file present")
 
-    
+
     def __setitem__(self, keys, value):
         """ Set or change a value of a new or existing parameter
 
@@ -110,8 +110,8 @@ class KITConfig(object):
         #print("KEYTYPE: {0}".format(keys))
         self.__setInDict(self.__cfg, keys, value)
         self.write(self.__cfgFile)
-            
-        
+
+
     def load(self, cfg='default', **kwargs):
 
 
@@ -128,22 +128,23 @@ class KITConfig(object):
             with open(self.__cfgFile) as cfgFile:
                 self.__cfg = json.load(cfgFile, object_pairs_hook=OrderedDict)
             print("Found {0}".format(self.__cfgFile))
-        except Exception: 
+        except Exception:
             if len(self.__default):
                 self.__cfg = self.__default
                 self.write(self.__cfgFile)
             else:
                 raise OSError("Cfg not found and no default config specified")
-            
-        
+
+
     def write(self, cfg='default.cfg'):
 
         if self.__dir != "" and not os.path.exists(self.__dir):
             os.makedirs(self.__dir)
-        
+
         self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
         with open(self.__cfgFile, 'w') as cfgFile:
             json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=True)
+            # json.dump(OrderedDict(self.__cfg), cfgFile, indent=4)
 
 
     def setDefaultCfg(self, fName='default.cfg'):
@@ -156,16 +157,16 @@ class KITConfig(object):
 
     def setDict(self, dictionary):
         self.__cfg = dictionary
-        
-        
+
+
     def __getfName(self, name='default'):
         if os.path.isdir(str(name)):
             #return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
             return re.split(r'[/\\]', os.path.normpath(str(name)))[-1]+".cfg"
         else:
             return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
-    
-            
+
+
     # Get data from a dictionary with position provided as a list
     def __getFromDict(self, dataDict, mapList):
         try:
@@ -175,7 +176,7 @@ class KITConfig(object):
             return dataDict
         except Exception:
             raise KeyError("Couln't find {0}".format(mapList))
-    
+
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):
         # Set new value if key already exists
@@ -183,9 +184,9 @@ class KITConfig(object):
         #print("Dict at call: {0}".format(dataDict))
         #print("Maplist at call: {0}".format(mapList))
         #print("Maplist Type: {0}".format(type(mapList)))
-        
+
         for i, key in enumerate(mapList[:-1]):
-            
+
             prevDict = dataDict
             try:
                 #print("Before: {0}".format(dataDict))
@@ -199,10 +200,10 @@ class KITConfig(object):
 
             if not (isinstance(dataDict, dict) or isinstance(dataDict, OrderedDict)):
                 #print("Not of type OrderedDict or dict\n")
-                dataDict = prevDict                
+                dataDict = prevDict
                 dataDict[key] = {mapList[i+1]: None}
                 dataDict = dataDict[key]
-                
+
         dataDict[mapList[-1]] = value
 
     def get(keyList, defaultValue):
@@ -211,7 +212,7 @@ class KITConfig(object):
         except Exception:
             return defaultValue
 
-        
+
     def __setupLogger(self):
         self.__log = logging.getLogger(__name__)
         self.__log.setLevel(logging.DEBUG)
@@ -224,7 +225,7 @@ class KITConfig(object):
 
         self.__log.addHandler(consoleHandler)
 
-        
+
     # Old API
 
     def init(self, dictionary):
@@ -244,7 +245,7 @@ class KITConfig(object):
         """
         self.__setInDict(self.__cfg, mapList, value)
 
-           
+
 
 if __name__ == '__main__':
 

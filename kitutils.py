@@ -61,16 +61,15 @@ def manipulate(graphList, arg):
 
     # normalization via list of factors
     else:
-        for fac in self.extractList(arg):
+        for fac in extractList(arg):
             facList.append(fac)
         if len(graphList) != len(facList):
             raise ValueError("Invalid normalization input! Number of "
                              "factors differs from the number of graphs.")
         for i, graph in enumerate(graphList):
-            for y in graph:
-                tempList = []
-                for val in y:
-                    tempList.append(val/facList[i])
+            tempList = []
+            for val in graph[1]:
+                tempList.append(val/float(facList[i]))
             graph[1] = tempList
 
     return graphList

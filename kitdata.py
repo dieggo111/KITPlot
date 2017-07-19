@@ -96,27 +96,29 @@ class KITData(object):
                 for line in inputFile:
                     splited = line.split();
 
-                    # First two columns are always interpreted as x and y
-                    self.__x.append(float(splited[0]))
-                    self.__y.append(float(splited[1]))
+                    try:
+                        # First two columns are always interpreted as x and y
+                        self.__x.append(float(splited[0]))
+                        self.__y.append(float(splited[1]))
 
-                    # Three columns are seen as x,y,z
-                    if len(splited) == 3:
-                        self.__z.append(float(splited[2]))
-                    # Four columns represent x,y and their errors dx,dy
-                    elif len(splited) == 4:
-                        self.__dx.append(float(splited[2]))
-                        self.__dy.append(float(splited[3]))
-                    # Six column are seen as x,y,z and their errors dx,dy,dz
-                    elif len(splited) == 6:
-                        self.__z.append(float(splited[2]))
-                        self.__dx.append(float(splited[3]))
-                        self.__dy.append(float(splited[4]))
-                        self.__dz.append(float(splited[5]))
-                    # Rpunch measurement from file
-                    elif len(splited) > 6 and "REdge" in dataInput:
-                        self.__z.append(float(splited[2]))
-
+                        # Three columns are seen as x,y,z
+                        if len(splited) == 3:
+                            self.__z.append(float(splited[2]))
+                        # Four columns represent x,y and their errors dx,dy
+                        elif len(splited) == 4:
+                            self.__dx.append(float(splited[2]))
+                            self.__dy.append(float(splited[3]))
+                        # Six column are seen as x,y,z and their errors dx,dy,dz
+                        elif len(splited) == 6:
+                            self.__z.append(float(splited[2]))
+                            self.__dx.append(float(splited[3]))
+                            self.__dy.append(float(splited[4]))
+                            self.__dz.append(float(splited[5]))
+                        # Rpunch measurement from file
+                        elif len(splited) > 6 and "REdge" in dataInput:
+                            self.__z.append(float(splited[2]))
+                    except:
+                        pass
 
                 # Reorder variables if file contains a RPunch measurement
                 if self.checkRpunch(self.__x):

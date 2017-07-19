@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 class KITLodger(object):
 
     def __init__(self, **kwargs):
@@ -13,6 +15,15 @@ class KITLodger(object):
         self.__color = kwargs.get('color', 0)
         self.__width = kwargs.get('width', 2)
         self.__style = kwargs.get('style', 1)
+
+        self.__paraDict = OrderedDict()
+        self.__paraDict =  {    "x"     : self.__x,
+                                "y"     : self.__y,
+                                "name"  : self.__name,
+                                "color" : self.__color,
+                                "width" : self.__width,
+                                "style" : self.__style
+                            }
 
 
         if self.__x == None and self.__y == None:
@@ -36,23 +47,8 @@ class KITLodger(object):
             print("Lodger:::Draw graph according to x->list and y->function.")
             self.__func = self.__y
 
-    # def readCfg(self, lDict):
-    #     print("kitlodgers", *lDict)
-    #
-    #     paraDict = lDict["graph"]
-    #     print("kitlodgers", paraDict["x"])
-    #     # will only work if these keys are in dict
-    #     x = paraDict["x"]
-    #     y = paraDict["y"]
-    #     name = paraDict["name"]
-    #     color = paraDict["color"]
-    #     width = paraDict["width"]
-    #     style = paraDict["style"]
-    #
-    #     # x=x,y=y,name=name,color=color,width=width,style=style
-    #
-    #     return True
-
+    def getDict(self):
+        return self.__paraDict
 
     def x(self):
         return self.__x
