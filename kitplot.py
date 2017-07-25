@@ -448,13 +448,6 @@ class KITPlot(object):
                     else:
                         pass
 
-                self.arrangeFileList()
-                self.addNorm()
-                if self.R_fit == True:
-                    for kdata in self.__files:
-                        self.makeFit(kdata)
-                else:
-                    pass
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -474,7 +467,6 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
 
-                    # self.arrangeFileList()
 
                     # for i,File in enumerate(self.__files):
                     #     if "Ramp" in File.getParaY():
