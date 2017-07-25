@@ -5,7 +5,7 @@ from .KITConfig import KITConfig
 from .kitdata import KITData
 from .kitlodger import KITLodger
 from collections import OrderedDict
-from . import kitutils
+from .Utils import kitutils
 import itertools
 
 
@@ -296,8 +296,8 @@ class KITMatplotlib(object):
         # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
-        ax.axhline(y=12000,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
-        ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+        # ax.axhline(y=12000,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+        # ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
 
         return fig
 

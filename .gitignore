@@ -4,7 +4,6 @@
 *.pdf
 *~
 *#
-*.cfg
 main.py
 resistivity.py
 *.txt

@@ -52,7 +52,7 @@ The script consists of 4 modules:
 3) Installation:
     a) Create a main folder and give it a nice name (f.e. 'KITPlot')
     b) Inside this folder you ought to create a folder for cfg files named
-       "cfg" and for output files named "output" .Clone the KITPlot
+       "cfg" and for output files named "output". Clone the KITPlot
        repository from 'https://github.com/dieggo111/KITPlot',
        put its content inside an extra folder within your main folder and name
        it 'KITPlot'.
@@ -63,10 +63,10 @@ The script consists of 4 modules:
        the following modules:
        - numpy: 'pip3 install numpy'
        - json: 'pip3 install simplejson'
-       - pymysql: Download download and unzip source file from
-                  https://pypi.python.org/pypi/mysql-connector-python/2.0.4 or
-                  use the one in the
-                  repository. Open consol/terminal and go to PyMySQL-0.7.11
+       - pymysql: Download and unzip source file from
+                  https://pypi.python.org/pypi/mysql-connector-python/2.0.4
+                  or use the one in the repository located inside the 'Utils' folder.
+                  Open consol/terminal and go to PyMySQL-0.7.11
                   folder. Type "python setup.py build" and then
                   "python setup.py install".
     e) There are 2 'plot engines' you can use: ROOT or matplotlib.
@@ -77,7 +77,8 @@ The script consists of 4 modules:
                easy on Linux. However,doing this on Windows or Mac is a
                different story... although it's generally possible to do this
                on every system.
-    f) Lastly, you need login informations to access the database, which are
+    f) Inside the 'Utils' folder,
+    g) Lastly, you need login informations to access the database, which are
        stored in the 'db.cfg'. For security reasons the login file can not be
        downloaded, but must be requested from Daniel or Marius.
 
@@ -222,10 +223,9 @@ from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from matplotlib.patches import Rectangle
 from .kitlodger import KITLodger
-from . import kitutils
+from .Utils import kitutils
 
 class KITPlot(object):
-
 
     __kitGreen = []
     __kitBlue = []
@@ -251,7 +251,7 @@ class KITPlot(object):
 
         # Load parameters and apply default style
         self.__cfg = KITConfig()
-        self.__cfg.Default("default.cfg")
+        self.__cfg.Default(os.path.join("KITPlot","Utils","default.cfg"))
         self.__cfg.Dir("cfg")
 
         # extract name from data input
@@ -482,26 +482,25 @@ class KITPlot(object):
 
 
                 # TODO Rpunch/REdge Ramp file
-                # elif "REdge" in dataInput:
-                #
-                #     data = KITData(dataInput).getRPunchDict()
-                #
-                #     x = []
-                #     y = []
-                #     labels = []
-                #
-                #     for i, bias in enumerate(data):
-                #         x, y = zip(*data[bias])
-                #         kdata = KITData()
-                #         kdata.setX(list(x))
-                #         kdata.setY(list(y))
-                #         kdata.setName(str(bias) + " V")
-                #         kdata.setPX("Voltage")
-                #         kdata.setPY("Rpunch")
-                #         self.__files.append(kdata)
-                #
-                #     self.addNorm()
-                #
+                elif "REdge" in dataInput:
+
+                    data = KITData(dataInput).getRPunchDict()
+
+                    x = []
+                    y = []
+                    labels = []
+
+                    for i, bias in enumerate(data):
+                        x, y = zip(*data[bias])
+                        kdata = KITData()
+                        kdata.setX(list(x))
+                        kdata.setY(list(y))
+                        kdata.setName(str(bias) + " V")
+                        kdata.setPX("Voltage")
+                        kdata.setPY("Rpunch")
+                        self.__files.append(kdata)
+
+
 
                 # singel file
                 else:

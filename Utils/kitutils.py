@@ -92,6 +92,8 @@ def extractList(arg, output="int"):
             str_list = arg.replace("[","").replace("]","").split(":")
         elif ',' in arg:
             str_list = arg.replace("[","").replace("]","").split(",")
+        elif len(arg) == 3:
+            str_list = list(arg.replace("[","").replace("]",""))
         else:
             raise ValueError("Unkown input. Cfg parameter needs to be a"
                              " string. Accepted seperations are ',' and "
