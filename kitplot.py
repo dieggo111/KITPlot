@@ -240,6 +240,7 @@ class KITPlot(object):
     __init = False
     __color = 0
 
+
     def __init__(self, dataInput=None, cfgFile=None):
         self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
@@ -434,7 +435,6 @@ class KITPlot(object):
 
                         self.__files.append(kdata)
 
-
                 else:
                     pass
 
@@ -448,8 +448,13 @@ class KITPlot(object):
                     else:
                         pass
 
-                # self.arrangeFileList()
-                # self.addNorm()
+                self.arrangeFileList()
+                self.addNorm()
+                if self.R_fit == True:
+                    for kdata in self.__files:
+                        self.makeFit(kdata)
+                else:
+                    pass
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -482,24 +487,22 @@ class KITPlot(object):
 
 
                 # TODO Rpunch/REdge Ramp file
-                elif "REdge" in dataInput:
-
-                    data = KITData(dataInput).getRPunchDict()
-
-                    x = []
-                    y = []
-                    labels = []
-
-                    for i, bias in enumerate(data):
-                        x, y = zip(*data[bias])
-                        kdata = KITData()
-                        kdata.setX(list(x))
-                        kdata.setY(list(y))
-                        kdata.setName(str(bias) + " V")
-                        kdata.setPX("Voltage")
-                        kdata.setPY("Rpunch")
-                        self.__files.append(kdata)
-
+                # elif "REdge" in dataInput:
+                    # data = KITData(dataInput).getRPunchDict()
+                    #
+                    # x = []
+                    # y = []
+                    # labels = []
+                    #
+                    # for i, bias in enumerate(data):
+                    #     x, y = zip(*data[bias])
+                    #     kdata = KITData()
+                    #     kdata.setX(list(x))
+                    #     kdata.setY(list(y))
+                    #     kdata.setName(str(bias) + " V")
+                    #     kdata.setPX("Voltage")
+                    #     kdata.setPY("Rpunch")
+                    #     self.__files.append(kdata)
 
 
                 # singel file
@@ -547,6 +550,17 @@ class KITPlot(object):
             if add_lodger == True:
                 self.addLodgerEntry()
 
+        return True
+
+    def showCanvas(self):
+        self.canvas.show()
+        return True
+
+    def saveCanvas(self):
+        png_out = os.path.join("output", self.__inputName) + ".png"
+        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
+        self.canvas.savefig(png_out)
+        self.canvas.savefig(pdf_out)
         return True
 
 
@@ -621,7 +635,6 @@ class KITPlot(object):
             self.__entryDict = self.__cfg['Legend','EntryList']
 
 
-
         # calculate expected number of entries in 'EntryList'
         # new lodgers are already appended
         exp_len = len(self.__files)
@@ -636,9 +649,9 @@ class KITPlot(object):
         if add_lodger == True:
             amount_lodgers = amount_lodgers + 1
 
+
         # TODO: check if lodger demands for entry
         # print("readEntry -> entryDict", self.__entryDict)
-
         # no new lodger added but there are lodgers in cfg
         # print(add_lodger, len(self.__entryDict), exp_len, len(self.__files))
         if len(self.__entryDict) != exp_len:
@@ -646,8 +659,6 @@ class KITPlot(object):
                            "entries does not match or a key is used more than"
                            "once. Adjust or reset 'EntryList'.")
 
-        # correct entry keys in case they are messed up
-        # self.fixEntryDict()
 
         return True
 
@@ -698,17 +709,6 @@ class KITPlot(object):
             pass
 
         return entryDict
-
-    def showCanvas(self):
-        self.canvas.show()
-        return True
-
-    def saveCanvas(self):
-        png_out = os.path.join("output", self.__inputName) + ".png"
-        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
-        self.canvas.savefig(png_out)
-        self.canvas.savefig(pdf_out)
-        return True
 
 
 ###################
