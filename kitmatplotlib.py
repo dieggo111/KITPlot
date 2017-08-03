@@ -281,22 +281,28 @@ class KITMatplotlib(object):
         if self.rangeY != 'auto':
             ax.set_ylim(self.rangeY)
 
-        # ax.xaxis.get_children()[1].set_size(13)
 
         self.setLegend(ax)
 
         # x = [graph[0][0] for graph in self.__graphs]
         # y = [graph[1][0] for graph in self.__graphs]
-        # print(x,y)
+        # x = self.__graphs[0][0]
+        # y = self.__graphs[0][1]
+        # y = [y for y in self.__graphs[0][1]]
+        # y2 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
+        # y3 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
+        # y = y1+y2+y3
+        # print(y)
+        # print(np.mean(y), np.std(y))
         # m,b = np.polyfit(x,y,1)
-        # print(m,b)
-        # t = np.arange(1e13,1.5e15,1e13)
+        # print(1/m,b)
+        # t = np.arange(0,0.018,0.001)
         # f = m*t+b
         # ax.plot(t, f, color='black')
-        # ax.xaxis.get_children()[1].set_size(14)
+        # # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
-        # ax.axhline(y=12000,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+        # ax.axhline(y=1.6e6,color=self.KITcolor['KITblue'][3][1],linewidth=2,linestyle='-')
         # ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
 
         return fig
@@ -327,11 +333,11 @@ class KITMatplotlib(object):
         elif self.legPosition == "TL":
             obj.legend(handles,labels,loc='upper left')
         elif self.legPosition == "BL":
-            obj.legend(handles,labels,loc='bottom left')
+            obj.legend(handles,labels,loc='lower left')
         elif self.legPosition == "TR":
-            obj.legend(handles,labels,loc='top right')
+            obj.legend(handles,labels,loc='upper right')
         elif self.legPosition == "BR":
-            obj.legend(handles,labels,loc='bottom right')
+            obj.legend(handles,labels,loc='lower right')
         elif self.legPosition == "test2":
             obj.legend(handles,labels,bbox_to_anchor=(0., 1.17, 1., .102),
                        loc='upper right',ncol=3, mode="expand", borderaxespad=0.)

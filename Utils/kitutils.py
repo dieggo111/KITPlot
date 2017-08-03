@@ -52,7 +52,10 @@ def manipulate(graphList, arg):
             for y in graph:
                 tempList = []
                 for val in y:
-                    tempList.append(1/(val*val))
+                    if val == 0:
+                        tempList.append(0)
+                    else:
+                        tempList.append(1/(val*val))
             graph[1] = tempList
 
     # no normalization
