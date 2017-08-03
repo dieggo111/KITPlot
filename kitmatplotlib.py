@@ -27,6 +27,10 @@ class KITMatplotlib(object):
 
         """
         self.cfg = cfg
+
+        # General Options
+        self.general = cfg['General','Style']
+
         # Canvas Options
         self.canvasSize = kitutils.extractList(cfg['Canvas','CanvasSize'], 'float')
 
@@ -176,137 +180,143 @@ class KITMatplotlib(object):
 
         """
 
+        if self.general == "histo":
+            self.drawHisto(fileList[0].getY())
+            print("histo here")
+        try:
+            if self.general == "histo":
+                self.drawHisto(fileList.getY())
+                print("histo here")
+        except:
 
-        # create self.__graphs list
-        for i, dset in enumerate(fileList):
-            self.addGraph(dset)
-        # print(self.__graphs, self.__lodgers)
-        # if self.splitGraph is True:
-        #     self.__graphs = [list(item) for item in zip(self.__graphs[0][0],self.__graphs[0][1])]
-        #     print(len(self.__graphs))
-
-
-        # apply user defined normalization or manipulation of y values of each graph
-        kitutils.manipulate(self.__graphs, self.norm)
-
-        # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
-        fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
-
-        # specify (nrows, ncols, axnum)
-        ax = fig.add_subplot(1, 1, 1)
-
-        # adjust pad size: [left, bottom, width, height]
-        ax.set_position(self.padSize)
-
-        # adjust axis tick
-        if self.tickX:
-            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        if self.tickY:
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-
-        # check GraphGroup
-        self.graphGroup = self.getGG(self.graphGroup)
-
-        for i, table in enumerate(self.__graphs):
-            if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
-                markerface = 'white'
-            else:
-                markerface = self.getColor(i)
-            ax.plot(table[0],                           # x-axis
-                    table[1],                           # y-axis
-                    color=self.getColor(i),             # line color
-                    marker=self.getMarker(i),           # marker style
-                    markersize=self.markerSize,
-                    markerfacecolor=markerface,
-                    linewidth=self.lineWidth,
-                    linestyle=self.getLineStyle(i),
-                    label=self.getLabel(i))
-
-        # set error bars
-        for i, table in enumerate(self.__graphs):
-            if len(table) == 4:
-                ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
-                            color=self.getColor(i),
-                            elinewidth=1)
-
-        # add lodgers to party
-        for lodger in self.__lodgers:
-            if lodger.vline() != None:
-                ax.axvline(x=lodger.vline(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),label=lodger.name())
-            elif lodger.hline() != None:
-                ax.axvline(y=lodger.hline(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),label=lodger.name())
-            if lodger.vgraph() != None:
-                ax.axvline(x=lodger.vgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
-                label=lodger.name(),linestyle=self.lines[lodger.style()])
-            elif lodger.hgraph() != None:
-                ax.axvline(y=lodger.hgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
-                label=lodger.name(),linestyle=self.lines[lodger.style()])
-            elif lodger.func() != None:
-                print("func", lodger.x(), lodger.y())
-                # ax.plot()
-            elif lodger.x() != None and lodger.y() != None:
-                ax.plot(lodger.x(),lodger.y(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),linestyle=self.lines[lodger.style()],label=lodger.name())
+            # create self.__graphs list
+            for i, dset in enumerate(fileList):
+                self.addGraph(dset)
+            # print(self.__graphs, self.__lodgers)
+            # if self.splitGraph is True:
+            #     self.__graphs = [list(item) for item in zip(self.__graphs[0][0],self.__graphs[0][1])]
+            #     print(len(self.__graphs))
 
 
-        # set titles
-        # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
-        ax.set_title(self.title,
-                     fontsize=self.titleFontSize,
-                     y=self.titleOffset,
-                     fontweight=self.titleFontStyle)
-        ax.set_xlabel(self.labelX,
-                      fontsize=self.fontSizeX,
-                      fontweight=self.fontStyleX)
-        ax.set_ylabel(self.labelY,
-                      fontsize=self.fontSizeY,
-                      fontweight=self.fontStyleY)
+            # apply user defined normalization or manipulation of y values of each graph
+            kitutils.manipulate(self.__graphs, self.norm)
 
-        # set log styles
-        if self.logX:
-            ax.semilogx()
-        if self.logY:
-            ax.semilogy()
+            # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
+            fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
 
-        # set grid
-        if self.grid == True:
-            # *args = [color,linstyle,linewidth]
-            ax.grid()
+            # specify (nrows, ncols, axnum)
+            ax = fig.add_subplot(1, 1, 1)
 
-        # set axis range manually
-        if self.rangeX != 'auto':
-            ax.set_xlim(self.rangeX)
-        if self.rangeY != 'auto':
-            ax.set_ylim(self.rangeY)
+            # adjust pad size: [left, bottom, width, height]
+            ax.set_position(self.padSize)
+
+            # adjust axis tick
+            if self.tickX:
+                plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+            if self.tickY:
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
+            # check GraphGroup
+            self.graphGroup = self.getGG(self.graphGroup)
+
+            for i, table in enumerate(self.__graphs):
+                if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
+                    markerface = 'white'
+                else:
+                    markerface = self.getColor(i)
+                ax.plot(table[0],                           # x-axis
+                        table[1],                           # y-axis
+                        color=self.getColor(i),             # line color
+                        marker=self.getMarker(i),           # marker style
+                        markersize=self.markerSize,
+                        markerfacecolor=markerface,
+                        linewidth=self.lineWidth,
+                        linestyle=self.getLineStyle(i),
+                        label=self.getLabel(i))
+
+            # set error bars
+            for i, table in enumerate(self.__graphs):
+                if len(table) == 4:
+                    ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
+                                color=self.getColor(i),
+                                elinewidth=1)
+
+            # add lodgers to party
+            for lodger in self.__lodgers:
+                if lodger.vline() != None:
+                    ax.axvline(x=lodger.vline(),color=self.getColor(lodger.color()),
+                    linewidth=lodger.width(),label=lodger.name())
+                elif lodger.hline() != None:
+                    ax.axvline(y=lodger.hline(),color=self.getColor(lodger.color()),
+                    linewidth=lodger.width(),label=lodger.name())
+                if lodger.vgraph() != None:
+                    ax.axvline(x=lodger.vgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
+                    label=lodger.name(),linestyle=self.lines[lodger.style()])
+                elif lodger.hgraph() != None:
+                    ax.axvline(y=lodger.hgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
+                    label=lodger.name(),linestyle=self.lines[lodger.style()])
+                elif lodger.func() != None:
+                    print("func", lodger.x(), lodger.y())
+                    # ax.plot()
+                elif lodger.x() != None and lodger.y() != None:
+                    ax.plot(lodger.x(),lodger.y(),color=self.getColor(lodger.color()),
+                    linewidth=lodger.width(),linestyle=self.lines[lodger.style()],label=lodger.name())
 
 
-        self.setLegend(ax)
+            # set titles
+            # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
+            ax.set_title(self.title,
+                         fontsize=self.titleFontSize,
+                         y=self.titleOffset,
+                         fontweight=self.titleFontStyle)
+            ax.set_xlabel(self.labelX,
+                          fontsize=self.fontSizeX,
+                          fontweight=self.fontStyleX)
+            ax.set_ylabel(self.labelY,
+                          fontsize=self.fontSizeY,
+                          fontweight=self.fontStyleY)
 
-        # x = [graph[0][0] for graph in self.__graphs]
-        # y = [graph[1][0] for graph in self.__graphs]
-        # x = self.__graphs[0][0]
-        # y = self.__graphs[0][1]
-        # y = [y for y in self.__graphs[0][1]]
-        # y2 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
-        # y3 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
-        # y = y1+y2+y3
-        # print(y)
-        # print(np.mean(y), np.std(y))
-        # m,b = np.polyfit(x,y,1)
-        # print(1/m,b)
-        # t = np.arange(0,0.018,0.001)
-        # f = m*t+b
-        # ax.plot(t, f, color='black')
-        # # ax.xaxis.get_children()[1].set_size(14)
-        # ax.xaxis.get_children()[1].set_weight("bold")
-        # ax.set_xticklabels
-        # ax.axhline(y=1.6e6,color=self.KITcolor['KITblue'][3][1],linewidth=2,linestyle='-')
-        # ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+            # set log styles
+            if self.logX:
+                ax.semilogx()
+            if self.logY:
+                ax.semilogy()
+
+            # set grid
+            if self.grid == True:
+                # *args = [color,linstyle,linewidth]
+                ax.grid()
+
+            # set axis range manually
+            if self.rangeX != 'auto':
+                ax.set_xlim(self.rangeX)
+            if self.rangeY != 'auto':
+                ax.set_ylim(self.rangeY)
+
+
+            self.setLegend(ax)
 
         return fig
 
+    def drawHisto(self, List):
+
+        # mu, sigma = 100, 15
+        # x = mu + sigma*np.random.randn(10000)
+        x = List
+        # the histogram of the data
+        # n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
+        bins = np.linspace(-1e-11, 1e-11, 400)
+
+        plt.hist(x, bins)
+        plt.xlabel('Smarts')
+        plt.ylabel('Probability')
+        plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
+        plt.grid(True)
+        plt.xlim(-0.15e-11,0.15e-11)
+
+        plt.show()
+
+        return True
 
     def setLegend(self, obj):
 
