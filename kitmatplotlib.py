@@ -180,13 +180,11 @@ class KITMatplotlib(object):
 
         """
 
-        if self.general == "histo":
-            self.drawHisto(fileList[0].getY())
-            print("histo here")
         try:
             if self.general == "histo":
-                self.drawHisto(fileList.getY())
-                print("histo here")
+                fig = self.drawHisto(fileList[0].getY())
+            else:
+                raise
         except:
 
             # create self.__graphs list
@@ -293,6 +291,26 @@ class KITMatplotlib(object):
             if self.rangeY != 'auto':
                 ax.set_ylim(self.rangeY)
 
+            # x = [graph[0][0] for graph in self.__graphs]
+            # y = [graph[1][0] for graph in self.__graphs]
+            # x = self.__graphs[0][0]
+            # y = self.__graphs[0][1]
+            y = [y for y in self.__graphs[0][1]]
+            # y2 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
+            # y3 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
+            # y = y1+y2+y3
+            # print(y)
+            print(np.mean(y), np.std(y))
+            # m,b = np.polyfit(x,y,1)
+            # print(1/m,b)
+            # t = np.arange(0,0.018,0.001)
+            # f = m*t+b
+            # ax.plot(t, f, color='black')
+            # # ax.xaxis.get_children()[1].set_size(14)
+            # ax.xaxis.get_children()[1].set_weight("bold")
+            # ax.set_xticklabels
+            # ax.axhline(y=1.6e6,color=self.KITcolor['KITblue'][3][1],linewidth=2,linestyle='-')
+            # ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
 
             self.setLegend(ax)
 
@@ -303,20 +321,29 @@ class KITMatplotlib(object):
         # mu, sigma = 100, 15
         # x = mu + sigma*np.random.randn(10000)
         x = List
+        num_x = len(x)
+        num_outliers = len([y for y in x if y > 0.15e-11])
+        print(num_outliers)
+        mean = np.mean(x)
+        variance = np.var(x)
+        sigma = np.sqrt(variance)
+
         # the histogram of the data
         # n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
         bins = np.linspace(-1e-11, 1e-11, 400)
 
-        plt.hist(x, bins)
-        plt.xlabel('Smarts')
-        plt.ylabel('Probability')
-        plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
-        plt.grid(True)
-        plt.xlim(-0.15e-11,0.15e-11)
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.hist(x, bins)
+        ax.set_xlabel('Current (A)')
+        ax.set_ylabel('Entries')
+        ax.set_title("Amp Noise Histogram via I$_{diel}$ line")
+        ax.grid(True)
+        ax.set_xlim(-0.15e-11,0.15e-11)
 
-        plt.show()
+        # fig.show()
 
-        return True
+        return fig
 
     def setLegend(self, obj):
 
