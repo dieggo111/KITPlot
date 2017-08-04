@@ -221,7 +221,6 @@ from .kitdata import KITData
 from .KITConfig import KITConfig
 from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
-from matplotlib.patches import Rectangle
 from .kitlodger import KITLodger
 from .Utils import kitutils
 
@@ -560,48 +559,50 @@ class KITPlot(object):
 ### Lodger methods ###
 ######################
 
-    def getLodgers(self):
-        """ Read the cfg and create a lodger object for every entry in
-            'Lodgers'.
-        """
-        # print("getLodger")
+    # def getLodgers(self):
+    #     """ Read the cfg and create a lodger object for every entry in
+    #         'Lodgers'.
+    #     """
+    #     # print("getLodger")
+    #
+    #     cfgLodgers = []
+    #     for lodger in self.__cfg['Lodgers']:
+    #         paraDict = dict(self.__cfg['Lodgers'][lodger])
+    #         # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
+    #         x = paraDict.get('x', None)
+    #         y = paraDict.get('y', None)
+    #         name = paraDict.get('name', None)
+    #         color = paraDict.get('color', None)
+    #         width = paraDict.get('width', None)
+    #         style = paraDict.get('style', None)
+    #
+    #         self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
+    #                                       style=style,width=width))
+    #     return True
 
-        cfgLodgers = []
-        for lodger in self.__cfg['Lodgers']:
-            paraDict = dict(self.__cfg['Lodgers'][lodger])
-            # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
-            x = paraDict.get('x', None)
-            y = paraDict.get('y', None)
-            name = paraDict.get('name', None)
-            color = paraDict.get('color', None)
-            width = paraDict.get('width', None)
-            style = paraDict.get('style', None)
+    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None,
+                  box=None):
 
-            self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
-                                          style=style,width=width))
-        return True
-
-    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
-        print("addLodger")
         # add new lodger from main
-        newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
-                              width=width)
-        self.__files.append(newLodger)
-        self.addLodgerEntry(newLodger)
-        self.draw(add_lodger=True)
-        return True
-
-    def addLodgerEntry(self, newLodger):
-        print("addLodgerEntry")
-        key = next(self.iter)
-        paraDict = newLodger.getDict()
-        try:
-            self.__cfg["Lodgers"].update({key : paraDict})
-            self.__cfg["Legend"]["EntryList"].update({})
-        except:
-            self.__cfg["Lodgers"] = {key : paraDict}
+        newLodger = KITLodger(self.canvas)
+        self.canvas = newLodger.add(x=x,y=y,name=name,color=color,style=style,
+                                    width=width,box=box)
+        # ax = self.canvas.add_subplot(1, 1, 1)
+        # ax.axhline(y=y,color=color)
 
         return True
+
+    # def addLodgerEntry(self, newLodger):
+    #     print("addLodgerEntry")
+    #     key = next(self.iter)
+    #     paraDict = newLodger.getDict()
+    #     try:
+    #         self.__cfg["Lodgers"].update({key : paraDict})
+    #         self.__cfg["Legend"]["EntryList"].update({})
+    #     except:
+    #         self.__cfg["Lodgers"] = {key : paraDict}
+    #
+    #     return True
 
 
 #########################
