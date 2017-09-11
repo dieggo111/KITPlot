@@ -8,9 +8,8 @@ class KITLodger(object):
         print(type(self.fig))
 
 
-    def add(self, **kwargs):
+    def init(self, **kwargs):
 
-        self.__type = kwargs.get('type_','None')
         self.__x = kwargs.get('x', None)
         self.__y = kwargs.get('y', None)
         self.__name = kwargs.get('name', None)

@@ -504,7 +504,7 @@ class KITPlot(object):
         return True
 
 
-    def draw(self, engine=None, add_lodger=False):
+    def draw(self, engine=None):
         """
         doc
 
@@ -515,18 +515,7 @@ class KITPlot(object):
             self.MeasurementType()
 
         # read and adjsut .__entryDict before drawing
-        if add_lodger == True:
-            self.readEntryDict(add_lodger=True)
-        else:
-            self.readEntryDict()
-
-        # get lodgers from cfg wenn KITPlot object is initialized
-        if add_lodger == False:
-            try:
-                self.getLodgers()
-            except:
-                pass
-                # print("No lodgers in cfg.")
+        self.readEntryDict()
 
         # set engine
         if engine == None:
@@ -538,8 +527,6 @@ class KITPlot(object):
         # create graphs and canvas
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
-            if add_lodger == True:
-                self.addLodgerEntry()
 
         return True
 
@@ -559,11 +546,35 @@ class KITPlot(object):
 ### Lodger methods ###
 ######################
 
+    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None,
+                  box=None):
+        """ Add new lodger to canvas
+
+        """
+
+        lodger = KITLodger(self.canvas)
+        self.canvas = lodger.init(x=x,y=y,name=name,color=color,style=style,
+                                  width=width,box=box)
+        self.addLodgerEntry(lodger)
+
+        return True
+
+    def addLodgerEntry(self, newLodger):
+        key = next(self.iter)
+        paraDict = newLodger.getDict()
+        try:
+            print("addLodgerEntry - update")
+            self.__cfg["Lodgers"].update({key : paraDict})
+        except:
+            print("addLodgerEntry - add")
+            self.__cfg["Lodgers"] = {key : paraDict}
+
+        return True
+
     # def getLodgers(self):
     #     """ Read the cfg and create a lodger object for every entry in
     #         'Lodgers'.
     #     """
-    #     # print("getLodger")
     #
     #     cfgLodgers = []
     #     for lodger in self.__cfg['Lodgers']:
@@ -580,31 +591,6 @@ class KITPlot(object):
     #                                       style=style,width=width))
     #     return True
 
-    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None,
-                  box=None):
-
-        # add new lodger from main
-        newLodger = KITLodger(self.canvas)
-        self.canvas = newLodger.add(x=x,y=y,name=name,color=color,style=style,
-                                    width=width,box=box)
-        # ax = self.canvas.add_subplot(1, 1, 1)
-        # ax.axhline(y=y,color=color)
-
-        return True
-
-    # def addLodgerEntry(self, newLodger):
-    #     print("addLodgerEntry")
-    #     key = next(self.iter)
-    #     paraDict = newLodger.getDict()
-    #     try:
-    #         self.__cfg["Lodgers"].update({key : paraDict})
-    #         self.__cfg["Legend"]["EntryList"].update({})
-    #     except:
-    #         self.__cfg["Lodgers"] = {key : paraDict}
-    #
-    #     return True
-
-
 #########################
 ### entryDict methods ###
 #########################
@@ -616,10 +602,9 @@ class KITPlot(object):
         can be used to reset the entry to its default value (the original order
         and names given by the .__files).
         """
-        # print(self.__cfg['Legend','EntryList'])
+
         # writes entry dict to cfg of sets it back to default if value is ""
         if self.__cfg['Legend','EntryList'] == "":
-            # print(self.getDefaultEntryDict(), type(self.getDefaultEntryDict()))
             self.__cfg['Legend','EntryList'] = self.getDefaultEntryDict()
             if self.is_cfg_new == False:
                 print("EntryDict was set back to default!")
@@ -627,26 +612,9 @@ class KITPlot(object):
         else:
             self.__entryDict = self.__cfg['Legend','EntryList']
 
-
         # calculate expected number of entries in 'EntryList'
-        # new lodgers are already appended
         exp_len = len(self.__files)
 
-        # check if there's a 'Lodgers' section and how many entries it has
-        try:
-            # print("lodgers items", len(self.__cfg['Lodgers'].items()))
-            amount_lodgers = len(self.__cfg['Lodgers'].items())
-        except:
-            amount_lodgers = 0
-
-        if add_lodger == True:
-            amount_lodgers = amount_lodgers + 1
-
-
-        # TODO: check if lodger demands for entry
-        # print("readEntry -> entryDict", self.__entryDict)
-        # no new lodger added but there are lodgers in cfg
-        # print(add_lodger, len(self.__entryDict), exp_len, len(self.__files))
         if len(self.__entryDict) != exp_len:
             raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                            "entries does not match or a key is used more than"
