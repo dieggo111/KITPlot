@@ -59,14 +59,21 @@ class KITData(object):
         self.__seed = None
         self.__seederr = None
 
+
+        # Sometimes integers are interpreted as strings, therefore
+        # isdigit() is called to check for missinterpreted integers
+        try:
+            if isinstance(dataInput, str) and dataInput.isdigit():
+                dataInput = int(dataInput)
+        except:
+            pass
+
         # Empty object
         if dataInput is None:
             pass
 
         # A single PID for either a probe station or ALiBaVa measurement
-        # Sometimes integers are interpreted as strings, therefore
-        # isdigit() is called to check for missinterpreted integers
-        elif isinstance(dataInput, int) or dataInput.isdigit():
+        elif isinstance(dataInput, int):
             self.__id = dataInput
 
             # Establish database connection if its no already established
@@ -170,6 +177,34 @@ class KITData(object):
                 self.__z.append(kitFile.getZ()[0])
                 self.__dy.append(kitFile.getdY()[0])
 
+
+        # NEW FEATURE: Data input is an array or tuple containing lists or
+        # tuples with raw data
+        elif isinstance(dataInput,(list, tuple)) \
+        and all(isinstance(i, (list, tuple)) for i in dataInput):
+            try:
+                # First two columns are always interpreted as x and y
+                self.__x = dataInput[0]
+                self.__y = dataInput[1]
+
+                # Three columns are seen as x,y,z
+                if len(dataInput) == 3:
+                    self.__z = dataInput[3]
+                # Four columns represent x,y and their errors dx,dy
+                elif len(dataInput) == 4:
+                    self.__dx = dataInput[2]
+                    self.__dy = dataInput[3]
+                # Six column are seen as x,y,z and their errors dx,dy,dz
+                elif len(splited) == 6:
+                    self.__z = dataInput[2]
+                    self.__dx = dataInput[3]
+                    self.__dy = dataInput[4]
+                    self.__dz = dataInput[5]
+                # # Rpunch measurement from file
+                # elif len(splited) > 6 and "REdge" in dataInput:
+                #     self.__z.append(dataInput[2])
+            except:
+                pass
 
         else:
             raise OSError("Input could not be identified (Input: %s)"
@@ -298,6 +333,7 @@ class KITData(object):
 
             self.__name = name
             self.__Fp = Fp
+            self.__project = project
 
 
     def __allo_db_alibava(self, run):
@@ -306,6 +342,7 @@ class KITData(object):
         self.__py = "Signal"
         self.__pz = "Annealing"
         self.__name = "ALiBaVa"
+        self.__project = "Default_Project"
 
         tmpID = None
         tmpDate = None
@@ -341,15 +378,15 @@ class KITData(object):
             annealing += equiv
         self.__z.append(annealing)
 
-        qrySensorName = ("SELECT name, F_p_aim_n_cm2 "
+        qrySensorName = ("SELECT name, F_p_aim_n_cm2, project "
                          "FROM info WHERE id=%s" %(tmpID))
 
         KITData.__dbCrs.execute(qrySensorName)
 
-        for (name, Fp) in KITData.__dbCrs:
+        for (name, Fp, project) in KITData.__dbCrs:
             self.__name = name
             self.__Fp = Fp
-
+            self.__project = project
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow
@@ -899,6 +936,9 @@ class KITData(object):
     def getScaleY(self):
 
         return 0, 1.3*max(__y)
+
+    def getProject(self):
+        return self.__project
 
 
 if __name__ == '__main__':

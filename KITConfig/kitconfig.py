@@ -40,6 +40,7 @@ class KITConfig(object):
 
 
     def Default(self, fName='default.cfg'):
+        print(fName)
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
                 self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)

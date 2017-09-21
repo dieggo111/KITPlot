@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" A simple ROOT based python plot script
+""" A simple python based plot script
 
 1) Synopsis:
 Hello World! Welcome to the KITPlot script. This script was created by
@@ -8,7 +8,7 @@ Daniel Schell (daniel.schell@kit.edu) and Marius Metzler
 (marius.metzler@kit.edu). This script is about creating distinctive,
 well-arranged plots especially for bachelor/master students at IEKP, who find
 common, commercially availible plotting software as lame and unconvinient
-as we do. The greatest benifit of KITPlot is that it is able to directly
+as we do. The greatest benifit of KITPlot is, that it is able to directly
 communicate with the IEKP database. It also automatizes standard operations and
 procedures as well as making plots easily editable and reproducible via
 distinctive config files.
@@ -19,10 +19,10 @@ The script consists of 4 modules:
        plot. It accepts:
         - single .txt file that contains a data table (x-value, y-value,
           x-error, y-error seperated by tabs or spaces)
-        - folder that houses several .txt files
-        - single ID ('probe ID' for probe station measurements,
+        - single folders that house several .txt files
+        - single IDs ('probe ID' for probe station measurements,
           'Run' for alibava measurements)
-        - single .txt file that contains a list of IDs
+        - single .txt files that contain a lists IDs
 
         KITData then creates a KITData object for every graph, which contains
         the data table and provides convenient methods for handling all
@@ -77,7 +77,6 @@ The script consists of 4 modules:
                easy on Linux. However,doing this on Windows or Mac is a
                different story... although it's generally possible to do this
                on every system.
-    f) Inside the 'Utils' folder,
     g) Lastly, you need login informations to access the database, which are
        stored in the 'db.cfg'. For security reasons the login file can not be
        downloaded, but must be requested from Daniel or Marius.
@@ -97,10 +96,18 @@ The script consists of 4 modules:
           are important! Do not try to plot two folders that happen to have the
           same name. The former output will be overwritten with the new plot.
 
+    The terminal input could look like this:
+
+####################################################
+Terminal> python main.py /DataFolder/Plot1/
+####################################################
+
+    This creates plot files named Plot1 (cfg, png, pdf). Depending on your OS,
+    you have to use either backslashes or frontslashes!
+
     A basic example of a main file could look like this:
 
 ####################################################
-
 import sys
 from KITPlot import KITPlot
 
@@ -109,34 +116,34 @@ if len(sys.argv) > 2:
 else:
     kPlot1 = KITPlot(sys.argv[1])
 
-
 kPlot1.draw("matplotlib")
-
 
 kPlot1.saveCanvas()
 kPlot1.showCanvas()
 input()
-
-
 ####################################################
 
     If no errors are being raised, the plot will show up on your screen.
-    You can now start to edit plot with the related cfg file in your cfg folder.
+    You can now start to edit your plot by editing the respective cfg file in
+    your cfg folder.
 
 5) cfg file:
     Most parameters in our cfg file are self-explanatory. Some have a special
-    syntax that needs be considered or need some explanation:
+    syntax that needs be considered or need some explanation. Generally, lists
+    (parameters in square brackets) have to be quoated/turned into strings by
+    putting them inside quoatation marks. Moreover, boolean parameters have to
+    start with a small character. Both conditions, are consequences of how the
+    JSON parser works, sadly):
 
-    - 'Range = [200:1000]': sets axis range from 200 to 1000 units.
-                            Mind the brackets!
-    - 'Font = 62': 62 is standard arial, bulky and ideal for presentations.
-                   See ROOT documention for other options.
-    - 'Log = false': This needs to be a boolean value. Remember that having a 0
-                     in your data table may raise errors.
-    - 'Abs = True': This needs to be a boolean value.
-    - 'Title = Voltage (V)': You can announce special characters here with an
-                             '#' like '#circ', '#sigma' or super/subscript
-                             by '_{i}' and '^{2}'.
+    - CanvasSize : "[10,10]" = creates a canvas of 10 x 10 cm.
+    - PadSize : "[0.1,0.1,0.9,0.9]" = creates a pad on the canvas. The numbers
+                                      are relative coordinates of the bottom left
+                                      and the top right corner of the pad .
+    - Range : "[200:1000]" = sets axis range from 200 to 1000 units.
+    - Font : 62 = is standard arial, bulky and ideal for presentations.
+    - Log : false =  This needs to be a boolean value (true/false)
+    - Title : "Voltage (V)": use latex style for special characters and double
+                             backslashes
     - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'.
                           Sometimes you might want to visualize that certain
                           graphs belong together by giving them a similar color.
@@ -241,7 +248,7 @@ class KITPlot(object):
     __color = 0
 
 
-    def __init__(self, dataInput=None, cfgFile=None):
+    def __init__(self, dataInput=None, cfgFile=None, name=None, defaultCfg=None):
         self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
@@ -252,11 +259,18 @@ class KITPlot(object):
 
         # Load parameters and apply default style
         self.__cfg = KITConfig()
-        self.__cfg.Default(os.path.join("KITPlot","Utils","default.cfg"))
+        if defaultCfg == None:
+            self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
+        else:
+            self.__cfg.Default(defaultCfg)
+
         self.__cfg.Dir("cfg")
 
         # extract name from data input
-        self.__inputName = self.getDataName(dataInput)
+        if name == None:
+            self.__inputName = self.getDataName(dataInput)
+        else:
+            self.__inputName = name
 
         # check if cfg is already there
         if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
@@ -392,6 +406,12 @@ class KITPlot(object):
             print("Input interpreted as KITData object")
             self.__files.append(dataInput)
             # self.addGraph(dataInput.getX(),dataInput.getY())
+
+        # NEW FEATURE: Load list/tuple with raw data
+        elif isinstance(dataInput, (list,tuple)):
+            print("Input interpreted as raw data")
+            for tup in dataInput:
+                self.__files.append(KITData(tup))
 
         # Load single PID
         # ???
@@ -785,7 +805,10 @@ class KITPlot(object):
         return Y
 
     def getDataName(self, dataInput):
-        return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+        if isinstance(dataInput, str):
+            return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+        else:
+            raise ValueError("Unknown name...")
 
 
 if __name__ == '__main__':
