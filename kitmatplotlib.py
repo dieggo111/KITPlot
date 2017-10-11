@@ -302,8 +302,10 @@ class KITMatplotlib(object):
         # # ax.xaxis.get_children()[1].set_size(14)
         # ax.xaxis.get_children()[1].set_weight("bold")
         # ax.set_xticklabels
-        # ax.axhline(y=1.6e6,color=self.KITcolor['KITblue'][3][1],linewidth=2,linestyle='-')
-        # ax.axhline(y=8400,color=self.KITcolor['KITred'][2][1],linewidth=2,linestyle='--')
+        # ax.axhline(y=12000,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
+        # ax.axhline(y=8400,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
+        # ax.axhline(y=2100,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
+
 
         return fig
 
@@ -346,7 +348,7 @@ class KITMatplotlib(object):
                        loc='lower left',ncol=3, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
             obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102),
-                       loc='lower center',ncol=2, mode="expand", borderaxespad=0.)
+                       loc='lower center',ncol=3, mode="expand", borderaxespad=0.)
         return True
 
 
