@@ -260,7 +260,8 @@ class KITPlot(object):
         # Load parameters and apply default style
         self.__cfg = KITConfig()
         if defaultCfg == None:
-            self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
+            self.__cfg.Default("C:\\Users\\Diego\\KITPlot\\KITPlot\\Utils\\default.cfg")
+            #self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
         else:
             self.__cfg.Default(defaultCfg)
 
