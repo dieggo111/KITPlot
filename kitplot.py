@@ -526,7 +526,7 @@ class KITPlot(object):
         return True
 
 
-    def draw(self, engine=None, add_lodger=False):
+    def draw(self, engine=None):
         """
         doc
 
@@ -537,18 +537,11 @@ class KITPlot(object):
             self.MeasurementType()
 
         # read and adjsut .__entryDict before drawing
-        if add_lodger == True:
-            self.readEntryDict(add_lodger=True)
-        else:
-            self.readEntryDict()
-
-        # get lodgers from cfg wenn KITPlot object is initialized
-        if add_lodger == False:
-            try:
-                self.getLodgers()
-            except:
-                pass
-                # print("No lodgers in cfg.")
+        # if add_lodger == True:
+        #     self.readEntryDict(add_lodger=True)
+        # else:
+        #     self.readEntryDict()
+        self.readEntryDict()
 
         # set engine
         if engine == None:
@@ -598,18 +591,25 @@ class KITPlot(object):
             width = paraDict.get('width', None)
             style = paraDict.get('style', None)
 
-            self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
-                                          style=style,width=width))
         return True
 
-    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
-        print("addLodger")
-        # add new lodger from main
-        newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
-                              width=width)
-        self.__files.append(newLodger)
-        self.addLodgerEntry(newLodger)
-        self.draw(add_lodger=True)
+    def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
+                  width=None,text=None,fontsize=None):
+
+        newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
+                               width=width,text=text,fontsize=fontsize)
+
+        self.canvas = newLodger.add()
+
+        key = next(self.iter)
+        paraDict = newLodger.getDict()
+        try:
+            print("addLodgerEntry - update")
+            self.__cfg["Lodgers"].update({key : paraDict})
+        except:
+            print("addLodgerEntry - add")
+            self.__cfg["Lodgers"] = {key : paraDict}
+
         return True
 
     # def addLodgerEntry(self, newLodger):
@@ -651,7 +651,7 @@ class KITPlot(object):
         # calculate expected number of entries in 'EntryList'
         # new lodgers are already appended
         exp_len = len(self.__files)
-        
+
         # # check if there's a 'Lodgers' section and how many entries it has
         # try:
         #     # print("lodgers items", len(self.__cfg['Lodgers'].items()))
@@ -664,9 +664,7 @@ class KITPlot(object):
 
 
         # TODO: check if lodger demands for entry
-        # print("readEntry -> entryDict", self.__entryDict)
-        # no new lodger added but there are lodgers in cfg
-        # print(add_lodger, len(self.__entryDict), exp_len, len(self.__files))
+
         if len(self.__entryDict) != exp_len:
             raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                            "entries does not match or a key is used more than"

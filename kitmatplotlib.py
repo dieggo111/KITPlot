@@ -12,7 +12,7 @@ import itertools
 
 class KITMatplotlib(object):
 
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
 
         self.__graphs = []
         self.__lodgers = []
@@ -176,7 +176,6 @@ class KITMatplotlib(object):
 
         """
 
-
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
@@ -228,27 +227,6 @@ class KITMatplotlib(object):
                 ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
                             color=self.getColor(i),
                             elinewidth=1)
-
-        # add lodgers to party
-        for lodger in self.__lodgers:
-            if lodger.vline() != None:
-                ax.axvline(x=lodger.vline(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),label=lodger.name())
-            elif lodger.hline() != None:
-                ax.axvline(y=lodger.hline(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),label=lodger.name())
-            if lodger.vgraph() != None:
-                ax.axvline(x=lodger.vgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
-                label=lodger.name(),linestyle=self.lines[lodger.style()])
-            elif lodger.hgraph() != None:
-                ax.axvline(y=lodger.hgraph(),color=self.getColor(lodger.color()),linewidth=lodger.width(),
-                label=lodger.name(),linestyle=self.lines[lodger.style()])
-            elif lodger.func() != None:
-                print("func", lodger.x(), lodger.y())
-                # ax.plot()
-            elif lodger.x() != None and lodger.y() != None:
-                ax.plot(lodger.x(),lodger.y(),color=self.getColor(lodger.color()),
-                linewidth=lodger.width(),linestyle=self.lines[lodger.style()],label=lodger.name())
 
 
         # set titles
@@ -305,8 +283,6 @@ class KITMatplotlib(object):
         # ax.axhline(y=12000,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
         # ax.axhline(y=8400,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
         # ax.axhline(y=2100,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
-
-
         return fig
 
 
@@ -315,7 +291,9 @@ class KITMatplotlib(object):
         # get names from cfg and lodger labels
         graphEntries = [items[1] for items in list(self.__entryDict.items())]
         lodgerEntries = [entry.name() for entry in self.__lodgers if entry.name() != None]
-        total_len = len(self.__graphs+self.__lodgers)
+        # total_len = len(self.__graphs+self.__lodgers)
+        total_len = len(self.__graphs)
+
         # check if there are already entries for lodgers in cfg
         if len(graphEntries) == total_len:
             obj.legend(graphEntries)
