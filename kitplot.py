@@ -560,8 +560,8 @@ class KITPlot(object):
         # create graphs and canvas
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
-            if add_lodger == True:
-                self.addLodgerEntry()
+            # if add_lodger == True:
+            #     self.addLodgerEntry()
 
         return True
 
@@ -612,17 +612,17 @@ class KITPlot(object):
         self.draw(add_lodger=True)
         return True
 
-    def addLodgerEntry(self, newLodger):
-        print("addLodgerEntry")
-        key = next(self.iter)
-        paraDict = newLodger.getDict()
-        try:
-            self.__cfg["Lodgers"].update({key : paraDict})
-            self.__cfg["Legend"]["EntryList"].update({})
-        except:
-            self.__cfg["Lodgers"] = {key : paraDict}
-
-        return True
+    # def addLodgerEntry(self, newLodger):
+    #     print("addLodgerEntry")
+    #     key = next(self.iter)
+    #     paraDict = newLodger.getDict()
+    #     try:
+    #         self.__cfg["Lodgers"].update({key : paraDict})
+    #         self.__cfg["Legend"]["EntryList"].update({})
+    #     except:
+    #         self.__cfg["Lodgers"] = {key : paraDict}
+    #
+    #     return True
 
 
 #########################
@@ -651,16 +651,16 @@ class KITPlot(object):
         # calculate expected number of entries in 'EntryList'
         # new lodgers are already appended
         exp_len = len(self.__files)
-
-        # check if there's a 'Lodgers' section and how many entries it has
-        try:
-            # print("lodgers items", len(self.__cfg['Lodgers'].items()))
-            amount_lodgers = len(self.__cfg['Lodgers'].items())
-        except:
-            amount_lodgers = 0
-
-        if add_lodger == True:
-            amount_lodgers = amount_lodgers + 1
+        
+        # # check if there's a 'Lodgers' section and how many entries it has
+        # try:
+        #     # print("lodgers items", len(self.__cfg['Lodgers'].items()))
+        #     amount_lodgers = len(self.__cfg['Lodgers'].items())
+        # except:
+        #     amount_lodgers = 0
+        #
+        # if add_lodger == True:
+        #     amount_lodgers = amount_lodgers + 1
 
 
         # TODO: check if lodger demands for entry
