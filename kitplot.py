@@ -249,7 +249,7 @@ class KITPlot(object):
 
 
     def __init__(self, dataInput=None, cfgFile=None, name=None, defaultCfg=None):
-        self.iter = iter(["lodger1","lodger2","lodger3"])
+
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
 
@@ -553,8 +553,9 @@ class KITPlot(object):
         # create graphs and canvas
         if engine == self.__engines[0]:
             self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
-            # if add_lodger == True:
-            #     self.addLodgerEntry()
+
+        # check if there are lodgers in cfg and if so, add them to plot
+        self.getLodgers()
 
         return True
 
@@ -578,20 +579,24 @@ class KITPlot(object):
         """ Read the cfg and create a lodger object for every entry in
             'Lodgers'.
         """
-        # print("getLodger")
+        try:
+            for lodger in self.__cfg['Lodgers']:
+                paraDict = dict(self.__cfg['Lodgers'][lodger])
+                x = paraDict.get('x', None)
+                y = paraDict.get('y', None)
+                name = paraDict.get('name', None)
+                color = paraDict.get('color', None)
+                width = paraDict.get('width', None)
+                style = paraDict.get('style', None)
+                text = paraDict.get('text', None)
+                fontsize = paraDict.get('fontsize', None)
 
-        cfgLodgers = []
-        for lodger in self.__cfg['Lodgers']:
-            paraDict = dict(self.__cfg['Lodgers'][lodger])
-            # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
-            x = paraDict.get('x', None)
-            y = paraDict.get('y', None)
-            name = paraDict.get('name', None)
-            color = paraDict.get('color', None)
-            width = paraDict.get('width', None)
-            style = paraDict.get('style', None)
-
+                self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
+                                       width=width,text=text,fontsize=fontsize)
+        except:
+            print("No lodgers present")
         return True
+
 
     def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
                   width=None,text=None,fontsize=None):
@@ -599,16 +604,9 @@ class KITPlot(object):
         newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
                                width=width,text=text,fontsize=fontsize)
 
-        self.canvas = newLodger.add()
+        self.canvas = newLodger.add_to_plot()
 
-        key = next(self.iter)
-        paraDict = newLodger.getDict()
-        try:
-            print("addLodgerEntry - update")
-            self.__cfg["Lodgers"].update({key : paraDict})
-        except:
-            print("addLodgerEntry - add")
-            self.__cfg["Lodgers"] = {key : paraDict}
+        newLodger.add_to_cfg(self.__cfg)
 
         return True
 
