@@ -416,25 +416,26 @@ class KITMatplotlib(object):
                 for i, item in enumerate(itertools.cycle(self.colorSet)):
                     if i == index:
                         color = self.KITcolor[self.colors[item]][0][1]
-
                         return color
 
             # if colors in 'ColorSet' are strings and correspond to entries
             # in KITcolor dict
             elif all(isinstance(item, str) for item in self.colorSet) \
                         and isinstance(self.colorSet, list):
-                color = self.colorSet[index]
+                # in case there are less entries in colorSet than needed we n
+                # eed to cycle that list
+                for i, cycled in enumerate(itertools.cycle(self.colorSet)):
+                    if i == index:
+                        color = cycled
+                        break
+                # search for RGB values in KITcolor dict for given color key
                 for colorDict in list(self.KITcolor.values()):
                     try:
                         return colorDict[color]
                     except:
                         pass
                 raise Exception
-                # for i, item in enumerate(itertools.cycle(self.colorSet)):
-                #     if item not in self.colors:
-                #         raise ValueError
-                #     else:
-                #         return item
+                
         except:
             print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
