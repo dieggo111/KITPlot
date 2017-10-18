@@ -109,9 +109,7 @@ Terminal> python main.py /DataFolder/Plot1/
 
 ####################################################
 #!/usr/bin/env python3
-"""
-    Mathtext doc: https://matplotlib.org/users/mathtext.html
-"""
+# Mathtext doc: https://matplotlib.org/users/mathtext.html
 
 import sys
 from KITPlot import KITData

@@ -1,11 +1,12 @@
 from collections import OrderedDict
 import matplotlib as plt
 from .KITConfig import KITConfig
+from .Utils import kitutils
 
 class KITLodger(object):
 
     def __init__(self, figure, **kwargs):
-        self.iter = iter(["lodger1","lodger2","lodger3"])
+
         self.fig = figure
         self.lodger_type = None
         self.__x = kwargs.get('x', None)
@@ -38,17 +39,17 @@ class KITLodger(object):
         elif self.__y == None and isinstance(self.__x, (int, float)):
             print("Lodger:::Draw vertical line at x = " + str(self.__x))
             self.lodger_type = "verticle line"
-            ax.axvline(x=self.__x,color=self.__color,
+            ax.axvline(x=self.__x,color=self.get_lodger_color(self.__color),
                        linewidth=self.__width,linestyle=self.__style)
         elif self.__x == None and isinstance(self.__y, (int, float)):
             print("Lodger:::Draw horizontal line at y = " + str(self.__y))
             self.lodger_type = "horizontal line"
-            ax.axhline(y=self.__y,color=self.__color,
+            ax.axhline(y=self.__y,color=self.get_lodger_color(self.__color),
                        linewidth=self.__width,linestyle=self.__style)
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
             print("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
-            ax.plot(self.__x, self.__y, color=self.__color)
+            ax.plot(self.__x, self.__y, color=self.get_lodger_color(self.__color))
         elif self.__text != None:
             print("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
@@ -81,12 +82,24 @@ class KITLodger(object):
             lodger_name = self.lodger_type
             cfg["Lodgers"] = {lodger_name : self.__paraDict}
 
-        # testDict = OrderedDict([("xxx", "111")])
-        # print(testDict)
-        # testDict.update({"yyy" : "222"})
-        # print(testDict)
-
         return True
+
+    def get_lodger_color(self,color):
+
+        KITcolor = kitutils.get_KITcolor()
+
+        try:
+            # if color is string and corresponds with KITcolor dict
+            for colorDict in list(KITcolor.values()):
+                try:
+                    return colorDict[color]
+                except:
+                    pass
+            raise Exception
+        except:
+            # go with default color
+            print("Warning:::%s is an invalid lodger color. Using default color 'r0' instead." %(color))
+            return KITcolor["KITred"]["r0"]
 
     def check_for_lodger_in_section(self,cfg):
         for lodger in cfg["Lodgers"]:

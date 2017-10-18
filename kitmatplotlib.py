@@ -97,6 +97,20 @@ class KITMatplotlib(object):
 
         return True
 
+    def __initColor(self):
+
+        mpl_std = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
+
+        self.KITcolor = kitutils.get_KITcolor()
+
+        if self.colorPalette == "std":
+            mpl_std_sorted = [item for (i,item) in sorted(zip(self.colorSet, mpl_std))]
+            return mpl_std_sorted
+        elif self.colorPalette == "KIT":
+            return list(self.KITcolor.keys())
+        else:
+            print("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
+            return list(self.KITcolor.keys())
 
     def addGraph(self, arg):
         """ Converts data of KITData objects or lists into a respective formate
@@ -452,76 +466,3 @@ class KITMatplotlib(object):
 
     def getGraphList(self):
         return self.__graphs
-
-
-    def __initColor(self):
-
-        mpl_std = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-
-        self.KITcolor = OrderedDict([
-                           ("KITred"    , OrderedDict([
-                                        ("r0" , (191./255, 35./255, 41./255)),
-                                        ("r1" , (205./255, 85./255, 75./255)),
-                                        ("r2" , (220./255, 130./255, 110./255)),
-                                        ("r3" , (230./255, 175./255, 160./255)),
-                                        ("r4" , (245./255, 215./255, 200./255))
-                                        ])),
-                           ("KITgreen"  , OrderedDict([
-                                        ("g0" ,  (0./255, 169./255, 144./255)),
-                                        ("g1" ,  (75./255, 195./255, 165./255)),
-                                        ("g2" ,  (125./255, 210./255, 185./255)),
-                                        ("g3" ,  (180./255, 230./255, 210./255)),
-                                        ("g4" ,  (215./255, 240./255, 230./255))
-                                        ])),
-                           ("KITorange" , OrderedDict([
-                                        ("o0" ,  (247./255, 145./255, 16./255)),
-                                        ("o1" ,  (249./255, 174./255, 73./255)),
-                                        ("o2" ,  (251./255, 195./255, 118./255)),
-                                        ("o3" ,  (252./255, 218./255, 168./255)),
-                                        ("o4" ,  (254./255, 236./255, 211./255))
-                                        ])),
-                           ("KITblue"   , OrderedDict([
-                                        ("b0" ,  (67./255, 115./255, 194./255)),
-                                        ("b1" ,  (120./255, 145./255, 210./255)),
-                                        ("b2" ,  (155./255, 170./255, 220./255)),
-                                        ("b3" ,  (195./255, 200./255, 235./255)),
-                                        ("b4" ,  (225./255, 225./255, 245./255))
-                                        ])),
-                           ("KITpurple" , OrderedDict([
-                                        ("p0" ,  (188./255, 12./255, 141./255)),
-                                        ("p1" ,  (205./255, 78./255, 174./255)),
-                                        ("p2" ,  (218./255, 125./255, 197./255)),
-                                        ("p3" ,  (232./255, 175./255, 220./255)),
-                                        ("p4" ,  (243./255, 215./255, 237./255))
-                                        ])),
-                           ("KITbrown" , OrderedDict([
-                                        ("br0" ,  (170./255, 127./255, 36./255)),
-                                        ("br1" ,  (193./255, 157./255, 82./255)),
-                                        ("br2" ,  (208./255, 181./255, 122./255)),
-                                        ("br3" ,  (226./255, 208./255, 169./255)),
-                                        ("br4" ,  (241./255, 231./255, 210./255))
-                                        ])),
-                           ("KITmay"    , OrderedDict([
-                                        ("m0" ,  (102./255, 196./255, 48./255)),
-                                        ("m1" ,  (148./255, 213./255, 98./255)),
-                                        ("m2" ,  (178./255, 225./255, 137./255)),
-                                        ("m3" ,  (209./255, 237./255, 180./255)),
-                                        ("m4" ,  (232./255, 246./255, 217./255))
-                                        ])),
-                           ("KITcyan"   , OrderedDict([
-                                        ("c0" , (28./255, 174./255, 236./255)),
-                                        ("c1" , (95./255, 197./255, 241./255)),
-                                        ("c2" , (140./255, 213./255, 245./255)),
-                                        ("c3" , (186./255, 229./255, 249./255)),
-                                        ("c4" , (221./255, 242./255, 252./255))
-                                        ]))
-                            ])
-
-        if self.colorPalette == "std":
-            mpl_std_sorted = [item for (i,item) in sorted(zip(self.colorSet, mpl_std))]
-            return mpl_std_sorted
-        elif self.colorPalette == "KIT":
-            return list(self.KITcolor.keys())
-        else:
-            print("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
-            return list(self.KITcolor.keys())
