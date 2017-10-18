@@ -108,8 +108,17 @@ Terminal> python main.py /DataFolder/Plot1/
     A basic example of a main file could look like this:
 
 ####################################################
+#!/usr/bin/env python3
+"""
+    Mathtext doc: https://matplotlib.org/users/mathtext.html
+"""
+
 import sys
+from KITPlot import KITData
 from KITPlot import KITPlot
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 if len(sys.argv) > 2:
     kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
@@ -117,10 +126,23 @@ else:
     kPlot1 = KITPlot(sys.argv[1])
 
 kPlot1.draw("matplotlib")
+fig = kPlot1.getCanvas()
 
-kPlot1.saveCanvas()
+##### LODGERS #####
+# draw horizontal line
+# kPlot1.addLodger(fig,y=7,style="--",color="r",name="test",width=2)
+# draw vertical line
+# kPlot1.addLodger(fig,x=5,style="-.",color="r",name="test",width=2)
+# draw xy-graph
+# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r",name="test",width=2)
+# draw text
+# kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
+###################
+
 kPlot1.showCanvas()
+kPlot1.saveCanvas()
 input()
+
 ####################################################
 
     If no errors are being raised, the plot will show up on your screen.
@@ -144,20 +166,6 @@ input()
     - Log : false =  This needs to be a boolean value (true/false)
     - Title : "Voltage (V)": use latex style for special characters and double
                              backslashes
-    - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'.
-                          Sometimes you might want to visualize that certain
-                          graphs belong together by giving them a similar color.
-                          'off' will just alter marker color and style for
-                          every graph. By choosing 'name', all graphs that
-                          share the first 5 letters of their name will be drawn
-                          in the same color but with altering markers (f.e.
-                          sensors of the same type but from different wafers).
-                          If 'fluence' is choosen then then sensors with equal
-                          fluences will be drawn in the same color (the flunces
-                          are retreived from the database). Lastly, you can
-                          make your own 'GraphGroup' by using the original
-                          sensor order and put them into brackets like
-                          '[1,2][6][3,4,5]'.
     - 'ColorShades = false': This needs to be a boolean value. If you use
                              GraphGroups, you might as well want to use
                              ColorShades. Let's say you have 3 red graphs and
@@ -594,7 +602,7 @@ class KITPlot(object):
                 self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
                                        width=width,text=text,fontsize=fontsize)
         except:
-            print("No lodgers present")
+            pass
         return True
 
 

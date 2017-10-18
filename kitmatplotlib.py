@@ -7,7 +7,7 @@ from .kitlodger import KITLodger
 from collections import OrderedDict
 from .Utils import kitutils
 import itertools
-
+import logging
 
 
 class KITMatplotlib(object):
@@ -16,6 +16,9 @@ class KITMatplotlib(object):
 
         self.__graphs = []
         self.__lodgers = []
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         # load style parameters from cfg file
         self.__initStyle(cfg)
@@ -68,6 +71,8 @@ class KITMatplotlib(object):
         #Line options
         self.colorPalette = cfg['Line','ColorPalette']
         self.colorSet = kitutils.extractList(cfg['Line','Color'])
+        # print("colorSet", self.colorSet)
+        # self.logger.info("HALLO")
         self.lineWidth = cfg['Line','Width']
         self.lineStyle = kitutils.extractList(cfg['Line','Style'])
 
@@ -290,7 +295,7 @@ class KITMatplotlib(object):
 
         # get names from cfg and lodger labels
         graphEntries = [items[1] for items in list(self.__entryDict.items())]
-        lodgerEntries = [entry.name() for entry in self.__lodgers if entry.name() != None]
+        # lodgerEntries = [entry.name() for entry in self.__lodgers if entry.name() != None]
         # total_len = len(self.__graphs+self.__lodgers)
         total_len = len(self.__graphs)
 
@@ -397,33 +402,30 @@ class KITMatplotlib(object):
                 for i, item in enumerate(itertools.cycle(self.colorSet)):
                     if i == index:
                         color = self.KITcolor[self.colors[item]][0][1]
-                        # self.KITcolor[self.colors[0]][0][1])
-                        # color = self.color_gen()
+
                         return color
 
-            # if colors in 'ColorSet' are defined by strings then they dont need to be cycled
+            # if colors in 'ColorSet' are strings and correspond to entries
+            # in KITcolor dict
             elif all(isinstance(item, str) for item in self.colorSet) \
                         and isinstance(self.colorSet, list):
-                for i, item in enumerate(itertools.cycle(self.colorSet)):
-                    if item not in self.colors:
-                        raise ValueError
-                    else:
-                        return item
+                color = self.colorSet[index]
+                for colorDict in list(self.KITcolor.values()):
+                    try:
+                        return colorDict[color]
+                    except:
+                        pass
+                raise Exception
+                # for i, item in enumerate(itertools.cycle(self.colorSet)):
+                #     if item not in self.colors:
+                #         raise ValueError
+                #     else:
+                #         return item
         except:
             print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
                 if i == index:
-                    return self.KITcolor[color][0][1]
-
-        # else:
-        #     sub = [sub for sub in self.graphGroup if index in sub][0]
-        #
-        #     print(sub_counter)
-        #     # if self.sub_current == None:
-        #     # self.sub_current = sub_index
-        #     shade_iter = iter(self.shade_keys)
-        #
-        #     color = self.color_gen(sub_index)
+                    return list(self.KITcolor[color].values())[0]
 
 
     def getLineStyle(self, index):
@@ -454,81 +456,72 @@ class KITMatplotlib(object):
 
     def __initColor(self):
 
-        mpl_std = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        mpl_std = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
 
-        self.KITcolor = OrderedDict()
-
-        self.KITcolor = {  "KITred" :   [
+        self.KITcolor = OrderedDict([
+                           ("KITred"    , OrderedDict([
                                         ("r0" , (191./255, 35./255, 41./255)),
                                         ("r1" , (205./255, 85./255, 75./255)),
                                         ("r2" , (220./255, 130./255, 110./255)),
                                         ("r3" , (230./255, 175./255, 160./255)),
                                         ("r4" , (245./255, 215./255, 200./255))
-                                        ],
-                           "KITgreen"  :[
+                                        ])),
+                           ("KITgreen"  , OrderedDict([
                                         ("g0" ,  (0./255, 169./255, 144./255)),
                                         ("g1" ,  (75./255, 195./255, 165./255)),
                                         ("g2" ,  (125./255, 210./255, 185./255)),
                                         ("g3" ,  (180./255, 230./255, 210./255)),
                                         ("g4" ,  (215./255, 240./255, 230./255))
-                                        ],
-                           "KITorange": [
+                                        ])),
+                           ("KITorange" , OrderedDict([
                                         ("o0" ,  (247./255, 145./255, 16./255)),
                                         ("o1" ,  (249./255, 174./255, 73./255)),
                                         ("o2" ,  (251./255, 195./255, 118./255)),
                                         ("o3" ,  (252./255, 218./255, 168./255)),
                                         ("o4" ,  (254./255, 236./255, 211./255))
-                                        ],
-                           "KITblue" :  [
+                                        ])),
+                           ("KITblue"   , OrderedDict([
                                         ("b0" ,  (67./255, 115./255, 194./255)),
                                         ("b1" ,  (120./255, 145./255, 210./255)),
                                         ("b2" ,  (155./255, 170./255, 220./255)),
                                         ("b3" ,  (195./255, 200./255, 235./255)),
                                         ("b4" ,  (225./255, 225./255, 245./255))
-                                        ],
-                           "KITpurple": [
+                                        ])),
+                           ("KITpurple" , OrderedDict([
                                         ("p0" ,  (188./255, 12./255, 141./255)),
                                         ("p1" ,  (205./255, 78./255, 174./255)),
                                         ("p2" ,  (218./255, 125./255, 197./255)),
                                         ("p3" ,  (232./255, 175./255, 220./255)),
                                         ("p4" ,  (243./255, 215./255, 237./255))
-                                        ],
-                           "KITbrown" : [
-                                        ("b0" ,  (170./255, 127./255, 36./255)),
-                                        ("b1" ,  (193./255, 157./255, 82./255)),
-                                        ("b2" ,  (208./255, 181./255, 122./255)),
-                                        ("b3" ,  (226./255, 208./255, 169./255)),
-                                        ("b4" ,  (241./255, 231./255, 210./255))
-                                        ],
-                           "KITmay" :   [
+                                        ])),
+                           ("KITbrown" , OrderedDict([
+                                        ("br0" ,  (170./255, 127./255, 36./255)),
+                                        ("br1" ,  (193./255, 157./255, 82./255)),
+                                        ("br2" ,  (208./255, 181./255, 122./255)),
+                                        ("br3" ,  (226./255, 208./255, 169./255)),
+                                        ("br4" ,  (241./255, 231./255, 210./255))
+                                        ])),
+                           ("KITmay"    , OrderedDict([
                                         ("m0" ,  (102./255, 196./255, 48./255)),
                                         ("m1" ,  (148./255, 213./255, 98./255)),
                                         ("m2" ,  (178./255, 225./255, 137./255)),
                                         ("m3" ,  (209./255, 237./255, 180./255)),
                                         ("m4" ,  (232./255, 246./255, 217./255))
-                                        ],
-                          "KITcyan" :   [
+                                        ])),
+                           ("KITcyan"   , OrderedDict([
                                         ("c0" , (28./255, 174./255, 236./255)),
                                         ("c1" , (95./255, 197./255, 241./255)),
                                         ("c2" , (140./255, 213./255, 245./255)),
                                         ("c3" , (186./255, 229./255, 249./255)),
                                         ("c4" , (221./255, 242./255, 252./255))
-                                        ]
-                    }
+                                        ]))
+                            ])
 
         if self.colorPalette == "std":
             mpl_std_sorted = [item for (i,item) in sorted(zip(self.colorSet, mpl_std))]
-            # print(mpl_std_sorted)
             return mpl_std_sorted
-            # return mpl_std
         elif self.colorPalette == "KIT":
-            keys = list(self.KITcolor.keys())
-            color_keys_ordered = keys
-            # for num in self.colorSet:
-            #     color_keys_ordered.append(keys[num])
-            # print(color_keys_ordered)
-            # color_keys_ordered = [item for (i,item) in sorted(zip(self.colorSet, keys))]
-            return color_keys_ordered
+            return list(self.KITcolor.keys())
         else:
-            print("Warning:::Invalid 'ColorPalette' value. Using default")
-            return mpl_std
+            print("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
+            return list(self.KITcolor.keys())
