@@ -12,7 +12,7 @@ import logging
 
 class KITMatplotlib(object):
 
-    def __init__(self, cfg=None):
+    def __init__(self, cfg=None,is_cfg_new=None):
 
         self.__graphs = []
         self.__lodgers = []
@@ -22,6 +22,7 @@ class KITMatplotlib(object):
 
         # load style parameters from cfg file
         self.__initStyle(cfg)
+        self.__is_cfg_new = is_cfg_new
 
 
     def __initStyle(self, cfg):
@@ -71,10 +72,9 @@ class KITMatplotlib(object):
         #Line options
         self.colorPalette = cfg['Line','ColorPalette']
         self.colorSet = kitutils.extractList(cfg['Line','Color'])
-        # print("colorSet", self.colorSet)
-        # self.logger.info("HALLO")
         self.lineWidth = cfg['Line','Width']
         self.lineStyle = kitutils.extractList(cfg['Line','Style'])
+        self.err = cfg['Line','ErrorBars']
 
         # KITPlot specific options
         self.norm = kitutils.extractList(cfg['Misc','Normalization'])
@@ -198,10 +198,26 @@ class KITMatplotlib(object):
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
-        # print(self.__graphs, self.__lodgers)
-        # if self.splitGraph is True:
-        #     self.__graphs = [list(item) for item in zip(self.__graphs[0][0],self.__graphs[0][1])]
-        #     print(len(self.__graphs))
+        print(self.__graphs)
+
+        # read and adjsut .__entryDict before drawing
+        self.readEntryDict(len(self.__graphs),self.getDefaultEntryDict(fileList))
+
+
+        # interpret all entries in single file as graphs instead of a singel graph
+        if self.splitGraph is True and len(self.__graphs) == 1:
+            self.__graphs = [list(item) for item in zip(*self.__graphs[0])]
+
+            # adjust entryDict
+            newLength = len(self.__graphs)
+            if len(self.__entryDict) != newLength:
+                self.__entryDict = OrderedDict([])
+                for i in range(0,newLength):
+                    self.__entryDict.update({str(i) : "Data"+str(i)})
+                self.cfg["Legend","EntryList"] = self.__entryDict
+
+        elif self.splitGraph is True and len(self.__graphs) != 1:
+            print("Warning::Can only split single graph. Request rejected")
 
 
         # apply user defined normalization or manipulation of y values of each graph
@@ -239,11 +255,13 @@ class KITMatplotlib(object):
 
         # set error bars
         for i, table in enumerate(self.__graphs):
-            if len(table) == 4:
+            if len(table) == 4 and self.err == True:
                 ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
                             color=self.getColor(i),
                             elinewidth=1)
-
+            elif len(table) != 4 and self.err == True:
+                print("Warning::Can't find x- and y-errors in file. Request "
+                      "rejected.")
 
         # set titles
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
@@ -346,29 +364,6 @@ class KITMatplotlib(object):
         return True
 
 
-    def getGG(self, arg):
-
-        if arg != "off":
-            # extract sub groups and convert them into list of lists
-            gg = arg[1:-1].split("],[")
-            try:
-                gg = [list(x.split(",")) for x in gg]
-                # convert items of sub lists into integers
-                gg = [[int(x) for x in sub] for sub in gg]
-            except:
-                raise ValueError("Invalid 'GraphGroup' input.")
-
-            # check if number of elements in gg is equal to number of graphs
-            l = sum([len(x) for x in gg])
-
-            if l > len(self.__graphs):
-                raise ValueError("Number of graphs ("+str(len(self.__graphs))+
-                                 ") and elements in 'GraphGroup' ("+str(l)+")"
-                                 " must be equal.")
-            return gg
-        else:
-            return arg
-
     def getLabel(self, index):
 
         label = [items[1] for items in list(self.__entryDict.items())]
@@ -464,3 +459,57 @@ class KITMatplotlib(object):
 
     def getGraphList(self):
         return self.__graphs
+
+
+    def readEntryDict(self, exp_len, def_list):
+        """'EntryList' makes the names and order of all graphs accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
+        and names given by .__files).
+        """
+        # writes entry dict to cfg and sets it back to default if value is ""
+        if self.cfg['Legend','EntryList'] == "":
+            self.cfg['Legend','EntryList'] = def_list
+            self.__entryDict = def_list
+            if self.__is_cfg_new == False:
+                print("EntryDict was set back to default!")
+
+        # calculate expected number of entries in 'EntryList'
+        if len(self.__entryDict) != exp_len and self.splitGraph == False:
+            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                           "entries does not match or a key is used more than"
+                           "once. Adjust or reset 'EntryList'.")
+        return True
+
+    def fixEntryDict(self):
+
+        # get key list from 'EntryList'
+        keys = [int(key) for key in self.__entryDict.keys()]
+
+        # key list should start at 0 and should have a length of len(keys)
+        straight_list = list(range(len(keys)))
+        # print("fix", straight_list)
+
+        # get reference list in respect to the original order of key list
+        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
+
+        # reorder reference list so that values stay in the same order as before
+        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
+
+        values = list(self.__entryDict.values())
+        new = OrderedDict(zip(fixed_order, values))
+        self.__cfg['Legend','EntryList'] = new
+
+
+    def getDefaultEntryDict(self,List):
+        """ Loads default names and order in respect to the KITData objects
+        in 'self.__files' list. Both keys and values of the dictionary must be
+        strings.
+
+        """
+        entryDict = OrderedDict()
+        # write legend entries in a dict
+        for i, graph in enumerate(List):
+            entryDict[i] = str(graph.getName())
+
+        return entryDict

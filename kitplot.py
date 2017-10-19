@@ -542,13 +542,6 @@ class KITPlot(object):
         if self.is_cfg_new == True:
             self.MeasurementType()
 
-        # read and adjsut .__entryDict before drawing
-        # if add_lodger == True:
-        #     self.readEntryDict(add_lodger=True)
-        # else:
-        #     self.readEntryDict()
-        self.readEntryDict()
-
         # set engine
         if engine == None:
             engine = self.__engines[0]
@@ -557,8 +550,7 @@ class KITPlot(object):
                              + self.__engines[0] + " and " + self.__engines[1])
 
         # create graphs and canvas
-        if engine == self.__engines[0]:
-            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
+        self.canvas = KITMatplotlib(self.__cfg,self.is_cfg_new).draw(self.__files)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
@@ -615,115 +607,6 @@ class KITPlot(object):
         newLodger.add_to_cfg(self.__cfg)
 
         return True
-
-    # def addLodgerEntry(self, newLodger):
-    #     print("addLodgerEntry")
-    #     key = next(self.iter)
-    #     paraDict = newLodger.getDict()
-    #     try:
-    #         self.__cfg["Lodgers"].update({key : paraDict})
-    #         self.__cfg["Legend"]["EntryList"].update({})
-    #     except:
-    #         self.__cfg["Lodgers"] = {key : paraDict}
-    #
-    #     return True
-
-
-#########################
-### entryDict methods ###
-#########################
-
-
-    def readEntryDict(self, add_lodger=False):
-        """'EntryList' makes the names and order of all graphs accessible. This
-        subsection is read every time KITPlot is executed. An empty value ("")
-        can be used to reset the entry to its default value (the original order
-        and names given by the .__files).
-        """
-        # print(self.__cfg['Legend','EntryList'])
-        # writes entry dict to cfg of sets it back to default if value is ""
-        if self.__cfg['Legend','EntryList'] == "":
-            # print(self.getDefaultEntryDict(), type(self.getDefaultEntryDict()))
-            self.__cfg['Legend','EntryList'] = self.getDefaultEntryDict()
-            if self.is_cfg_new == False:
-                print("EntryDict was set back to default!")
-            self.__entryDict = self.getDefaultEntryDict()
-        else:
-            self.__entryDict = self.__cfg['Legend','EntryList']
-
-
-        # calculate expected number of entries in 'EntryList'
-        # new lodgers are already appended
-        exp_len = len(self.__files)
-
-        # # check if there's a 'Lodgers' section and how many entries it has
-        # try:
-        #     # print("lodgers items", len(self.__cfg['Lodgers'].items()))
-        #     amount_lodgers = len(self.__cfg['Lodgers'].items())
-        # except:
-        #     amount_lodgers = 0
-        #
-        # if add_lodger == True:
-        #     amount_lodgers = amount_lodgers + 1
-
-
-        # TODO: check if lodger demands for entry
-
-        if len(self.__entryDict) != exp_len:
-            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
-                           "entries does not match or a key is used more than"
-                           "once. Adjust or reset 'EntryList'.")
-
-
-        return True
-
-    def fixEntryDict(self):
-
-        # get key list from 'EntryList'
-        keys = [int(key) for key in self.__entryDict.keys()]
-        # print("fix", keys)
-
-        # key list should start at 0 and should have a length of len(keys)
-        straight_list = list(range(len(keys)))
-        # print("fix", straight_list)
-
-        # get reference list in respect to the original order of key list
-        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
-
-        # reorder reference list so that values stay in the same order as before
-        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
-
-        # print("fix", fixed_order)
-        values = list(self.__entryDict.values())
-        # print("fix", values)
-        new = OrderedDict(zip(fixed_order, values))
-        # print(new)
-        # test = self.__entryDict
-        # print(test.update(newDict))
-        self.__cfg['Legend','EntryList'] = new
-
-    def getDefaultEntryDict(self):
-        """ Loads default names and order in respect to the KITData objects
-        in 'self.__files' list. Both keys and values of the dictionary must be
-        strings.
-
-        """
-
-        entryDict = OrderedDict()
-
-        # write legend entries in a dict
-        for i, graph in enumerate(self.__files):
-            entryDict[i] = str(graph.getName())
-        # print(entryDict, type(entryDict))
-        # check if there's a 'Lodgers' section and how many entries it has
-        try:
-            lodgers = [name[0] for name in self.__cfg['Lodgers'].items()]
-            for i, lodger in lodgers:
-                entryDict.update({str(len(self.__files)+i) : lodger})
-        except:
-            pass
-
-        return entryDict
 
 
 ###################
