@@ -77,7 +77,6 @@ class KITMatplotlib(object):
         self.lineStyle = kitutils.extractList(cfg['Line','Style'])
 
         # KITPlot specific options
-        self.graphGroup = cfg['Misc','GraphGroup']
         self.norm = kitutils.extractList(cfg['Misc','Normalization'])
         self.splitGraph = cfg['Misc','SplitGraph']
 
@@ -99,8 +98,9 @@ class KITMatplotlib(object):
 
     def __initColor(self):
 
+        # standard mpl colorSet
         mpl_std = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-
+        # KITcolor dictionary
         self.KITcolor = kitutils.get_KITcolor()
 
         if self.colorPalette == "std":
@@ -221,9 +221,6 @@ class KITMatplotlib(object):
             plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         if self.tickY:
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-
-        # check GraphGroup
-        self.graphGroup = self.getGG(self.graphGroup)
 
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
@@ -435,7 +432,7 @@ class KITMatplotlib(object):
                     except:
                         pass
                 raise Exception
-                
+                color
         except:
             print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
