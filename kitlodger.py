@@ -71,14 +71,12 @@ class KITLodger(object):
             else:
                 lodger_count = len(list(cfg["Lodgers"].keys()))
                 lodger_name = self.lodger_type + str(lodger_count+1)
-                print("addLodgerEntry - update")
                 new = cfg["Lodgers"]
                 new.update({lodger_name : self.__paraDict})
                 cfg["Lodgers"] = new
 
         # create lodgers section in cfg
         except:
-            print("addLodgerEntry - add_new")
             lodger_name = self.lodger_type
             cfg["Lodgers"] = {lodger_name : self.__paraDict}
 

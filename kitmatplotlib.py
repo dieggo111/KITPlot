@@ -198,7 +198,6 @@ class KITMatplotlib(object):
         # create self.__graphs list
         for i, dset in enumerate(fileList):
             self.addGraph(dset)
-        print(self.__graphs)
 
         # read and adjsut .__entryDict before drawing
         self.readEntryDict(len(self.__graphs),self.getDefaultEntryDict(fileList))
@@ -252,7 +251,6 @@ class KITMatplotlib(object):
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
-
         # set error bars
         for i, table in enumerate(self.__graphs):
             if len(table) == 4 and self.err == True:
@@ -324,15 +322,8 @@ class KITMatplotlib(object):
 
         # get names from cfg and lodger labels
         graphEntries = [items[1] for items in list(self.__entryDict.items())]
-        # lodgerEntries = [entry.name() for entry in self.__lodgers if entry.name() != None]
-        # total_len = len(self.__graphs+self.__lodgers)
-        total_len = len(self.__graphs)
 
-        # check if there are already entries for lodgers in cfg
-        if len(graphEntries) == total_len:
-            obj.legend(graphEntries)
-        else:
-            obj.legend(graphEntries+lodgerEntries)
+        total_len = len(self.__graphs)
 
         # reorder legend items according to 'EntryList'
         handles,labels = obj.get_legend_handles_labels()
@@ -340,7 +331,6 @@ class KITMatplotlib(object):
         # labels = self.adjustOrder(labels)
         handles = kitutils.adjustOrder(handles, self.__entryDict, total_len)
         labels = kitutils.adjustOrder(labels, self.__entryDict, total_len)
-
 
         if self.legPosition == "auto":
             obj.legend(handles,labels)

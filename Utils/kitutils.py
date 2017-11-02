@@ -78,32 +78,11 @@ def adjustOrder(List, entryDict, len_total):
     userOrder = []
     userOrder = [int(item[0]) for item in list(entryDict.items())]
 
-    # adjust length of userOrder to not loose lodgers while zipping
-    userOrder = extendList(userOrder,len_total)
-    # while len(userOrder)<len_total:
-    #     # appended elements must be higher then the max value to avoide doublings
-    #     if len(userOrder)<max(userOrder):
-    #         userOrder.append(max(userOrder)+1)
-    #     else:
-    #         userOrder.append(len(userOrder))
-
     # reorder the list
-    # print(userOrder, List)
     List = [y for (x,y) in sorted(zip(userOrder, List))]
 
     return List
 
-def extendList(List,len_total):
-
-    # adjust length of userOrder to not loose lodgers while zipping
-    while len(List)<len_total:
-        # appended elements must be higher then the max value to avoide doublings
-        if len(List)<max(List):
-            List.append(max(List)+1)
-        else:
-            List.append(len(List))
-
-    return List
 
 def manipulate(graphList, arg):
 

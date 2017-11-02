@@ -128,11 +128,11 @@ fig = kPlot1.getCanvas()
 
 ##### LODGERS #####
 # draw horizontal line
-# kPlot1.addLodger(fig,y=7,style="--",color="r",name="test",width=2)
+# kPlot1.addLodger(fig,y=7,style="--",color="r0",name="test",width=2)
 # draw vertical line
-# kPlot1.addLodger(fig,x=5,style="-.",color="r",name="test",width=2)
+# kPlot1.addLodger(fig,x=5,style="-.",color="r0",name="test",width=2)
 # draw xy-graph
-# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r",name="test",width=2)
+# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r0",name="test",width=2)
 # draw text
 # kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
 ###################
@@ -266,8 +266,8 @@ class KITPlot(object):
         # Load parameters and apply default style
         self.__cfg = KITConfig()
         if defaultCfg == None:
-            self.__cfg.Default("C:\\Users\\Diego\\KITPlot\\KITPlot\\Utils\\default.cfg")
-            #self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
+            # self.__cfg.Default("C:\\Users\\Diego\\KITPlot\\KITPlot\\Utils\\default.cfg")
+            self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
         else:
             self.__cfg.Default(defaultCfg)
 
