@@ -43,6 +43,9 @@ class KITData(object):
 
         self.__temp = []
         self.__humid = []
+        self.__err = []
+        self.__bias_current = []
+        self.__time = []
 
         self.__px = None
         self.__py = None
@@ -303,13 +306,16 @@ class KITData(object):
 
         qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
         KITData.__dbCrs.execute(qryProbeData)
-        for (uid, pid, x, y, z, t, h, err) in KITData.__dbCrs:
+        for (uid, pid, x, y, z, t, h, err, time, bias_current) in KITData.__dbCrs:
             self.__x.append(x)
             self.__y.append(y)
             self.__z.append(z)
             self.__temp.append(t)
             self.__humid.append(h)
-            # err is not used yet 
+            # not used yet
+            self.__err.append(err)
+            self.__bias_current.append(bias_current)
+            self.__time.append(time)
 
         name = None
 

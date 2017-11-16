@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-""" A simple python based plot script
+""" A simple ROOT based python plot script
 
 1) Synopsis:
 Hello World! Welcome to the KITPlot script. This script was created by
 Daniel Schell (daniel.schell@kit.edu) and Marius Metzler
 (marius.metzler@kit.edu). This script is about creating distinctive,
-well-arranged plots especially for bachelor/master students at IEKP, who find
+well-arranged plots especially for bachelor/master students at ETP, who find
 common, commercially availible plotting software as lame and unconvinient
-as we do. The greatest benifit of KITPlot is, that it is able to directly
-communicate with the IEKP database. It also automatizes standard operations and
+as we do. The greatest benifit of KITPlot is that it is able to directly
+communicate with the ETP database. It also automatizes standard operations and
 procedures as well as making plots easily editable and reproducible via
 distinctive config files.
 
@@ -19,10 +19,10 @@ The script consists of 4 modules:
        plot. It accepts:
         - single .txt file that contains a data table (x-value, y-value,
           x-error, y-error seperated by tabs or spaces)
-        - single folders that house several .txt files
-        - single IDs ('probe ID' for probe station measurements,
+        - folder that houses several .txt files
+        - single ID ('probe ID' for probe station measurements,
           'Run' for alibava measurements)
-        - single .txt files that contain a lists IDs
+        - single .txt file that contains a list of IDs
 
         KITData then creates a KITData object for every graph, which contains
         the data table and provides convenient methods for handling all
@@ -52,7 +52,7 @@ The script consists of 4 modules:
 3) Installation:
     a) Create a main folder and give it a nice name (f.e. 'KITPlot')
     b) Inside this folder you ought to create a folder for cfg files named
-       "cfg" and for output files named "output". Clone the KITPlot
+       "cfg" and for output files named "output" .Clone the KITPlot
        repository from 'https://github.com/dieggo111/KITPlot',
        put its content inside an extra folder within your main folder and name
        it 'KITPlot'.
@@ -63,10 +63,10 @@ The script consists of 4 modules:
        the following modules:
        - numpy: 'pip3 install numpy'
        - json: 'pip3 install simplejson'
-       - pymysql: Download and unzip source file from
-                  https://pypi.python.org/pypi/mysql-connector-python/2.0.4
-                  or use the one in the repository located inside the 'Utils' folder.
-                  Open consol/terminal and go to PyMySQL-0.7.11
+       - pymysql: Download download and unzip source file from
+                  https://pypi.python.org/pypi/mysql-connector-python/2.0.4 or
+                  use the one in the
+                  repository. Open consol/terminal and go to PyMySQL-0.7.11
                   folder. Type "python setup.py build" and then
                   "python setup.py install".
     e) There are 2 'plot engines' you can use: ROOT or matplotlib.
@@ -77,7 +77,7 @@ The script consists of 4 modules:
                easy on Linux. However,doing this on Windows or Mac is a
                different story... although it's generally possible to do this
                on every system.
-    g) Lastly, you need login informations to access the database, which are
+    f) Lastly, you need login informations to access the database, which are
        stored in the 'db.cfg'. For security reasons the login file can not be
        downloaded, but must be requested from Daniel or Marius.
 
@@ -96,74 +96,60 @@ The script consists of 4 modules:
           are important! Do not try to plot two folders that happen to have the
           same name. The former output will be overwritten with the new plot.
 
-    The terminal input could look like this:
-
-####################################################
-Terminal> python main.py /DataFolder/Plot1/
-####################################################
-
-    This creates plot files named Plot1 (cfg, png, pdf). Depending on your OS,
-    you have to use either backslashes or frontslashes!
-
     A basic example of a main file could look like this:
 
 ####################################################
-#!/usr/bin/env python3
-# Mathtext doc: https://matplotlib.org/users/mathtext.html
 
 import sys
-from KITPlot import KITData
 from KITPlot import KITPlot
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 if len(sys.argv) > 2:
     kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
 else:
     kPlot1 = KITPlot(sys.argv[1])
 
+
 kPlot1.draw("matplotlib")
-fig = kPlot1.getCanvas()
 
-##### LODGERS #####
-# draw horizontal line
-# kPlot1.addLodger(fig,y=7,style="--",color="r0",name="test",width=2)
-# draw vertical line
-# kPlot1.addLodger(fig,x=5,style="-.",color="r0",name="test",width=2)
-# draw xy-graph
-# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r0",name="test",width=2)
-# draw text
-# kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
-###################
 
-kPlot1.showCanvas()
 kPlot1.saveCanvas()
+kPlot1.showCanvas()
 input()
+
 
 ####################################################
 
     If no errors are being raised, the plot will show up on your screen.
-    You can now start to edit your plot by editing the respective cfg file in
-    your cfg folder.
+    You can now start to edit plot with the related cfg file in your cfg folder.
 
 5) cfg file:
     Most parameters in our cfg file are self-explanatory. Some have a special
-    syntax that needs be considered or need some explanation. Generally, lists
-    (parameters in square brackets) have to be quoated/turned into strings by
-    putting them inside quoatation marks. Moreover, boolean parameters have to
-    start with a small character. Both conditions, are consequences of how the
-    JSON parser works, sadly):
+    syntax that needs be considered or need some explanation:
 
-    - CanvasSize : "[10,10]" = creates a canvas of 10 x 10 cm.
-    - PadSize : "[0.1,0.1,0.9,0.9]" = creates a pad on the canvas. The numbers
-                                      are relative coordinates of the bottom left
-                                      and the top right corner of the pad .
-    - Range : "[200:1000]" = sets axis range from 200 to 1000 units.
-    - Font : 62 = is standard arial, bulky and ideal for presentations.
-    - Log : false =  This needs to be a boolean value (true/false)
-    - Title : "Voltage (V)": use latex style for special characters and double
-                             backslashes
+    - 'Range = [200:1000]': sets axis range from 200 to 1000 units.
+                            Mind the brackets!
+    - 'Font = 62': 62 is standard arial, bulky and ideal for presentations.
+                   See ROOT documention for other options.
+    - 'Log = false': This needs to be a boolean value. Remember that having a 0
+                     in your data table may raise errors.
+    - 'Abs = True': This needs to be a boolean value.
+    - 'Title = Voltage (V)': You can announce special characters here with an
+                             '#' like '#circ', '#sigma' or super/subscript
+                             by '_{i}' and '^{2}'.
+    - 'GraphGroup = off': Default values are 'off', 'name', 'fluence'.
+                          Sometimes you might want to visualize that certain
+                          graphs belong together by giving them a similar color.
+                          'off' will just alter marker color and style for
+                          every graph. By choosing 'name', all graphs that
+                          share the first 5 letters of their name will be drawn
+                          in the same color but with altering markers (f.e.
+                          sensors of the same type but from different wafers).
+                          If 'fluence' is choosen then then sensors with equal
+                          fluences will be drawn in the same color (the flunces
+                          are retreived from the database). Lastly, you can
+                          make your own 'GraphGroup' by using the original
+                          sensor order and put them into brackets like
+                          '[1,2][6][3,4,5]'.
     - 'ColorShades = false': This needs to be a boolean value. If you use
                              GraphGroups, you might as well want to use
                              ColorShades. Let's say you have 3 red graphs and
@@ -236,9 +222,10 @@ from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from matplotlib.patches import Rectangle
 from .kitlodger import KITLodger
-from .Utils import kitutils
+from . import kitutils
 
 class KITPlot(object):
+
 
     __kitGreen = []
     __kitBlue = []
@@ -253,9 +240,8 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-
-    def __init__(self, dataInput=None, cfgFile=None, name=None, defaultCfg=None):
-
+    def __init__(self, dataInput=None, cfgFile=None):
+        self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
 
@@ -265,19 +251,11 @@ class KITPlot(object):
 
         # Load parameters and apply default style
         self.__cfg = KITConfig()
-        if defaultCfg == None:
-            # self.__cfg.Default("C:\\Users\\Diego\\KITPlot\\KITPlot\\Utils\\default.cfg")
-            self.__cfg.Default("C:\\Users\\Marius\\KITPlot\\KITPlot\\Utils\\default.cfg")
-        else:
-            self.__cfg.Default(defaultCfg)
-
+        self.__cfg.Default("default.cfg")
         self.__cfg.Dir("cfg")
 
         # extract name from data input
-        if name == None:
-            self.__inputName = self.getDataName(dataInput)
-        else:
-            self.__inputName = name
+        self.__inputName = self.getDataName(dataInput)
 
         # check if cfg is already there
         if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
@@ -414,12 +392,6 @@ class KITPlot(object):
             self.__files.append(dataInput)
             # self.addGraph(dataInput.getX(),dataInput.getY())
 
-        # NEW FEATURE: Load list/tuple with raw data
-        elif isinstance(dataInput, (list,tuple)):
-            print("Input interpreted as raw data")
-            for tup in dataInput:
-                self.__files.append(KITData(tup))
-
         # Load single PID
         # ???
         elif isinstance(dataInput, int):
@@ -462,6 +434,7 @@ class KITPlot(object):
 
                         self.__files.append(kdata)
 
+
                 else:
                     pass
 
@@ -475,6 +448,8 @@ class KITPlot(object):
                     else:
                         pass
 
+                # self.arrangeFileList()
+                # self.addNorm()
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -494,6 +469,7 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
 
+                    # self.arrangeFileList()
 
                     # for i,File in enumerate(self.__files):
                     #     if "Ramp" in File.getParaY():
@@ -507,22 +483,25 @@ class KITPlot(object):
 
                 # TODO Rpunch/REdge Ramp file
                 # elif "REdge" in dataInput:
-                    # data = KITData(dataInput).getRPunchDict()
-                    #
-                    # x = []
-                    # y = []
-                    # labels = []
-                    #
-                    # for i, bias in enumerate(data):
-                    #     x, y = zip(*data[bias])
-                    #     kdata = KITData()
-                    #     kdata.setX(list(x))
-                    #     kdata.setY(list(y))
-                    #     kdata.setName(str(bias) + " V")
-                    #     kdata.setPX("Voltage")
-                    #     kdata.setPY("Rpunch")
-                    #     self.__files.append(kdata)
-
+                #
+                #     data = KITData(dataInput).getRPunchDict()
+                #
+                #     x = []
+                #     y = []
+                #     labels = []
+                #
+                #     for i, bias in enumerate(data):
+                #         x, y = zip(*data[bias])
+                #         kdata = KITData()
+                #         kdata.setX(list(x))
+                #         kdata.setY(list(y))
+                #         kdata.setName(str(bias) + " V")
+                #         kdata.setPX("Voltage")
+                #         kdata.setPY("Rpunch")
+                #         self.__files.append(kdata)
+                #
+                #     self.addNorm()
+                #
 
                 # singel file
                 else:
@@ -532,7 +511,7 @@ class KITPlot(object):
         return True
 
 
-    def draw(self, engine=None):
+    def draw(self, engine=None, add_lodger=False):
         """
         doc
 
@@ -542,6 +521,19 @@ class KITPlot(object):
         if self.is_cfg_new == True:
             self.MeasurementType()
 
+        # read and adjsut .__entryDict before drawing
+        if add_lodger == True:
+            self.readEntryDict(add_lodger=True)
+        else:
+            self.readEntryDict()
+
+        # get lodgers from cfg wenn KITPlot object is initialized
+        if add_lodger == False:
+            try:
+                self.getLodgers()
+            except:
+                print("No lodgers in cfg.")
+
         # set engine
         if engine == None:
             engine = self.__engines[0]
@@ -550,22 +542,11 @@ class KITPlot(object):
                              + self.__engines[0] + " and " + self.__engines[1])
 
         # create graphs and canvas
-        self.canvas = KITMatplotlib(self.__cfg,self.is_cfg_new).draw(self.__files)
+        if engine == self.__engines[0]:
+            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
+            if add_lodger == True:
+                self.addLodgerEntry()
 
-        # check if there are lodgers in cfg and if so, add them to plot
-        self.getLodgers()
-
-        return True
-
-    def showCanvas(self):
-        self.canvas.show()
-        return True
-
-    def saveCanvas(self):
-        png_out = os.path.join("output", self.__inputName) + ".png"
-        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
-        self.canvas.savefig(png_out)
-        self.canvas.savefig(pdf_out)
         return True
 
 
@@ -577,35 +558,152 @@ class KITPlot(object):
         """ Read the cfg and create a lodger object for every entry in
             'Lodgers'.
         """
-        try:
-            for lodger in self.__cfg['Lodgers']:
-                paraDict = dict(self.__cfg['Lodgers'][lodger])
-                x = paraDict.get('x', None)
-                y = paraDict.get('y', None)
-                name = paraDict.get('name', None)
-                color = paraDict.get('color', None)
-                width = paraDict.get('width', None)
-                style = paraDict.get('style', None)
-                text = paraDict.get('text', None)
-                fontsize = paraDict.get('fontsize', None)
+        print("getLodger")
 
-                self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
-                                       width=width,text=text,fontsize=fontsize)
+        cfgLodgers = []
+        for lodger in self.__cfg['Lodgers']:
+            paraDict = dict(self.__cfg['Lodgers'][lodger])
+            # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
+            x = paraDict.get('x', None)
+            y = paraDict.get('y', None)
+            name = paraDict.get('name', None)
+            color = paraDict.get('color', None)
+            width = paraDict.get('width', None)
+            style = paraDict.get('style', None)
+
+            self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
+                                          style=style,width=width))
+        return True
+
+    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
+        print("addLodger")
+        # add new lodger from main
+        newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
+                              width=width)
+        self.__files.append(newLodger)
+        self.addLodgerEntry(newLodger)
+        self.draw(add_lodger=True)
+        return True
+
+    def addLodgerEntry(self, newLodger):
+        print("addLodgerEntry")
+        key = next(self.iter)
+        paraDict = newLodger.getDict()
+        try:
+            self.__cfg["Lodgers"].update({key : paraDict})
+            self.__cfg["Legend"]["EntryList"].update({})
         except:
-            pass
+            self.__cfg["Lodgers"] = {key : paraDict}
+
         return True
 
 
-    def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
-                  width=None,text=None,fontsize=None):
+#########################
+### entryDict methods ###
+#########################
 
-        newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
-                               width=width,text=text,fontsize=fontsize)
 
-        self.canvas = newLodger.add_to_plot()
+    def readEntryDict(self, add_lodger=False):
+        """'EntryList' makes the names and order of all graphs accessible. This
+        subsection is read every time KITPlot is executed. An empty value ("")
+        can be used to reset the entry to its default value (the original order
+        and names given by the .__files).
+        """
 
-        newLodger.add_to_cfg(self.__cfg)
+        # writes entry dict to cfg of sets it back to default if value is ""
+        if self.__cfg['Legend','EntryList'] == "":
+            self.__cfg['Legend','EntryList'] = self.getDefaultEntryDict()
+            if self.is_cfg_new == False:
+                print("EntryDict was set back to default!")
+            self.__entryDict = self.getDefaultEntryDict()
+        else:
+            self.__entryDict = self.__cfg['Legend','EntryList']
 
+
+
+        # calculate expected number of entries in 'EntryList'
+        # new lodgers are already appended
+        exp_len = len(self.__files)
+
+        # check if there's a 'Lodgers' section and how many entries it has
+        # try:
+        #     # print("lodgers items", len(self.__cfg['Lodgers'].items()))
+        #     amount_lodgers = len(self.__cfg['Lodgers'].items())
+        # except:
+        #     amount_lodgers = 0
+
+        # TODO: check if lodger demands for entry
+        # print("readEntry -> entryDict", self.__entryDict)
+
+        # no new lodger added but there are lodgers in cfg
+        print(add_lodger, len(self.__entryDict), exp_len, len(self.__files))
+        if len(self.__entryDict) != exp_len:
+            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
+                           "entries does not match or a key is used more than"
+                           "once. Adjust or reset 'EntryList'.")
+
+        # correct entry keys in case they are messed up
+        # self.fixEntryDict()
+
+        return True
+
+    def fixEntryDict(self):
+
+        # get key list from 'EntryList'
+        keys = [int(key) for key in self.__entryDict.keys()]
+        # print("fix", keys)
+
+        # key list should start at 0 and should have a length of len(keys)
+        straight_list = list(range(len(keys)))
+        # print("fix", straight_list)
+
+        # get reference list in respect to the original order of key list
+        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
+
+        # reorder reference list so that values stay in the same order as before
+        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
+
+        # print("fix", fixed_order)
+        values = list(self.__entryDict.values())
+        # print("fix", values)
+        new = OrderedDict(zip(fixed_order, values))
+        print(new)
+        # test = self.__entryDict
+        # print(test.update(newDict))
+        self.__cfg['Legend','EntryList'] = new
+
+    def getDefaultEntryDict(self):
+        """ Loads default names and order in respect to the KITData objects
+        in 'self.__files' list. Both keys and values of the dictionary must be
+        strings.
+
+        """
+
+        entryDict = OrderedDict()
+
+        # write legend entries in a dict
+        for i, graph in enumerate(self.__files):
+            entryDict[i] = str(graph.getName())
+
+        # check if there's a 'Lodgers' section and how many entries it has
+        try:
+            lodgers = [name[0] for name in self.__cfg['Lodgers'].items()]
+            for i, lodger in lodgers:
+                entryDict.update({str(len(self.__files)+i) : lodger})
+        except:
+            pass
+
+        return entryDict
+
+    def showCanvas(self):
+        self.canvas.show()
+        return True
+
+    def saveCanvas(self):
+        png_out = os.path.join("output", self.__inputName) + ".png"
+        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
+        self.canvas.savefig(png_out)
+        self.canvas.savefig(pdf_out)
         return True
 
 
@@ -691,10 +789,7 @@ class KITPlot(object):
         return Y
 
     def getDataName(self, dataInput):
-        if isinstance(dataInput, str):
-            return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
-        else:
-            raise ValueError("Unknown name...")
+        return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
 
 
 if __name__ == '__main__':
