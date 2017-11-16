@@ -100,20 +100,33 @@ The script consists of 4 modules:
 
 ####################################################
 
-import sys
-from KITPlot import KITPlot
 
+#!/usr/bin/env python3
+# Mathtext doc: https://matplotlib.org/users/mathtext.html
+import sys
+from KITPlot import KITData
+from KITPlot import KITPlot
+import numpy as np
+import matplotlib.pyplot as plt
 if len(sys.argv) > 2:
     kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
 else:
     kPlot1 = KITPlot(sys.argv[1])
-
-
 kPlot1.draw("matplotlib")
+fig = kPlot1.getCanvas()
 
-
-kPlot1.saveCanvas()
+##### LODGERS #####
+# draw horizontal line
+# kPlot1.addLodger(fig,y=7,style="--",color="r0",name="test",width=2)
+# draw vertical line
+# kPlot1.addLodger(fig,x=5,style="-.",color="r0",name="test",width=2)
+# draw xy-graph
+# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r0",name="test",width=2)
+# draw text
+# kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
+###################
 kPlot1.showCanvas()
+kPlot1.saveCanvas()
 input()
 
 
@@ -174,8 +187,6 @@ input()
     - 'BoxPara = 1': If you change the name of a legend element you might want
                      to adjust the legend box width by changing this factor in
                      between 0.5 and 1.5.
-    - 'SortPara = list': Pronounces the parameter that determines the order of
-                         all legend element.
     - 'EntryList = (0)a, (1)b, (3)c, (2)d': The legend elements are naturally
                                             ordered by ROOT. This original order
                                             (here: a = 0, b = 1, c = 2, d = 3)
