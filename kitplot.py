@@ -292,7 +292,6 @@ class KITPlot(object):
         else:
             pass
 
-
     ##################
     ### Auto Title ###
     ##################
@@ -302,7 +301,6 @@ class KITPlot(object):
         measurement type by checking database information. The default axis
         labels and titles are then set according to this information as soon as
         the respective cfg file is created.
-
         """
 
         if self.__files[0].getParaY() == None:
@@ -391,7 +389,6 @@ class KITPlot(object):
         A RPunch measurement, however, origionaly consist of one KITData file
         that needs to be split up into several KITData objects for one bias
         value (x value) represents one graph.
-
         Args:
             dataInput(None|int|str): Determines the way the 'self.__files'
                 is filled.
@@ -408,6 +405,12 @@ class KITPlot(object):
             print("Input interpreted as KITData object")
             self.__files.append(dataInput)
             # self.addGraph(dataInput.getX(),dataInput.getY())
+
+        # NEW FEATURE: Load list/tuple with raw data
+        elif isinstance(dataInput, (list,tuple)):
+            print("Input interpreted as raw data")
+            for tup in dataInput:
+                self.__files.append(KITData(tup))
 
         # Load single PID
         # ???
@@ -451,7 +454,6 @@ class KITPlot(object):
 
                         self.__files.append(kdata)
 
-
                 else:
                     pass
 
@@ -465,8 +467,6 @@ class KITPlot(object):
                     else:
                         pass
 
-                # self.arrangeFileList()
-                # self.addNorm()
 
             # Load file
             elif os.path.isfile(dataInput):
@@ -486,7 +486,6 @@ class KITPlot(object):
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
 
-                    # self.arrangeFileList()
 
                     # for i,File in enumerate(self.__files):
                     #     if "Ramp" in File.getParaY():
@@ -500,25 +499,22 @@ class KITPlot(object):
 
                 # TODO Rpunch/REdge Ramp file
                 # elif "REdge" in dataInput:
-                #
-                #     data = KITData(dataInput).getRPunchDict()
-                #
-                #     x = []
-                #     y = []
-                #     labels = []
-                #
-                #     for i, bias in enumerate(data):
-                #         x, y = zip(*data[bias])
-                #         kdata = KITData()
-                #         kdata.setX(list(x))
-                #         kdata.setY(list(y))
-                #         kdata.setName(str(bias) + " V")
-                #         kdata.setPX("Voltage")
-                #         kdata.setPY("Rpunch")
-                #         self.__files.append(kdata)
-                #
-                #     self.addNorm()
-                #
+                    # data = KITData(dataInput).getRPunchDict()
+                    #
+                    # x = []
+                    # y = []
+                    # labels = []
+                    #
+                    # for i, bias in enumerate(data):
+                    #     x, y = zip(*data[bias])
+                    #     kdata = KITData()
+                    #     kdata.setX(list(x))
+                    #     kdata.setY(list(y))
+                    #     kdata.setName(str(bias) + " V")
+                    #     kdata.setPX("Voltage")
+                    #     kdata.setPY("Rpunch")
+                    #     self.__files.append(kdata)
+
 
                 # singel file
                 else:
@@ -528,28 +524,14 @@ class KITPlot(object):
         return True
 
 
-    def draw(self, engine=None, add_lodger=False):
+    def draw(self, engine=None):
         """
         doc
-
         """
 
         # if dataInput comes from database then apply titles according to measurement type
         if self.is_cfg_new == True:
             self.MeasurementType()
-
-        # read and adjsut .__entryDict before drawing
-        if add_lodger == True:
-            self.readEntryDict(add_lodger=True)
-        else:
-            self.readEntryDict()
-
-        # get lodgers from cfg wenn KITPlot object is initialized
-        if add_lodger == False:
-            try:
-                self.getLodgers()
-            except:
-                print("No lodgers in cfg.")
 
         # set engine
         if engine == None:
@@ -559,11 +541,22 @@ class KITPlot(object):
                              + self.__engines[0] + " and " + self.__engines[1])
 
         # create graphs and canvas
-        if engine == self.__engines[0]:
-            self.canvas = KITMatplotlib(self.__cfg).draw(self.__files)
-            if add_lodger == True:
-                self.addLodgerEntry()
+        self.canvas = KITMatplotlib(self.__cfg,self.is_cfg_new).draw(self.__files)
 
+        # check if there are lodgers in cfg and if so, add them to plot
+        self.getLodgers()
+
+        return True
+
+    def showCanvas(self):
+        self.canvas.show()
+        return True
+
+    def saveCanvas(self):
+        png_out = os.path.join("output", self.__inputName) + ".png"
+        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
+        self.canvas.savefig(png_out)
+        self.canvas.savefig(pdf_out)
         return True
 
 
@@ -575,148 +568,35 @@ class KITPlot(object):
         """ Read the cfg and create a lodger object for every entry in
             'Lodgers'.
         """
-
-        cfgLodgers = []
-        for lodger in self.__cfg['Lodgers']:
-            paraDict = dict(self.__cfg['Lodgers'][lodger])
-            # for paraDict in dict(self.__cfg['Lodgers'][lodger]):
-            x = paraDict.get('x', None)
-            y = paraDict.get('y', None)
-            name = paraDict.get('name', None)
-            color = paraDict.get('color', None)
-            width = paraDict.get('width', None)
-            style = paraDict.get('style', None)
-
-            self.__files.append(KITLodger(x=x,y=y,name=name,color=color,
-                                          style=style,width=width))
-        return True
-
-    def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
-        # add new lodger from main
-        newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
-                              width=width)
-        self.__files.append(newLodger)
-        self.addLodgerEntry(newLodger)
-        self.draw(add_lodger=True)
-        return True
-
-    def addLodgerEntry(self, newLodger):
-        key = next(self.iter)
-        paraDict = newLodger.getDict()
         try:
-            self.__cfg["Lodgers"].update({key : paraDict})
-            self.__cfg["Legend"]["EntryList"].update({})
-        except:
-            self.__cfg["Lodgers"] = {key : paraDict}
+            for lodger in self.__cfg['Lodgers']:
+                paraDict = dict(self.__cfg['Lodgers'][lodger])
+                x = paraDict.get('x', None)
+                y = paraDict.get('y', None)
+                name = paraDict.get('name', None)
+                color = paraDict.get('color', None)
+                width = paraDict.get('width', None)
+                style = paraDict.get('style', None)
+                text = paraDict.get('text', None)
+                fontsize = paraDict.get('fontsize', None)
 
-        return True
-
-
-#########################
-### entryDict methods ###
-#########################
-
-
-    def readEntryDict(self, add_lodger=False):
-        """'EntryList' makes the names and order of all graphs accessible. This
-        subsection is read every time KITPlot is executed. An empty value ("")
-        can be used to reset the entry to its default value (the original order
-        and names given by the .__files).
-        """
-
-        # writes entry dict to cfg of sets it back to default if value is ""
-        if self.__cfg['Legend','EntryList'] == "":
-            self.__cfg['Legend','EntryList'] = self.getDefaultEntryDict()
-            if self.is_cfg_new == False:
-                print("EntryDict was set back to default!")
-            self.__entryDict = self.getDefaultEntryDict()
-        else:
-            self.__entryDict = self.__cfg['Legend','EntryList']
-
-
-
-        # calculate expected number of entries in 'EntryList'
-        # new lodgers are already appended
-        exp_len = len(self.__files)
-
-        # check if there's a 'Lodgers' section and how many entries it has
-        # try:
-        #     # print("lodgers items", len(self.__cfg['Lodgers'].items()))
-        #     amount_lodgers = len(self.__cfg['Lodgers'].items())
-        # except:
-        #     amount_lodgers = 0
-
-        # TODO: check if lodger demands for entry
-        # print("readEntry -> entryDict", self.__entryDict)
-
-        # no new lodger added but there are lodgers in cfg
-        if len(self.__entryDict) != exp_len:
-            raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
-                           "entries does not match or a key is used more than"
-                           "once. Adjust or reset 'EntryList'.")
-
-        # correct entry keys in case they are messed up
-        # self.fixEntryDict()
-
-        return True
-
-    def fixEntryDict(self):
-
-        # get key list from 'EntryList'
-        keys = [int(key) for key in self.__entryDict.keys()]
-        # print("fix", keys)
-
-        # key list should start at 0 and should have a length of len(keys)
-        straight_list = list(range(len(keys)))
-        # print("fix", straight_list)
-
-        # get reference list in respect to the original order of key list
-        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
-
-        # reorder reference list so that values stay in the same order as before
-        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
-
-        # print("fix", fixed_order)
-        values = list(self.__entryDict.values())
-        # print("fix", values)
-        new = OrderedDict(zip(fixed_order, values))
-        print(new)
-        # test = self.__entryDict
-        # print(test.update(newDict))
-        self.__cfg['Legend','EntryList'] = new
-
-    def getDefaultEntryDict(self):
-        """ Loads default names and order in respect to the KITData objects
-        in 'self.__files' list. Both keys and values of the dictionary must be
-        strings.
-
-        """
-
-        entryDict = OrderedDict()
-
-        # write legend entries in a dict
-        for i, graph in enumerate(self.__files):
-            entryDict[i] = str(graph.getName())
-
-        # check if there's a 'Lodgers' section and how many entries it has
-        try:
-            lodgers = [name[0] for name in self.__cfg['Lodgers'].items()]
-            for i, lodger in lodgers:
-                entryDict.update({str(len(self.__files)+i) : lodger})
+                self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
+                                       width=width,text=text,fontsize=fontsize)
         except:
             pass
-
-        return entryDict
-
-    def showCanvas(self):
-        self.canvas.show()
         return True
 
-    def saveCanvas(self):
-        png_out = os.path.join("output", self.__inputName) + ".png"
-        pdf_out = os.path.join("output", self.__inputName) + ".pdf"
-        self.canvas.savefig(png_out)
-        self.canvas.savefig(pdf_out)
+
+    def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
+                  width=None,text=None,fontsize=None):
+
+        newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
+                               width=width,text=text,fontsize=fontsize)
+
+        self.canvas = newLodger.add_to_plot()
+
+        newLodger.add_to_cfg(self.__cfg)
+
         return True
 
 
@@ -802,9 +682,12 @@ class KITPlot(object):
         return Y
 
     def getDataName(self, dataInput):
-        return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+        if isinstance(dataInput, str):
+            return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+        else:
+            raise ValueError("Unknown name...")
 
 
-if __name__ == '__main__':
-    plot = KITPlot(38268)
-    plot.draw('APL')
+# if __name__ == '__main__':
+#     plot = KITPlot(38268)
+#     plot.draw('APL')
