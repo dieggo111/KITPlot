@@ -233,7 +233,7 @@ from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from matplotlib.patches import Rectangle
 from .kitlodger import KITLodger
-from . import kitutils
+from .Utils import kitutils
 
 class KITPlot(object):
 
@@ -251,7 +251,7 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None, cfgFile=None):
+    def __init__(self, dataInput=None,defaultCfg=None,name=None):
         self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
@@ -262,11 +262,17 @@ class KITPlot(object):
 
         # Load parameters and apply default style
         self.__cfg = KITConfig()
-        self.__cfg.Default("default.cfg")
+        if defaultCfg == None:
+            self.__cfg.Default("default.cfg")
+        else:
+            self.__cfg.Default(defaultCfg)
         self.__cfg.Dir("cfg")
 
         # extract name from data input
-        self.__inputName = self.getDataName(dataInput)
+        if name == None:
+            self.__inputName = self.getDataName(dataInput)
+        else:
+            self.__inputName = name
 
         # check if cfg is already there
         if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
@@ -569,7 +575,6 @@ class KITPlot(object):
         """ Read the cfg and create a lodger object for every entry in
             'Lodgers'.
         """
-        print("getLodger")
 
         cfgLodgers = []
         for lodger in self.__cfg['Lodgers']:
@@ -587,7 +592,6 @@ class KITPlot(object):
         return True
 
     def addLodger(self,x=None,y=None,name=None,color=None,style=None,width=None):
-        print("addLodger")
         # add new lodger from main
         newLodger = KITLodger(x=x,y=y,name=name,color=color,style=style,
                               width=width)
@@ -597,7 +601,6 @@ class KITPlot(object):
         return True
 
     def addLodgerEntry(self, newLodger):
-        print("addLodgerEntry")
         key = next(self.iter)
         paraDict = newLodger.getDict()
         try:
@@ -647,7 +650,6 @@ class KITPlot(object):
         # print("readEntry -> entryDict", self.__entryDict)
 
         # no new lodger added but there are lodgers in cfg
-        print(add_lodger, len(self.__entryDict), exp_len, len(self.__files))
         if len(self.__entryDict) != exp_len:
             raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
                            "entries does not match or a key is used more than"
