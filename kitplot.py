@@ -261,6 +261,7 @@ class KITPlot(object):
         self.__graphs = []
 
         # Load parameters and apply default style
+        # Default-function expects (working directory) path 
         self.__cfg = KITConfig()
         if defaultCfg == None:
             self.__cfg.Default("default.cfg")
