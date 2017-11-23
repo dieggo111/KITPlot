@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
 import os,sys
 import numpy as np
 import mysql.connector
 from .KITConfig import KITConfig
+from .KITSearch import KITSearch
 from collections import OrderedDict
 import datetime
 
@@ -61,7 +61,6 @@ class KITData(object):
         self.__gain = None
         self.__seed = None
         self.__seederr = None
-
 
         # Sometimes integers are interpreted as strings, therefore
         # isdigit() is called to check for missinterpreted integers
@@ -233,31 +232,18 @@ class KITData(object):
             section: config section where login data can be found
 
         """
-
-
         try:
             cnxConf = KITConfig()
-
             cnxConf.load(credentials)
             db_config = cnxConf[section]
-
-            KITData.__dbCnx = mysql.connector.MySQLConnection(**db_config)
-
-#            if KITData.__dbCnx.is_connected():
-            print("Database connection established")
-#            else:
-#                sys.exit("Connection failed! Did you changed "
-#                         "the database parameters in 'db.cfg'? ")
-
-            KITData.__dbCrs = KITData.__dbCnx.cursor()
-# TODO: except case for calling a none-existend probeID
         except:
-            if "db.cfg" not in os.listdir(os.getcwd()):
-                self.__createCfg()
-            else:
-                raise ValueError("No credentials file found. "
-                                 "Please add correct database parameters "
-                                 "to 'db.cfg'")
+            raise ValueError("No credentials file found. Please add correct"+
+                             "database parameters to 'db.cfg'")
+        try:
+            self.dbCnx = KITSearch(db_config)
+            print("Database connection established")
+        except:
+            raise ValueError("Database connection failed.")
 
 
     def __createCfg(self):
@@ -304,43 +290,24 @@ class KITData(object):
 
         """
 
-        qryProbeData = ("SELECT * FROM probe_data WHERE probeid=%s" %(pid))
-        KITData.__dbCrs.execute(qryProbeData)
-        for (uid, pid, x, y, z, t, h, err, time, bias_current) in KITData.__dbCrs:
-            self.__x.append(x)
-            self.__y.append(y)
-            self.__z.append(z)
-            self.__temp.append(t)
-            self.__humid.append(h)
-            # not used yet
-            self.__err.append(err)
-            self.__bias_current.append(bias_current)
-            self.__time.append(time)
+        data = self.dbCnx.search_for_PID(pid)
 
-        name = None
-
-        qryProbe = ("SELECT * FROM probe WHERE probeid=%s" %(pid))
-        KITData.__dbCrs.execute(qryProbe)
-
-        for (pid, sid, pX, pY, pZ, date, op, t, h,
-             stat, f, com, flag, cernt, guard, aLCR,
-             mLCR, n, start, stop, bias, vdep, fmode) in KITData.__dbCrs:
-
-            self.__px = pX
-            self.__py = pY
-            self.__t0 = t
-            self.__h0 = h
-            name = sid
-
-        qrySensorName = ("SELECT * FROM info WHERE id=%s" %(name))
-        KITData.__dbCrs.execute(qrySensorName)
-        for (sid,name,project,man,cls,stype,spec,
-             thick,width,length,strips,pitch,coupling,
-             date,op,inst,stat,bname,Fp,Fn,par,defect) in KITData.__dbCrs:
-
-            self.__name = name
-            self.__Fp = Fp
-            self.__project = project
+        self.__x = data["dataX"]
+        self.__y = data["dataY"]
+        self.__z = data["dataZ"]
+        self.__temp = data["temp"]
+        self.__humid = data["rh"]
+        self.__err = data["err"]
+        self.__bias_current = data["bias_cur"]
+        self.__time = data["time"]
+        self.__px = data["paraX"]
+        self.__py = data["paraY"]
+        self.__t0 = data["t0"]
+        self.__h0 = data["h0"]
+        self.__name = data["name"]
+        self.__Fp = data["Fp"]
+        self.__Fn = data["Fn"]
+        self.__project = data["project"]
 
 
     def __allo_db_alibava(self, run):
@@ -351,49 +318,60 @@ class KITData(object):
         self.__name = "ALiBaVa"
         self.__project = "Default_Project"
 
-        tmpID = None
-        tmpDate = None
-        annealing = 0
+        data = self.dbCnx.search_for_PID(pid)
 
-        qryRunData = ("SELECT voltage, current, gain, electron_sig, "
-                      "signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date "
-                      "FROM alibava WHERE run=%s" %(run))
-        KITData.__dbCrs.execute(qryRunData)
+        self.__x = [dic["voltage"]]
+        self.__y = [dic["e_sig"]]
+        self.__dy = [dic["signal_e_err"]]
+        self.__gain = dic["gain"]
+        self.__seed = dic["SeedSig_MPV"]
+        self.__seederr = dic["SeedSig_MPV_err"]
+        tempID = dic
 
-        for (voltage, current, gain, electron_sig, signal_e_err,
-             SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
-            self.__x.append(voltage)
-            self.__y.append(electron_sig)
-            self.__dy.append(signal_e_err)
-            self.__gain = gain
-            self.__seed = SeedSig_MPV
-            self.__seederr = SeedSig_MPV_err
 
-            tmpID = id
-            tmpDate = date
-
-        qryAnnealing = ("SELECT date,equiv FROM annealing "
-                        "WHERE id=%s and "
-                        "TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
-
-        try:
-            KITData.__dbCrs.execute(qryAnnealing)
-        except mysql.connector.errors.ProgrammingError:
-            sys.exit("Couldn't find run " + run + " in Database")
-
-        for (date,equiv) in KITData.__dbCrs:
-            annealing += equiv
-        self.__z.append(annealing)
-
-        qrySensorName = ("SELECT name, F_p_aim_n_cm2, project "
-                         "FROM info WHERE id=%s" %(tmpID))
-
-        KITData.__dbCrs.execute(qrySensorName)
-
-        for (name, Fp, project) in KITData.__dbCrs:
-            self.__name = name
-            self.__Fp = Fp
-            self.__project = project
+        # tmpID = None
+        # tmpDate = None
+        # annealing = 0
+        #
+        # qryRunData = ("SELECT voltage, current, gain, electron_sig, "
+        #               "signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date "
+        #               "FROM alibava WHERE run=%s" %(run))
+        # KITData.__dbCrs.execute(qryRunData)
+        #
+        # for (voltage, current, gain, electron_sig, signal_e_err,
+        #     self.__x.append(voltage)
+        #     self.__y.append(electron_sig)
+        #     self.__dy.append(signal_e_err)
+        #     self.__gain = gain
+        #     self.__seed = SeedSig_MPV
+        #     self.__seederr = SeedSig_MPV_err
+        #
+        #      SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
+        #     tmpID = id
+        #     tmpDate = date
+        #
+        # qryAnnealing = ("SELECT date,equiv FROM annealing "
+        #                 "WHERE id=%s and "
+        #                 "TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
+        #
+        # try:
+        #     KITData.__dbCrs.execute(qryAnnealing)
+        # except mysql.connector.errors.ProgrammingError:
+        #     sys.exit("Couldn't find run " + run + " in Database")
+        #
+        # for (date,equiv) in KITData.__dbCrs:
+        #     annealing += equiv
+        # self.__z.append(annealing)
+        #
+        # qrySensorName = ("SELECT name, F_p_aim_n_cm2, project "
+        #                  "FROM info WHERE id=%s" %(tmpID))
+        #
+        # KITData.__dbCrs.execute(qrySensorName)
+        #
+        # for (name, Fp, project) in KITData.__dbCrs:
+        #     self.__name = name
+        #     self.__Fp = Fp
+        #     self.__project = project
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow

@@ -227,11 +227,11 @@ input()
 
 import numpy as np
 import os, sys
+import matplotlib.pyplot as plt
 from .kitdata import KITData
 from .KITConfig import KITConfig
 from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
-from matplotlib.patches import Rectangle
 from .kitlodger import KITLodger
 from .Utils import kitutils
 
@@ -261,7 +261,7 @@ class KITPlot(object):
         self.__graphs = []
 
         # Load parameters and apply default style
-        # Default-function expects (working directory) path 
+        # Default-function expects (working directory) path
         self.__cfg = KITConfig()
         if defaultCfg == None:
             self.__cfg.Default("default.cfg")
@@ -551,6 +551,8 @@ class KITPlot(object):
 
     def showCanvas(self):
         self.canvas.show()
+        plt.waitforbuttonpress(0)
+        plt.close(self.canvas)
         return True
 
     def saveCanvas(self):
@@ -559,6 +561,9 @@ class KITPlot(object):
         self.canvas.savefig(png_out)
         self.canvas.savefig(pdf_out)
         return True
+
+# this will wait for indefinite time
+
 
 
 ######################
