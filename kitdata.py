@@ -14,8 +14,7 @@ class KITData(object):
 
     """
 
-    __dbCnx = None
-    __dbCrs = None
+    dbSession = None
 
     def __init__(self, dataInput=None, measurement="probe",
                  credentials='db.cfg', show_input=None):
@@ -79,8 +78,8 @@ class KITData(object):
             self.__id = dataInput
 
             # Establish database connection if its no already established
-            if KITData.__dbCrs is None:
-                self.__init_db_connection()
+            if KITData.dbSession is None:
+                self.__init_db_connection(credentials)
 
             # Distinguish between probe station and ALiBaVa ID
             if measurement is "alibava":
@@ -240,7 +239,7 @@ class KITData(object):
             raise ValueError("No credentials file found. Please add correct"+
                              "database parameters to 'db.cfg'")
         try:
-            self.dbCnx = KITSearch(db_config)
+            KITData.dbSession = KITSearch(db_config)
             print("Database connection established")
         except:
             raise ValueError("Database connection failed.")
@@ -290,7 +289,7 @@ class KITData(object):
 
         """
 
-        data = self.dbCnx.search_for_PID(pid)
+        data = KITData.dbSession.search_for_PID(pid)
 
         self.__x = data["dataX"]
         self.__y = data["dataY"]
@@ -318,60 +317,19 @@ class KITData(object):
         self.__name = "ALiBaVa"
         self.__project = "Default_Project"
 
-        data = self.dbCnx.search_for_PID(pid)
+        data = KITData.dbSession.search_for_run(run)
 
-        self.__x = [dic["voltage"]]
-        self.__y = [dic["e_sig"]]
-        self.__dy = [dic["signal_e_err"]]
-        self.__gain = dic["gain"]
-        self.__seed = dic["SeedSig_MPV"]
-        self.__seederr = dic["SeedSig_MPV_err"]
-        tempID = dic
-
-
-        # tmpID = None
-        # tmpDate = None
-        # annealing = 0
-        #
-        # qryRunData = ("SELECT voltage, current, gain, electron_sig, "
-        #               "signal_e_err, SeedSig_MPV, SeedSig_MPV_err, id, date "
-        #               "FROM alibava WHERE run=%s" %(run))
-        # KITData.__dbCrs.execute(qryRunData)
-        #
-        # for (voltage, current, gain, electron_sig, signal_e_err,
-        #     self.__x.append(voltage)
-        #     self.__y.append(electron_sig)
-        #     self.__dy.append(signal_e_err)
-        #     self.__gain = gain
-        #     self.__seed = SeedSig_MPV
-        #     self.__seederr = SeedSig_MPV_err
-        #
-        #      SeedSig_MPV, SeedSig_MPV_err, id, date) in KITData.__dbCrs:
-        #     tmpID = id
-        #     tmpDate = date
-        #
-        # qryAnnealing = ("SELECT date,equiv FROM annealing "
-        #                 "WHERE id=%s and "
-        #                 "TIMESTAMP(date)<='%s'" %(tmpID,tmpDate))
-        #
-        # try:
-        #     KITData.__dbCrs.execute(qryAnnealing)
-        # except mysql.connector.errors.ProgrammingError:
-        #     sys.exit("Couldn't find run " + run + " in Database")
-        #
-        # for (date,equiv) in KITData.__dbCrs:
-        #     annealing += equiv
-        # self.__z.append(annealing)
-        #
-        # qrySensorName = ("SELECT name, F_p_aim_n_cm2, project "
-        #                  "FROM info WHERE id=%s" %(tmpID))
-        #
-        # KITData.__dbCrs.execute(qrySensorName)
-        #
-        # for (name, Fp, project) in KITData.__dbCrs:
-        #     self.__name = name
-        #     self.__Fp = Fp
-        #     self.__project = project
+        self.__x = [data["voltage"]]
+        self.__y = [data["e_sig"]]
+        self.__z = [data["annealing"]]
+        self.__dy = [data["e_sig_err"]]
+        self.__gain = data["gain"]
+        self.__seed = data["seed"]
+        self.__seederr = data["seed_err"]
+        self.__name = data["name"]
+        self.__Fp = data["Fp"]
+        self.__Fn = data["Fn"]
+        self.__project = data["project"]
 
     def dropXLower(self, xlow=0):
         """Drops datasets if x < xlow

@@ -145,7 +145,7 @@ class db_annealing(Base):
 
     __tablename__ = "annealing"
 
-    annealing-id            = Column(Integer, primary_key=True)
+    annealing_id            = Column(Integer, primary_key=True)
     ID                      = Column(Integer)
     date                    = Column(DateTime)
     temperature             = Column(Float)

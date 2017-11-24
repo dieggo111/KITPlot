@@ -105,12 +105,24 @@ class KITSearch(object):
                         "seed_err"      : column.SeedSig_MPV_err})
             tempID = column.ID
             tempDate = column.date
+            annealing = 0
 
         for column in self.search_in_annealing(tempID):
-            print(column.equiv,column.date)
-            print(tempDate>column.date)
+            # print(column.equiv,column.date, tempDate)
+            # print(tempDate>column.date)
+            annealing += column.equiv
+        dic.update({"annealing" : annealing})
+
+        for column in self.search_in_info(tempID,para="ID"):
+            dic.update({"name"      : column.name,
+                        "Fp"        : column.F_p_aim_n_cm2,
+                        "Fn"        : column.F_n_aim_n_cm2,
+                        "project"   : column.project})
 
         return dic
+
+    def getSession(self):
+        return self.session
 
 if __name__ == '__main__':
 

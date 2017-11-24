@@ -36,11 +36,11 @@ class KITConfig(object):
         self.__setupLogger()
 
         if cfg is not None:
+            self.__cfgFile = cfg
             self.load(cfg)
 
 
     def Default(self, fName='default.cfg'):
-        print(fName)
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
                 self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
@@ -122,9 +122,9 @@ class KITConfig(object):
             cfg (str): Name of cfg file inside the working directory
 
         """
+
         if self.__cfgFile is "":
             self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
-
         try:
             with open(self.__cfgFile) as cfgFile:
                 self.__cfg = json.load(cfgFile, object_pairs_hook=OrderedDict)
