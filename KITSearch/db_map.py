@@ -125,7 +125,7 @@ class db_alibava(Base):
     station                 = Column(Integer)
     chip                    = Column(Integer)
     signal_e_syserror       = Column(Float)
-    flag                    = Enum("good", "bad", "meas", "valid")
+    flag                    = Column(Enum("good", "bad", "meas", "valid"))
     fakehits                = Column(Float)
     SeedSig_MPV             = Column(Float)
     SeedSig_MPV_err         = Column(Float)
@@ -152,3 +152,29 @@ class db_annealing(Base):
     time                    = Column(Float)
     equiv                   = Column(Float)
     operator                = Column(String)
+
+class db_irradiation(Base):
+
+    __tablename__ = "irradiation"
+
+    uirrad_id           = Column(Integer,primary_key=True)
+    ID                  = Column(Integer)
+    F_n_cm2             = Column(Float)
+    particletype        = Column(Enum("n","p","pi"))
+    date                = Column(DateTime)
+    starttime           = Column(DateTime)
+    endtime             = Column(DateTime)
+    beamcurrent_uA      = Column(Float)
+    temperature         = Column(Float)
+    F_measure           = Column(Float)
+    F_aim_n_cm2         = Column(Float)
+    stack               = Column(Integer)
+    hardnessfactor      = Column(Float)
+    operator            = Column(String)
+    comment             = Column(String)
+    location            = Column(String)
+    n_scans             = Column(Integer)
+    scan_lines          = Column(Integer)
+    scan_speed_mm_s     = Column(Integer)
+    scan_width_mm       = Column(Integer)
+    groupname           = Column(String)
