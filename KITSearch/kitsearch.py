@@ -24,7 +24,9 @@ class KITSearch(object):
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    # basic table search
+    #####################
+    # basic table search#
+    #####################
     def search_in_info(self,val,para=None):
         if para == "name" or para == None:
             data = self.session.query(db_info).filter_by(name=val)
@@ -63,12 +65,15 @@ class KITSearch(object):
             data = self.session.query(db_irradiation).filter_by(ID=val)
         return data
 
-    # combined searches
-    def probe_search_for_name(self,name):
+    ####################
+    # combined searches#
+    ####################
+    def probe_search_for_name(self,name,project):
         dic = {}
         PID = []
         for col in self.search_in_info(name,para="name"):
-            UID = col.ID
+            if col.project == project:
+                UID = col.ID
         for row in self.search_in_probe(UID,"UID"):
             PID.append(row.probeid)
         for run in PID:
@@ -150,13 +155,11 @@ class KITSearch(object):
 
         return dic
 
-    def ali_search_for_name_voltage(self,name,voltage):
+    def ali_search_for_name_voltage(self,name,voltage,project):
         dic = {}
         for col in self.search_in_info(name,"name"):
-            ID = col.ID
-            # TODO: differ between sensors with same name and different project
-            # print(ID)
-            project = col.project
+            if col.project == project:
+                ID = col.ID
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
             if (voltage*0.99)<abs(col.voltage)<(voltage*1.01):
@@ -174,11 +177,11 @@ class KITSearch(object):
                 dic.update({col.run : sub})
         return dic
 
-    def ali_search_for_name_annealing(self,name,annealing):
+    def ali_search_for_name_annealing(self,name,annealing,project):
         dic = {}
         for col in self.search_in_info(name,"name"):
-            ID = col.ID
-            print(ID)
+            if col.project == project:
+                ID = col.ID
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
             if (annealing*0.99)<abs(self.getAnnealing(ID,col.date))<(annealing*1.01):
@@ -192,7 +195,6 @@ class KITSearch(object):
                             "annealing"     : self.getAnnealing(ID,col.date)})
                 dic.update({col.run : sub})
         return dic
-
 
     def getAnnealing(self,ID,date):
         annealing = 0

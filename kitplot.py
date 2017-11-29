@@ -234,10 +234,11 @@ from .kitmatplotlib import KITMatplotlib
 from collections import OrderedDict
 from .kitlodger import KITLodger
 from .Utils import kitutils
+import warnings
 
 class KITPlot(object):
 
-
+    # deprecated?
     __kitGreen = []
     __kitBlue = []
     __kitMay = []
@@ -252,6 +253,10 @@ class KITPlot(object):
     __color = 0
 
     def __init__(self, dataInput=None,defaultCfg=None,name=None):
+
+        # ignore warning that is raised because of back-end bug while using 'waitforbuttonpress'
+        warnings.filterwarnings("ignore",".*GUI is implemented.*")
+
         self.iter = iter(["lodger1","lodger2","lodger3"])
         # supported plot engines
         self.__engines = ['matplotlib', 'ROOT']
