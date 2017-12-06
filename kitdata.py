@@ -170,7 +170,7 @@ class KITData(object):
             self.__py = dataInput[0].getParaY()
             self.__pz = dataInput[0].getParaZ()
             self.__name = dataInput[0].getName()
-            self.__Fp = dataInput[0].getFluenceP()
+            self.__fluence = dataInput[0].getFluenceP()
 
             for kitFile in dataInput:
                 self.__x.append(kitFile.getX()[0])
@@ -289,7 +289,7 @@ class KITData(object):
 
         """
 
-        data = KITData.dbSession.search_for_PID(pid)
+        data = KITData.dbSession.probe_search_for_PID(pid)
 
         self.__x = data["dataX"]
         self.__y = data["dataY"]
@@ -304,8 +304,8 @@ class KITData(object):
         self.__t0 = data["t0"]
         self.__h0 = data["h0"]
         self.__name = data["name"]
-        self.__Fp = data["Fp"]
-        self.__Fn = data["Fn"]
+        self.__fluence = data["fluence"]
+        self.__pt = data["particletype"]
         self.__project = data["project"]
 
 
@@ -327,8 +327,8 @@ class KITData(object):
         self.__seed = data["seed"]
         self.__seederr = data["seed_err"]
         self.__name = data["name"]
-        self.__Fp = data["Fp"]
-        self.__Fn = data["Fn"]
+        self.__fluence = data["Fp"]
+        self.__pt = data["particletype"]
         self.__project = data["project"]
 
     def dropXLower(self, xlow=0):
@@ -854,7 +854,7 @@ class KITData(object):
         return self.__h0
 
 
-    def getFluenceP(self):
+    def getFluence(self):
         """Returns fluence of irradiated sensors
 
         Returns:
@@ -862,7 +862,7 @@ class KITData(object):
 
         """
 
-        return self.__Fp
+        return self.__fluence
 
 
     #TODO: Do we need these two methods?

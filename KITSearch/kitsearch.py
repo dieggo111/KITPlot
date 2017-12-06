@@ -223,10 +223,11 @@ class KITSearch(object):
 
 if __name__ == '__main__':
 
-    db = {"host": "192.168.13.2",
-          "database": "sample",
-          "user": "abfrage",
-          "passwd": "JtjTN9M4WpQr,29t"}
+    # db = {"host"      : "...",
+    #         "database"  : "...",
+    #         "user"      : "...",
+    #         "passwd"    : "..."}
+
     s = KITSearch(db)
     print(s.probe_search_for_name("Irradiation_04"))
     # print(s.ali_search_for_name_voltage("KIT_Test_07",600))

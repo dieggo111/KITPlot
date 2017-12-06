@@ -218,16 +218,12 @@ class KITMatplotlib(object):
         elif self.splitGraph is True and len(self.__graphs) != 1:
             print("Warning::Can only split single graph. Request rejected")
 
-
         # apply user defined normalization or manipulation of y values of each graph
-        kitutils.manipulate(self.__graphs, self.norm)
-
+        self.__graphs = kitutils.manipulate(self.__graphs, self.norm)
         # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
         fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
-
         # specify (nrows, ncols, axnum)
         ax = fig.add_subplot(1, 1, 1)
-
         # adjust pad size: [left, bottom, width, height]
         ax.set_position(self.padSize)
 
@@ -237,11 +233,13 @@ class KITMatplotlib(object):
         if self.tickY:
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
+
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
                 markerface = 'white'
             else:
                 markerface = self.getColor(i)
+            # print("here",table[0],table[1])
             ax.plot(table[0],                           # x-axis
                     table[1],                           # y-axis
                     color=self.getColor(i),             # line color

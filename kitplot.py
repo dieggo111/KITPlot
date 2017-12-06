@@ -101,9 +101,10 @@ The script consists of 4 modules:
 ####################################################
 
 
+####################################################
 #!/usr/bin/env python3
 # Mathtext doc: https://matplotlib.org/users/mathtext.html
-import sys
+import sys, os
 from KITPlot import KITData
 from KITPlot import KITPlot
 import numpy as np
@@ -111,7 +112,7 @@ import matplotlib.pyplot as plt
 if len(sys.argv) > 2:
     kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
 else:
-    kPlot1 = KITPlot(sys.argv[1])
+    kPlot1 = KITPlot(sys.argv[1],defaultCfg=os.path.join("KITPlot","Utils","default.cfg"))
 kPlot1.draw("matplotlib")
 fig = kPlot1.getCanvas()
 
@@ -125,10 +126,8 @@ fig = kPlot1.getCanvas()
 # draw text
 # kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
 ###################
-kPlot1.showCanvas()
-kPlot1.saveCanvas()
-input()
-
+kPlot1.showCanvas(save=True)
+####################################################
 
 ####################################################
 
@@ -476,7 +475,6 @@ class KITPlot(object):
 
             # Load file
             elif os.path.isfile(dataInput):
-
                 # multiple PIDs
                 if self.checkPID(dataInput) == True:
                     print("Input interpreted as multiple PIDs")
@@ -554,8 +552,11 @@ class KITPlot(object):
 
         return True
 
-    def showCanvas(self):
+    def showCanvas(self,save=None):
         self.canvas.show()
+        if save == True:
+            self.saveCanvas()
+        # this will wait for indefinite time
         plt.waitforbuttonpress(0)
         plt.close(self.canvas)
         return True
@@ -566,10 +567,6 @@ class KITPlot(object):
         self.canvas.savefig(png_out)
         self.canvas.savefig(pdf_out)
         return True
-
-# this will wait for indefinite time
-
-
 
 ######################
 ### Lodger methods ###

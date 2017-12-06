@@ -87,36 +87,58 @@ def adjustOrder(List, entryDict, len_total):
 def manipulate(graphList, arg):
 
     facList = []
-    tempGraphs = graphList
-
+    newList = []
+    print(graphList)
+    # no normalization
+    if arg == 'off':
+        pass
     # normalization for CV plots
-    if arg in ["1/C^{2}", "CV"]:
+    elif arg in ["1/C^{2}", "CV"]:
         for i, graph in enumerate(graphList):
-            for y in graph:
+            try:
                 tempList = []
-                for val in y:
+                for val in graph[1]:
                     if val == 0:
                         tempList.append(0)
                     else:
                         tempList.append(1/(val*val))
-            graph[1] = tempList
-
-    # no normalization
-    elif arg == 'off':
-        pass
-
+                graph[1] = tempList
+            except:
+                if graph[1] == 0:
+                    pass
+                else:
+                    graph[1] = 1/(graph[1]*graph[1])
     # normalization via list of factors
-    else:
-        for fac in extractList(arg):
+    elif isinstance(arg, list):
+        for fac in arg:
             facList.append(fac)
         if len(graphList) != len(facList):
             raise ValueError("Invalid normalization input! Number of "
                              "factors differs from the number of graphs.")
         for i, graph in enumerate(graphList):
             tempList = []
-            for val in graph[1]:
-                tempList.append(val/float(facList[i]))
-            graph[1] = tempList
+            print(graph[0], graph[1])
+            try:
+                for val in graph[1]:
+                    tempList.append(val/float(facList[i]))
+                graph[1] = tempList
+            except:
+                graph[1] = graph[1]/float(facList[i])
+            print(graphList)
+
+    # normalization via single factor
+    elif isinstance(arg, (float,int)):
+        for i, graph in enumerate(graphList):
+            tempList = []
+            try:
+                for val in graph[1]:
+                    tempList.append(val/arg)
+                graph[1] = tempList
+            except:
+                graph[1] = graph[1]/arg
+                print(graph)
+    else:
+        print("Warning::Unknown normalization Input. Request rejected.")
 
     return graphList
 
@@ -133,18 +155,21 @@ def extractList(arg, output="int"):
     if output not in ["int", "float"]:
         raise ValueError("Unexpected argument.")
 
+    # for ints/floats disguised as str
+    try:
+        if isinstance(arg, str):
+            return float(arg)
+    except:
+        pass
+
     if isinstance(arg, str) and arg[0] == '[' and arg[-1] == ']':
         if ':' in arg:
             str_list = arg.replace("[","").replace("]","").split(":")
         elif ',' in arg:
             str_list = arg.replace("[","").replace("]","").split(",")
-        elif len(arg) == 3:
-            str_list = list(arg.replace("[","").replace("]",""))
-            print("utils",str_list)
         else:
-            raise ValueError("Unkown input. Cfg parameter needs to be a"
-                             " string. Accepted seperations are ',' and "
-                             "':'. ")
+            raise ValueError("Unkown input. Normalization parameter is odd...")
+
         try:
             if output == "int":
                 new_list = [int(string) for string in str_list]
