@@ -557,7 +557,10 @@ class KITPlot(object):
         if save == True:
             self.saveCanvas()
         # this will wait for indefinite time
-        plt.waitforbuttonpress(0)
+        try:
+            plt.waitforbuttonpress(0)
+        except:
+            pass
         plt.close(self.canvas)
         return True
 

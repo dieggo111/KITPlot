@@ -88,7 +88,6 @@ def manipulate(graphList, arg):
 
     facList = []
     newList = []
-    print(graphList)
     # no normalization
     if arg == 'off':
         pass
@@ -117,14 +116,12 @@ def manipulate(graphList, arg):
                              "factors differs from the number of graphs.")
         for i, graph in enumerate(graphList):
             tempList = []
-            print(graph[0], graph[1])
             try:
                 for val in graph[1]:
                     tempList.append(val/float(facList[i]))
                 graph[1] = tempList
             except:
                 graph[1] = graph[1]/float(facList[i])
-            print(graphList)
 
     # normalization via single factor
     elif isinstance(arg, (float,int)):
@@ -136,7 +133,6 @@ def manipulate(graphList, arg):
                 graph[1] = tempList
             except:
                 graph[1] = graph[1]/arg
-                print(graph)
     else:
         print("Warning::Unknown normalization Input. Request rejected.")
 

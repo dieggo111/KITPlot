@@ -239,7 +239,6 @@ class KITMatplotlib(object):
                 markerface = 'white'
             else:
                 markerface = self.getColor(i)
-            # print("here",table[0],table[1])
             ax.plot(table[0],                           # x-axis
                     table[1],                           # y-axis
                     color=self.getColor(i),             # line color
