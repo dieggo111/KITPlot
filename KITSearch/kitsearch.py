@@ -186,7 +186,7 @@ class KITSearch(object):
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
             totan = self.getAnnealing(ID,col.date)
-            if (annealing*0.9)<abs(totan)<(annealing*1.1):
+            if (annealing*0.9)<=abs(totan)<=(annealing*1.1):
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
                             "e_sig"         : col.electron_sig,
