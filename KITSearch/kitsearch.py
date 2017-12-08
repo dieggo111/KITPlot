@@ -172,6 +172,7 @@ class KITSearch(object):
                             "seed_err"      : col.SeedSigENC_MPV_err,
                             "annealing"     : self.getAnnealing(ID,col.date),
                             "name"          : name,
+                            "UID"           : col.ID,
                             "project"       : project,
                             "fluence"       : None})
                 dic.update({col.run : sub})
@@ -184,7 +185,8 @@ class KITSearch(object):
                 ID = col.ID
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
-            if (annealing*0.99)<abs(self.getAnnealing(ID,col.date))<(annealing*1.01):
+            totan = self.getAnnealing(ID,col.date)
+            if (annealing*0.9)<abs(totan)<(annealing*1.1):
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
                             "e_sig"         : col.electron_sig,
@@ -192,7 +194,13 @@ class KITSearch(object):
                             "gain"          : col.gain,
                             "seed"          : col.SeedSigENC_MPV,
                             "seed_err"      : col.SeedSigENC_MPV_err,
-                            "annealing"     : self.getAnnealing(ID,col.date)})
+                            "annealing"     : totan,
+                            "name"          : name,
+                            "UID"           : col.ID,
+                            "project"       : project})
+                fluence, pt = self.getFluence(sub["UID"],sub["date"])
+                sub.update({"fluence"       : fluence,
+                            "particletype"  : pt})
                 dic.update({col.run : sub})
         return dic
 
