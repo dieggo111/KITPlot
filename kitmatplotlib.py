@@ -352,7 +352,6 @@ class KITMatplotlib(object):
 
 
     def getLabel(self, index):
-
         label = [items[1] for items in list(self.__entryDict.items())]
         return label[index]
 

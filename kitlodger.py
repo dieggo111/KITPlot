@@ -1,53 +1,118 @@
 from collections import OrderedDict
+import matplotlib as plt
+from .KITConfig import KITConfig
+from .Utils import kitutils
 
 class KITLodger(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self, figure, **kwargs):
 
+        self.fig = figure
+        self.lodger_type = None
         self.__x = kwargs.get('x', None)
         self.__y = kwargs.get('y', None)
         self.__name = kwargs.get('name', None)
-        self.__func = None
-        self.__vline = None
-        self.__hline = None
-        self.__vgraph = None
-        self.__hgraph = None
         self.__color = kwargs.get('color', 0)
         self.__width = kwargs.get('width', 2)
         self.__style = kwargs.get('style', 1)
+        self.__text = kwargs.get('text', None)
+        self.__fontsize = kwargs.get('fontsize', 14)
 
-        self.__paraDict = OrderedDict()
-        self.__paraDict =  {    "x"     : self.__x,
-                                "y"     : self.__y,
-                                "name"  : self.__name,
-                                "color" : self.__color,
-                                "width" : self.__width,
-                                "style" : self.__style
+        self.__paraDict =  {    "x"         : self.__x,
+                                "y"         : self.__y,
+                                "name"      : self.__name,
+                                "color"     : self.__color,
+                                "width"     : self.__width,
+                                "style"     : self.__style,
+                                "text"      : self.__text,
+                                "fontsize"  : self.__fontsize
                             }
 
+        self.__paraDict = self.stripDict()
 
-        if self.__x == None and self.__y == None:
-            # print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
-            pass
+    def add_to_plot(self):
+
+        ax = self.fig.add_subplot(1,1,1)
+
+        if self.__x == None and self.__y == None and self.__text == None:
+            print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
         elif self.__y == None and isinstance(self.__x, (int, float)):
             print("Lodger:::Draw vertical line at x = " + str(self.__x))
-            self.__vline = self.__x
+            self.lodger_type = "verticle line"
+            ax.axvline(x=self.__x,color=self.get_lodger_color(self.__color),
+                       linewidth=self.__width,linestyle=self.__style)
         elif self.__x == None and isinstance(self.__y, (int, float)):
             print("Lodger:::Draw horizontal line at y = " + str(self.__y))
-            self.__hline = self.__y
-        elif self.__y == None and isinstance(self.__x, list):
-            print("Lodger:::Draw vertical graph at x = " + str(self.__x))
-            self.__vgraph = self.__x
-        elif self.__x == None and isinstance(self.__y, list):
-            print("Lodger:::Draw horizontal graph at y = " + str(self.__y))
-            self.__hgraph = self.__y
+            self.lodger_type = "horizontal line"
+            ax.axhline(y=self.__y,color=self.get_lodger_color(self.__color),
+                       linewidth=self.__width,linestyle=self.__style)
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
-            print("Lodger:::Draw graph according to (x,y)->list.")
-        elif isinstance(y, str) and isinstance(x, list):
-            print("Lodger:::Draw graph according to x->list and y->function.")
-            self.__func = self.__y
+            print("Lodger:::Draw graph according to [x],[y]")
+            self.lodger_type = "graph"
+            ax.plot(self.__x, self.__y, color=self.get_lodger_color(self.__color))
+        elif self.__text != None:
+            print("Lodger:::Draw text at (x,y)")
+            self.lodger_type = "text"
+            ax.text(self.__x,self.__y,self.__text,fontsize=self.__fontsize)
+        # elif isinstance(self.__y, str) and isinstance(self.__x, list):
+        #     print("Lodger:::Draw graph according to x->list and y->function.")
+        #     if self.__y = "m*x+b"
+        return self.fig
+
+    def add_to_cfg(self, cfg):
+        # add new lodger to lodger section in cfg
+        try:
+            # check if lodger is already in section
+            if self.check_for_lodger_in_section(cfg) == True:
+                pass
+            # lodger is not yet in section
+            else:
+                lodger_count = len(list(cfg["Lodgers"].keys()))
+                lodger_name = self.lodger_type + str(lodger_count+1)
+                print("addLodgerEntry - update")
+                new = cfg["Lodgers"]
+                new.update({lodger_name : self.__paraDict})
+                cfg["Lodgers"] = new
+
+        # create lodgers section in cfg
+        except:
+            print("addLodgerEntry - add_new")
+            lodger_name = self.lodger_type
+            cfg["Lodgers"] = {lodger_name : self.__paraDict}
+
+        return True
+
+    def get_lodger_color(self,color):
+
+        KITcolor = kitutils.get_KITcolor()
+        try:
+            # if color is string and corresponds with KITcolor dict
+            for colorDict in list(KITcolor.values()):
+                try:
+                    return colorDict[color]
+                except:
+                    pass
+            raise Exception
+        except:
+            # go with default color
+            print("Warning:::%s is an invalid lodger color. Using default color 'r0' instead." %(color))
+            return KITcolor["KITred"]["r0"]
+
+    def check_for_lodger_in_section(self,cfg):
+        for lodger in cfg["Lodgers"]:
+            if self.__paraDict == dict(cfg["Lodgers"][lodger]):
+                return True
+        return False
+
+    def stripDict(self):
+        """ Strip dict from all values that are None"""
+        for key in list(self.__paraDict.keys()):
+            if self.__paraDict[key] == None:
+                del self.__paraDict[key]
+        return self.__paraDict
 
     def getDict(self):
+        """ Returns dictionary with lodger parameters"""
         return self.__paraDict
 
     def x(self):
