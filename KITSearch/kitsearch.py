@@ -195,8 +195,11 @@ class KITSearch(object):
                             "e_sig"         : col.electron_sig,
                             "e_sig_err"     : col.signal_e_err,
                             "gain"          : col.gain,
-                            "seed"          : col.SeedSigENC_MPV,
-                            "seed_err"      : col.SeedSigENC_MPV_err,
+                            # wrong entries in db
+                            # "seed_e"        : col.SeedSigENC_MPV,
+                            # "seed_e_err"    : col.SeedSigENC_MPV_err,
+                            "seed"          : col.SeedSig_MPV,
+                            "seed_err"      : col.SeedSig_MPV_err,
                             "annealing"     : totan,
                             "name"          : name,
                             "UID"           : col.ID,
