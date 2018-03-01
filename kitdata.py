@@ -102,13 +102,12 @@ class KITData(object):
 
             with open(dataInput, 'r') as inputFile:
                 for line in inputFile:
-                    splited = line.split();
+                    splited = line.split()
 
                     try:
                         # First two columns are always interpreted as x and y
                         self.__x.append(float(splited[0]))
                         self.__y.append(float(splited[1]))
-
                         # Three columns are seen as x,y,z
                         if len(splited) == 3:
                             self.__z.append(float(splited[2]))

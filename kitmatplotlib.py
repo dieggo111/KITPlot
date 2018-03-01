@@ -127,7 +127,6 @@ class KITMatplotlib(object):
         dy = []
         if isinstance(arg, KITData):
             if KITData().getRPunchDict() == None:
-                # self.__files.append(arg)
                 # toggle absolute mode
                 if self.absX:
                     x = list(np.absolute(arg.getX()))
@@ -202,7 +201,6 @@ class KITMatplotlib(object):
         # read and adjsut .__entryDict before drawing
         self.readEntryDict(len(self.__graphs),self.getDefaultEntryDict(fileList))
 
-
         # interpret all entries in single file as graphs instead of a singel graph
         if self.splitGraph is True and len(self.__graphs) == 1:
             self.__graphs = [list(item) for item in zip(*self.__graphs[0])]
@@ -220,6 +218,7 @@ class KITMatplotlib(object):
 
         # apply user defined normalization or manipulation of y values of each graph
         self.__graphs = kitutils.manipulate(self.__graphs, self.norm)
+
         # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
         fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
         # specify (nrows, ncols, axnum)
@@ -232,7 +231,6 @@ class KITMatplotlib(object):
             plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         if self.tickY:
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-
 
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
@@ -293,8 +291,9 @@ class KITMatplotlib(object):
 
         # x = [graph[0][0] for graph in self.__graphs]
         # y = [graph[1][0] for graph in self.__graphs]
-        # x = self.__graphs[0][0]
-        # y = self.__graphs[0][1]
+        # x = self.__graphs[0][0][2:4]
+        # y = self.__graphs[0][1][2:4]
+        # print(x,y)
         # y = [y for y in self.__graphs[0][1]]
         # y2 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
         # y3 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
@@ -303,7 +302,7 @@ class KITMatplotlib(object):
         # print(np.mean(y), np.std(y))
         # m,b = np.polyfit(x,y,1)
         # print(1/m,b)
-        # t = np.arange(0,0.018,0.001)
+        # t = np.arange(0,35,1)
         # f = m*t+b
         # ax.plot(t, f, color='black')
         # # ax.xaxis.get_children()[1].set_size(14)
@@ -348,6 +347,13 @@ class KITMatplotlib(object):
         elif self.legPosition == "below":
             obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102),
                        loc='lower center',ncol=3, mode="expand", borderaxespad=0.)
+        elif self.legPosition == "outside":
+            if total_len > 8:
+                ncol = 2
+            else:
+                ncol = 1
+            obj.legend(handles,labels,bbox_to_anchor=(1, 1.01),
+                       loc='upper left',ncol=ncol)
         return True
 
 
@@ -459,7 +465,6 @@ class KITMatplotlib(object):
             self.__entryDict = def_list
             if self.__is_cfg_new == False:
                 print("EntryDict was set back to default!")
-
         # calculate expected number of entries in 'EntryList'
         if len(self.__entryDict) != exp_len and self.splitGraph == False:
             raise KeyError("Unexpected 'EntryList' value! Number of graphs and "
@@ -493,9 +498,13 @@ class KITMatplotlib(object):
         strings.
 
         """
+        i = 0
         entryDict = OrderedDict()
         # write legend entries in a dict
         for i, graph in enumerate(List):
-            entryDict[i] = str(graph.getName())
-
+            if graph.getName() == None:
+                entryDict[i] = "graph" + str(i)
+                i += 1
+            else:
+                entryDict[i] = str(graph.getName())
         return entryDict

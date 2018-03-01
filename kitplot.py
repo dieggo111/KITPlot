@@ -421,11 +421,7 @@ class KITPlot(object):
         # ???
         elif isinstance(dataInput, int):
             self.__files.append(KITData(dataInput))
-            # if "Ramp" in self.__files[-1].getParaY():
-            #     print("Ramp measurement")
-            #     self.addGraph(self.__files[-1].getZ(), self.__files[-1].getY())
-            # else:
-            #     self.addGraph(self.__files[-1].getX(), self.__files[-1].getY())
+
 
         elif isinstance(dataInput, str):
             # Load single PID
@@ -472,7 +468,6 @@ class KITPlot(object):
                     else:
                         pass
 
-
             # Load file
             elif os.path.isfile(dataInput):
                 # multiple PIDs
@@ -489,16 +484,6 @@ class KITPlot(object):
                             self.__files = fileList
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
-
-
-                    # for i,File in enumerate(self.__files):
-                    #     if "Ramp" in File.getParaY():
-                    #         self.addGraph(File.getZ(), File.getY())
-                    #     elif File.getParaY() is "Signal":
-                    #         self.addGraph(File.getX(), File.getY())
-                    #     else:
-                    #         self.addNorm(False, i)
-
 
 
                 # TODO Rpunch/REdge Ramp file

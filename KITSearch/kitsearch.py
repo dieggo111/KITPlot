@@ -55,9 +55,8 @@ class KITSearch(object):
             data = self.session.query(db_alibava).filter_by(ID=val)
         return data
 
-    def search_in_annealing(self,val,para=None):
-        if para == "ID" or para == None:
-            data = self.session.query(db_annealing).filter_by(ID=val)
+    def search_in_annealing(self,a_id):
+        data = self.session.query(db_annealing).filter_by(annealing_id=a_id)
         return data
 
     def search_in_irradiation(self,val,para=None):
@@ -144,15 +143,17 @@ class KITSearch(object):
                         "seedADC_err"   : col.SeedSig_MPV_err})
             ID = col.ID
             date = col.date
-
-        dic.update({"annealing" : self.getAnnealing(ID,date)})
+            a_id = annealing_id
+        # dic.update({"annealing" : self.getAnnealing(ID,date)})
+        #
+        # for col in self.search_in_annealing(ID):
+        #     dic.update({"annealing" :
 
         for col in self.search_in_info(ID,para="UID"):
             dic.update({"name"      : col.name,
                         "Fp"        : col.F_p_aim_n_cm2,
                         "Fn"        : col.F_n_aim_n_cm2,
                         "project"   : col.project})
-
         return dic
 
     def ali_search_for_name_voltage(self,name,voltage,project):
@@ -160,9 +161,11 @@ class KITSearch(object):
         for col in self.search_in_info(name,"name"):
             if col.project == project:
                 ID = col.ID
+        print(ID)
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
             if (voltage*0.99)<abs(col.voltage)<(voltage*1.01):
+                print(col.annealing_id, self.getAnnealing(col.annealing_id))
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
                             "e_sig"         : col.electron_sig,
@@ -173,7 +176,8 @@ class KITSearch(object):
                             # "seed_e_err"    : col.SeedSigENC_MPV_err,
                             "seed"          : col.SeedSig_MPV,
                             "seed_err"      : col.SeedSig_MPV_err,
-                            "annealing"     : self.getAnnealing(ID,col.date),
+                            "annealing"     : self.getAnnealing(col.annealing_id),
+                            # "annealing"     : self.getAnnealing(ID,col.date),
                             "name"          : name,
                             "UID"           : col.ID,
                             "project"       : project,
@@ -204,33 +208,39 @@ class KITSearch(object):
                             "name"          : name,
                             "UID"           : col.ID,
                             "project"       : project})
-                fluence, pt = self.getFluence(sub["UID"],sub["date"])
-                sub.update({"fluence"       : fluence,
+                # fluence, pt = self.getFluence(sub["UID"],sub["date"])
+                sub.update({"fluence"       : self.getFluence(col.irradiation_id),
                             "particletype"  : pt})
                 dic.update({col.run : sub})
         return dic
 
-    def getAnnealing(self,ID,date):
-        annealing = 0
-        for col in self.search_in_annealing(ID):
-            if date>col.date:
-                annealing += col.equiv
-        return round(annealing)
+    def getAnnealing(self,a_id):
+        if a_id == None:
+            return 0
+        for col in self.search_in_annealing(a_id):
+            return round(col.sum)
+    #     annealing = 0
+    #     for col in self.search_in_annealing(ID):
+    #         if date>col.date:
+    #             annealing += col.equiv
+    #     return round(annealing)
 
-    def getFluence(self,ID,date):
-        fluence = 0
-        pt = []
-        for col in self.search_in_irradiation(ID):
-            if date.date()>col.date:
-                fluence += col.F_n_cm2
-                pt.append(col.particletype)
-        if set(pt) == set(["n","p"]):
-            pt = "(n,p)"
-        elif len(pt) == 1:
-            pt = pt[0]
-        else:
-            pt = ""
-        return ("{:0.0e}".format(fluence), pt)
+    def getFluence(self,ID):
+         for col in self.search_in_irradiation(ID):
+             return round(col.F_sum)
+        # fluence = 0
+        # pt = []
+        # for col in self.search_in_irradiation(ID):
+        #     if date.date()>col.date:
+        #         fluence += col.F_n_cm2
+        #         pt.append(col.particletype)
+        # if set(pt) == set(["n","p"]):
+        #     pt = "(n,p)"
+        # elif len(pt) == 1:
+        #     pt = pt[0]
+        # else:
+        #     pt = ""
+        # return ("{:0.0e}".format(fluence), pt)
 
     def getSession(self):
         return self.session

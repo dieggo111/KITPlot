@@ -139,7 +139,8 @@ class db_alibava(Base):
     pdf                     = Column(LargeBinary)
     last_analyzed           = Column(DateTime)
     ThresholdAt995          = Column(Float)
-    irrad_sum               = Column(Float)
+    annealing_id            = Column(Integer)
+    irradiation_id          = Column(Integer)
 
 class db_annealing(Base):
 
@@ -152,6 +153,7 @@ class db_annealing(Base):
     time                    = Column(Float)
     equiv                   = Column(Float)
     operator                = Column(String)
+    sum                     = Column(Float)
 
 class db_irradiation(Base):
 
@@ -178,3 +180,4 @@ class db_irradiation(Base):
     scan_speed_mm_s     = Column(Integer)
     scan_width_mm       = Column(Integer)
     groupname           = Column(String)
+    F_sum               = Column(Float(50))
