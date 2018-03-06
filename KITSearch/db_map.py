@@ -181,3 +181,4 @@ class db_irradiation(Base):
     scan_width_mm       = Column(Integer)
     groupname           = Column(String)
     F_sum               = Column(Float(50))
+    particles           = Column(String)

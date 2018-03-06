@@ -59,9 +59,8 @@ class KITSearch(object):
         data = self.session.query(db_annealing).filter_by(annealing_id=a_id)
         return data
 
-    def search_in_irradiation(self,val,para=None):
-        if para == "ID" or para == None:
-            data = self.session.query(db_irradiation).filter_by(ID=val)
+    def search_in_irradiation(self,i_id):
+        data = self.session.query(db_irradiation).filter_by(uirrad_id=val)
         return data
 
     ####################
@@ -125,9 +124,9 @@ class KITSearch(object):
             dic.update({"name"      : col.name,
                         "project"   : col.project})
 
-        fluence, pt = self.getFluence(dic["UID"],dic["date"])
-        dic.update({"fluence"       : fluence,
-                    "particletype"  : pt})
+        #TODO
+        dic.update({"fluence"       : 0,
+                    "particletype"  : ""})
         return dic
 
     def ali_search_for_run(self,nr):
@@ -143,11 +142,12 @@ class KITSearch(object):
                         "seedADC_err"   : col.SeedSig_MPV_err})
             ID = col.ID
             date = col.date
-            a_id = annealing_id
-        # dic.update({"annealing" : self.getAnnealing(ID,date)})
-        #
-        # for col in self.search_in_annealing(ID):
-        #     dic.update({"annealing" :
+            a_id = col.annealing_id
+            dic.update({"annealing" : self.getAnnealing(col.annealing_id)})
+            fluence, particle = self.getFluence(sub["irradiation_id"])
+            sub.update({"fluence"       : fluence,
+                        "particletype"  : particle})
+
 
         for col in self.search_in_info(ID,para="UID"):
             dic.update({"name"      : col.name,
@@ -177,11 +177,12 @@ class KITSearch(object):
                             "seed"          : col.SeedSig_MPV,
                             "seed_err"      : col.SeedSig_MPV_err,
                             "annealing"     : self.getAnnealing(col.annealing_id),
-                            # "annealing"     : self.getAnnealing(ID,col.date),
                             "name"          : name,
                             "UID"           : col.ID,
-                            "project"       : project,
-                            "fluence"       : None})
+                            "project"       : project})
+                fluence, particle = self.getFluence(sub["irradiation_id"])
+                sub.update({"fluence"       : fluence,
+                            "particletype"  : particle})
                 dic.update({col.run : sub})
         return dic
 
@@ -192,7 +193,7 @@ class KITSearch(object):
                 ID = col.ID
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
-            totan = self.getAnnealing(ID,col.date)
+            totan = self.getAnnealing(ID)
             if (annealing*0.9)<=abs(totan)<=(annealing*1.1):
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
@@ -204,13 +205,14 @@ class KITSearch(object):
                             # "seed_e_err"    : col.SeedSigENC_MPV_err,
                             "seed"          : col.SeedSig_MPV,
                             "seed_err"      : col.SeedSig_MPV_err,
-                            "annealing"     : totan,
+                            "annealing"     : self.getAnnealing(col.annealing_id),
                             "name"          : name,
                             "UID"           : col.ID,
+                            "irradiation_id": col.irradiation_id,
                             "project"       : project})
-                # fluence, pt = self.getFluence(sub["UID"],sub["date"])
-                sub.update({"fluence"       : self.getFluence(col.irradiation_id),
-                            "particletype"  : pt})
+                fluence, particle = self.getFluence(sub["irradiation_id"])
+                sub.update({"fluence"       : fluence,
+                            "particletype"  : particle})
                 dic.update({col.run : sub})
         return dic
 
@@ -227,7 +229,7 @@ class KITSearch(object):
 
     def getFluence(self,ID):
          for col in self.search_in_irradiation(ID):
-             return round(col.F_sum)
+             return (round(col.F_sum), col.particles)
         # fluence = 0
         # pt = []
         # for col in self.search_in_irradiation(ID):
