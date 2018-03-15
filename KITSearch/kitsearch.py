@@ -60,7 +60,7 @@ class KITSearch(object):
         return data
 
     def search_in_irradiation(self,i_id):
-        data = self.session.query(db_irradiation).filter_by(uirrad_id=val)
+        data = self.session.query(db_irradiation).filter_by(uirrad_id=i_id)
         return data
 
     ####################
@@ -161,11 +161,9 @@ class KITSearch(object):
         for col in self.search_in_info(name,"name"):
             if col.project == project:
                 ID = col.ID
-        print(ID)
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
             if (voltage*0.99)<abs(col.voltage)<(voltage*1.01):
-                print(col.annealing_id, self.getAnnealing(col.annealing_id))
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
                             "e_sig"         : col.electron_sig,
@@ -180,7 +178,7 @@ class KITSearch(object):
                             "name"          : name,
                             "UID"           : col.ID,
                             "project"       : project})
-                fluence, particle = self.getFluence(sub["irradiation_id"])
+                fluence, particle = self.getFluence(col.irradiation_id)
                 sub.update({"fluence"       : fluence,
                             "particletype"  : particle})
                 dic.update({col.run : sub})
@@ -193,7 +191,7 @@ class KITSearch(object):
                 ID = col.ID
         for col in self.search_in_alibava(ID,"ID"):
             sub = {}
-            totan = self.getAnnealing(ID)
+            totan = self.getAnnealing(col.annealing_id)
             if (annealing*0.9)<=abs(totan)<=(annealing*1.1):
                 sub.update({"voltage"       : col.voltage,
                             "date"          : col.date,
@@ -208,9 +206,8 @@ class KITSearch(object):
                             "annealing"     : self.getAnnealing(col.annealing_id),
                             "name"          : name,
                             "UID"           : col.ID,
-                            "irradiation_id": col.irradiation_id,
                             "project"       : project})
-                fluence, particle = self.getFluence(sub["irradiation_id"])
+                fluence, particle = self.getFluence(col.irradiation_id)
                 sub.update({"fluence"       : fluence,
                             "particletype"  : particle})
                 dic.update({col.run : sub})
