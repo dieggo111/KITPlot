@@ -225,8 +225,11 @@ class KITSearch(object):
     #     return round(annealing)
 
     def getFluence(self,ID):
-         for col in self.search_in_irradiation(ID):
-             return (round(col.F_sum), col.particles)
+        if ID == None:
+            return (0,"")
+        else:
+            for col in self.search_in_irradiation(ID):
+                return (round(col.F_sum), col.particles)
         # fluence = 0
         # pt = []
         # for col in self.search_in_irradiation(ID):
