@@ -158,6 +158,7 @@ class KITSearch(object):
 
     def ali_search_for_name_voltage(self,name,voltage,project):
         dic = {}
+        ID = None
         for col in self.search_in_info(name,"name"):
             if col.project == project:
                 ID = col.ID
@@ -217,7 +218,10 @@ class KITSearch(object):
         if a_id == None:
             return 0
         for col in self.search_in_annealing(a_id):
-            return round(col.sum)
+            if col.sum == None:
+                return 0
+            else:
+                return round(col.sum)
     #     annealing = 0
     #     for col in self.search_in_annealing(ID):
     #         if date>col.date:
