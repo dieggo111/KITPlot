@@ -163,8 +163,11 @@ def extractList(arg, output="int"):
             str_list = arg.replace("[","").replace("]","").split(":")
         elif ',' in arg:
             str_list = arg.replace("[","").replace("]","").split(",")
+        elif len(arg[1:-1]) == 1:
+            str_list = []
+            str_list.append(arg[1:-1])
         else:
-            raise ValueError("Unkown input. Normalization parameter is odd...")
+            raise ValueError("Unkown input. ")
 
         try:
             if output == "int":

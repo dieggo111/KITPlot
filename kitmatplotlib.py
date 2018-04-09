@@ -166,7 +166,7 @@ class KITMatplotlib(object):
                 y = list(np.absolute(arg[1]))
             else:
                 y = arg[1]
-            if len(args) == 4:
+            if len(arg) == 4:
                 dx = arg[2]
                 dy = arg[3]
 
@@ -195,7 +195,7 @@ class KITMatplotlib(object):
         """
 
         # create self.__graphs list
-        for i, dset in enumerate(fileList):
+        for dset in fileList:
             self.addGraph(dset)
 
         # read and adjsut .__entryDict before drawing
