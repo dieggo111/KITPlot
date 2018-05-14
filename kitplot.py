@@ -575,19 +575,20 @@ class KITPlot(object):
                 style = paraDict.get('style', None)
                 text = paraDict.get('text', None)
                 fontsize = paraDict.get('fontsize', None)
+                alpha = paraDict.get('alpha', None)
 
                 self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
-                                       width=width,text=text,fontsize=fontsize)
+                                       width=width,text=text,fontsize=fontsize,alpha=alpha)
         except:
             pass
         return True
 
 
     def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
-                  width=None,text=None,fontsize=None):
+                  width=None,text=None,fontsize=None,alpha=None):
 
         newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
-                               width=width,text=text,fontsize=fontsize)
+                               width=width,text=text,fontsize=fontsize,alpha=alpha)
 
         self.canvas = newLodger.add_to_plot()
 
