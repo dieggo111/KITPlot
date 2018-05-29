@@ -418,8 +418,7 @@ class KITMatplotlib(object):
                         return colorDict[color]
                     except:
                         pass
-                raise Exception
-                color
+
         except:
             print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):

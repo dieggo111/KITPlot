@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+#pylint: disable=C0103,W0201,W0702
 """ A simple ROOT based python plot script
 
 1) Synopsis:
@@ -69,7 +69,7 @@ The script consists of 4 modules:
                   repository. Open consol/terminal and go to PyMySQL-0.7.11
                   folder. Type "python setup.py build" and then
                   "python setup.py install".
-    e) There are 2 'plot engines' you can use: ROOT or matplotlib.
+    e) There are 2 'plot s' you can use: ROOT or matplotlib.
        - matplotlib: 'pip3 install matplotlib'
        - ###### ROOT: ###### no longger supported ######
                Download and build ROOT v5.34/36 or 6 on your system. When
@@ -225,7 +225,8 @@ kPlot1.showCanvas(save=True)
 """
 
 import numpy as np
-import os, sys
+import os
+import sys
 import matplotlib.pyplot as plt
 from .kitdata import KITData
 from .KITConfig import KITConfig
@@ -251,14 +252,13 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None,defaultCfg=None,name=None):
+    def __init__(self, dataInput=None, defaultCfg=None, name=None,
+                 name_lst=None):
 
         # ignore warning that is raised because of back-end bug while using 'waitforbuttonpress'
         warnings.filterwarnings("ignore",".*GUI is implemented.*")
 
-        self.iter = iter(["lodger1","lodger2","lodger3"])
-        # supported plot engines
-        self.__engines = ['matplotlib', 'ROOT']
+        self.iter = iter(["lodger1", "lodger2", "lodger3"])
 
         # init lists
         self.__files = []
@@ -267,14 +267,14 @@ class KITPlot(object):
         # Load parameters and apply default style
         # Default-function expects (working directory) path
         self.__cfg = KITConfig()
-        if defaultCfg == None:
+        if defaultCfg is None:
             self.__cfg.Default("default.cfg")
         else:
             self.__cfg.Default(defaultCfg)
         self.__cfg.Dir("cfg")
 
         # extract name from data input
-        if name == None:
+        if name is None:
             self.__inputName = self.getDataName(dataInput)
         else:
             self.__inputName = name
@@ -287,6 +287,9 @@ class KITPlot(object):
 
         # load dict with parameters from cfg file
         self.__cfg.load(self.__inputName)
+
+        if name_lst is not None:
+            self.name_lst = name_lst
 
 #        a = self.__cfg['General','Measurement']
         a = "probe"
@@ -412,16 +415,18 @@ class KITPlot(object):
             # self.addGraph(dataInput.getX(),dataInput.getY())
 
         # NEW FEATURE: Load list/tuple with raw data
-        elif isinstance(dataInput, (list,tuple)):
+        elif isinstance(dataInput, (list, tuple)):
             print("Input interpreted as raw data")
-            for tup in dataInput:
+            for i, tup in enumerate(dataInput):
                 self.__files.append(KITData(tup))
-
+                try:
+                    self.__files[-1].setName(self.name_lst[i])
+                except:
+                    pass
         # Load single PID
         # ???
         elif isinstance(dataInput, int):
             self.__files.append(KITData(dataInput))
-
 
         elif isinstance(dataInput, str):
             # Load single PID
@@ -431,7 +436,7 @@ class KITPlot(object):
                     print("Input interpreted as ramp measurement")
                     x = []
                     y = []
-                    labels = []
+                    # labels = []
 
                     if len(self.__files) > 1:
                         raise ValueError("You can only print one RPunch ramp"
@@ -462,29 +467,35 @@ class KITPlot(object):
             # Load multiple data files in a folder
             elif os.path.isdir(dataInput):
                 print("Input interpreted as folder with files")
-                for inputFile in os.listdir(dataInput):
-                    if (os.path.splitext(inputFile)[1] == ".txt"):
+                for i, inputFile in enumerate(os.listdir(dataInput)):
+                    if os.path.splitext(inputFile)[1] == ".txt":
                         self.__files.append(KITData(dataInput + inputFile))
+                        try:
+                            self.__files[-1].setName(self.name_lst[i])
+                        except:
+                            pass
                     else:
                         pass
 
             # Load file
             elif os.path.isfile(dataInput):
                 # multiple PIDs
-                if self.checkPID(dataInput) == True:
+                if self.checkPID(dataInput) is True:
                     print("Input interpreted as multiple PIDs")
                     with open(dataInput) as inputFile:
                         fileList = []
-                        for line in inputFile:
+                        for i, line in enumerate(inputFile):
                             entry = line.split()
                             if entry[0].isdigit():
-                                fileList.append(KITData(entry[0],measurement))
-
-                        if measurement is "probe":
+                                fileList.append(KITData(entry[0], measurement))
+                                try:
+                                    fileList[-1].setName(self.name_lst[i])
+                                except:
+                                    pass
+                        if measurement == "probe":
                             self.__files = fileList
                         elif measurement == "alibava":
                             self.__files.append(KITData(fileList))
-
 
                 # TODO Rpunch/REdge Ramp file
                 # elif "REdge" in dataInput:
@@ -509,37 +520,32 @@ class KITPlot(object):
                 else:
                     print("Input interpreted as single file")
                     self.__files.append(KITData(dataInput))
-
+                    try:
+                        self.__files[-1].setName(self.name_lst[0])
+                    except:
+                        pass
         return True
 
 
-    def draw(self, engine=None):
+    def draw(self):
         """
         doc
         """
-
         # if dataInput comes from database then apply titles according to measurement type
-        if self.is_cfg_new == True:
+        if self.is_cfg_new is True:
             self.MeasurementType()
 
-        # set engine
-        if engine == None:
-            engine = self.__engines[0]
-        if engine not in self.__engines:
-            raise ValueError("Unkown plot engine. Supported engines are: \n"
-                             + self.__engines[0] + " and " + self.__engines[1])
-
         # create graphs and canvas
-        self.canvas = KITMatplotlib(self.__cfg,self.is_cfg_new).draw(self.__files)
+        self.canvas = KITMatplotlib(self.__cfg, self.is_cfg_new).draw(self.__files)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
 
         return True
 
-    def showCanvas(self,save=None):
+    def showCanvas(self, save=None):
         self.canvas.show()
-        if save == True:
+        if save is True:
             self.saveCanvas()
         # this will wait for indefinite time
         try:
@@ -576,24 +582,34 @@ class KITPlot(object):
                 text = paraDict.get('text', None)
                 fontsize = paraDict.get('fontsize', None)
 
-                self.addLodger(self.canvas,x=x,y=y,name=name,color=color,style=style,
-                                       width=width,text=text,fontsize=fontsize)
+                self.addLodger(self.canvas, x=x, y=y, name=name, color=color,
+                               style=style, width=width, text=text,
+                               fontsize=fontsize)
         except:
             pass
         return True
 
 
-    def addLodger(self,fig,x=None,y=None,name=None,color=None,style=None,
-                  width=None,text=None,fontsize=None):
+    def addLodger(self, fig, x=None, y=None, f=None, t=None, name=None,
+                  color=None, style=None, width=None, text=None, fontsize=None):
 
-        newLodger = KITLodger(fig,x=x,y=y,name=name,color=color,style=style,
-                               width=width,text=text,fontsize=fontsize)
+        newLodger = KITLodger(fig, x=x, y=y, f=f, t=t, name=name, color=color,
+                              style=style, width=width, text=text,
+                              fontsize=fontsize)
 
         self.canvas = newLodger.add_to_plot()
-
         newLodger.add_to_cfg(self.__cfg)
 
         return True
+
+    def get_fit(self, data_lst):
+        x = [tup[0][0] for tup in data_lst]
+        y = [tup[1][0] for tup in data_lst]
+        m, b = np.polyfit(x, y, 1)
+        print("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
+        t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
+        f = m * t + b
+        return (f, t)
 
 
 ###################
@@ -631,7 +647,7 @@ class KITPlot(object):
         if len(self.__graphs) == 1:
             return self.__graphs[0]
         elif (len(self.__graphs) != 1) and (graph is None):
-            return self._graphs
+            return self.__graphs
         else:
             if isinstance(graph,str):
                 if (len(self.__graphs) != 1) and (graph.isdigit()):
@@ -649,7 +665,7 @@ class KITPlot(object):
         if len(self.__files) == 1:
             return self.__files[0]
         elif (len(self.__files) != 1) and (KITFile is None):
-            return self._file
+            return self.__file
         else:
             if isinstance(KITFile,str):
                 if (len(self.__files) != 1) and (KITFile.isdigit()):

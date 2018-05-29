@@ -50,7 +50,8 @@ class KITConfig(object):
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
                 KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        except Exception:
+        except Exception as e:
+            print(e)
             raise OSError("Default config file not found")
 
 

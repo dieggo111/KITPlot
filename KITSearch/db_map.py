@@ -1,28 +1,36 @@
-import sys,os
-import sqlalchemy
-import mysql.connector
+# pylint: disable=C0326, C0103, R0903, C0111
 from sqlalchemy import BigInteger, Column, Integer, String, Float, DateTime, Date, Enum, Boolean, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
-Base = declarative_base()
+BASE = declarative_base()
 
-class db_probe_data(Base):
+class db_info(BASE):
 
-    __tablename__ = "probe_data"
+    __tablename__ = "info"
 
-    probeid         = Column(Integer)
-    probe_uid       = Column(BigInteger, primary_key=True)
-    datax           = Column(Float)
-    datay           = Column(Float)
-    dataz           = Column(Float)
-    temperature     = Column(Float)
-    RH              = Column(Float)
-    errory          = Column(Float)
-    time            = Column(DateTime)
-    bias_current    = Column(Float)
+    ID              = Column(Integer, primary_key=True)
+    name            = Column(String)
+    project         = Column(String)
+    manufacturer    = Column(String)
+    Class           = Column(String)
+    sensortype      = Column(String)
+    specification   = Column(String)
+    thickness       = Column(Float)
+    width           = Column(Float)
+    length          = Column(Float)
+    strips          = Column(Float)
+    pitch           = Column(Float)
+    coupling        = Column(Enum("AC","DC"))
+    date            = Column(Date)
+    contact         = Column(String)
+    institute       = Column(String)
+    status          = Column(String)
+    backup_name     = Column(String)
+    F_p_aim_n_cm2   = Column(Float)
+    F_n_aim_n_cm2   = Column(Float)
+    parent          = Column(String)
+    defect          = Column(Integer)
 
-
-
-class db_probe(Base):
+class db_probe(BASE):
 
     __tablename__ = "probe"
 
@@ -50,36 +58,22 @@ class db_probe(Base):
     Vdep            = Column(Float)
     fitmode         = Column(Integer)
 
+class db_probe_data(BASE):
 
+    __tablename__ = "probe_data"
 
-class db_info(Base):
+    probeid         = Column(Integer)
+    probe_uid       = Column(BigInteger, primary_key=True)
+    datax           = Column(Float)
+    datay           = Column(Float)
+    dataz           = Column(Float)
+    temperature     = Column(Float)
+    RH              = Column(Float)
+    errory          = Column(Float)
+    time            = Column(DateTime)
+    bias_current    = Column(Float)
 
-    __tablename__ = "info"
-
-    ID              = Column(Integer, primary_key=True)
-    name            = Column(String)
-    project         = Column(String)
-    manufacturer    = Column(String)
-    Class           = Column(String)
-    sensortype      = Column(String)
-    specification   = Column(String)
-    thickness       = Column(Float)
-    width           = Column(Float)
-    length          = Column(Float)
-    strips          = Column(Float)
-    pitch           = Column(Float)
-    coupling        = Column(Enum("AC","DC"))
-    date            = Column(Date)
-    contact         = Column(String)
-    institute       = Column(String)
-    status          = Column(String)
-    backup_name     = Column(String)
-    F_p_aim_n_cm2   = Column(Float)
-    F_n_aim_n_cm2   = Column(Float)
-    parent          = Column(String)
-    defect          = Column(Integer)
-
-class db_alibava(Base):
+class db_alibava(BASE):
 
     __tablename__ = "alibava"
 
@@ -142,7 +136,7 @@ class db_alibava(Base):
     annealing_id            = Column(Integer)
     irradiation_id          = Column(Integer)
 
-class db_annealing(Base):
+class db_annealing(BASE):
 
     __tablename__ = "annealing"
 
@@ -155,7 +149,7 @@ class db_annealing(Base):
     operator                = Column(String)
     sum                     = Column(Float)
 
-class db_irradiation(Base):
+class db_irradiation(BASE):
 
     __tablename__ = "irradiation"
 

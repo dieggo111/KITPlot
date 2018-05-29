@@ -1,6 +1,4 @@
-from collections import OrderedDict
-import matplotlib as plt
-from .KITConfig import KITConfig
+import numpy as np
 from .Utils import kitutils
 
 class KITLodger(object):
@@ -34,18 +32,18 @@ class KITLodger(object):
 
         ax = self.fig.add_subplot(1,1,1)
 
-        if self.__x == None and self.__y == None and self.__text == None:
+        if self.__x is None and self.__y is None and self.__text is None:
             print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
-        elif self.__y == None and isinstance(self.__x, (int, float)):
+        elif self.__y is None and isinstance(self.__x, (int, float)):
             print("Lodger:::Draw vertical line at x = " + str(self.__x))
             self.lodger_type = "verticle line"
-            ax.axvline(x=self.__x,color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width,linestyle=self.__style)
-        elif self.__x == None and isinstance(self.__y, (int, float)):
+            ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
+                       linewidth=self.__width, linestyle=self.__style)
+        elif self.__x is None and isinstance(self.__y, (int, float)):
             print("Lodger:::Draw horizontal line at y = " + str(self.__y))
             self.lodger_type = "horizontal line"
-            ax.axhline(y=self.__y,color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width,linestyle=self.__style)
+            ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
+                       linewidth=self.__width, linestyle=self.__style)
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
             print("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
@@ -53,14 +51,15 @@ class KITLodger(object):
         elif self.__text != None:
             print("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
-            ax.text(self.__x,self.__y,self.__text,fontsize=self.__fontsize)
-        # elif isinstance(self.__y, str) and isinstance(self.__x, list):
-        #     print("Lodger:::Draw graph according to x->list and y->function.")
-        #     if self.__y = "m*x+b"
+            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize)
+        elif isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
+            print("Lodger:::Draw function.")
+            self.lodger_type = "function"
+            ax.plot(self.__y, self.__x, color='black')
         return self.fig
 
     def add_to_cfg(self, cfg):
-        # add new lodger to lodger section in cfg
+        """Add new lodger to lodger section in cfg"""
         try:
             # check if lodger is already in section
             if self.check_for_lodger_in_section(cfg) == True:
@@ -82,7 +81,7 @@ class KITLodger(object):
 
         return True
 
-    def get_lodger_color(self,color):
+    def get_lodger_color(self, color):
 
         KITcolor = kitutils.get_KITcolor()
         try:
@@ -106,10 +105,14 @@ class KITLodger(object):
 
     def stripDict(self):
         """ Strip dict from all values that are None"""
-        for key in list(self.__paraDict.keys()):
-            if self.__paraDict[key] == None:
-                del self.__paraDict[key]
-        return self.__paraDict
+        new = {}
+        for key, val in self.__paraDict.items():
+            if isinstance(val, np.ndarray):
+                print(val, [elem for elem in val])
+                new[key] = [elem for elem in val]
+            elif self.__paraDict[key] is not None:
+                new[key] = val
+        return new
 
     def getDict(self):
         """ Returns dictionary with lodger parameters"""
@@ -124,15 +127,6 @@ class KITLodger(object):
     def name(self):
         return self.__name
 
-    def hline(self):
-        return self.__hline
-
-    def vline(self):
-        return self.__vline
-
-    def func(self):
-        return self.__func
-
     def style(self):
         return self.__style
 
@@ -141,9 +135,3 @@ class KITLodger(object):
 
     def color(self):
         return self.__color
-
-    def vgraph(self):
-        return self.__vgraph
-
-    def hgraph(self):
-        return self.__hgraph

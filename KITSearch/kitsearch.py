@@ -1,87 +1,98 @@
-import sys,os
+#pylint: disable=C0103
+"""KITSearch module"""
+# import sys
+# import os
+import yaml
 import sqlalchemy
-import mysql.connector
-try:
-    from .db_map import *
-except:
-    from db_map import *
 from sqlalchemy.orm import sessionmaker
+try:
+    from db_map import db_info, db_probe, db_probe_data
+    from db_map import db_alibava, db_annealing, db_irradiation
+except ImportError:
+    from .db_map import db_info, db_probe, db_probe_data
+    from .db_map import db_alibava, db_annealing, db_irradiation
 
 
 class KITSearch(object):
+    """Module for searching data in ETP Measurement DB.
+    Primary keys:
+        - db_info : ID
+        - db_probe : probeid
+        - db_probe_data : probe_uid
+        - db_alibava : alibava_uid
+        - db_irradiation : uirrad_id
+        - db_annealing : annealing_id
+    """
+    def __init__(self, cred=None):
+        """Initializes class, loads credentials, creates engine and DB session,
+        creates dict for calling table objects with name.
 
-    def __init__(self,cred):
-        """ cred = {"host"      : "...",
-                    "database"  : "...",
-                    "user"      : "...",
-                    "passwd"    : "..."}
+        Misc:
+                cred = {"host"      : "...",
+                        "database"  : "...",
+                        "user"      : "...",
+                        "passwd"    : "..."}
         """
+        if isinstance(cred, str):
+            with open(cred, "r") as crx:
+                dic = yaml.load(crx)
+            cred = list(dic.values())[0]
+
         self.engine = sqlalchemy.create_engine("mysql+mysqlconnector://" +
-                                          cred["user"] + ":" + cred["passwd"] +
-                                          "@" + cred["host"] + ":" +
-                                          "3306" + "/" + cred["database"])
+                                               cred["user"] + ":" + cred["passwd"] +
+                                               "@" + cred["host"] + ":" +
+                                               "3306" + "/" + cred["database"])
 
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        session = sessionmaker(bind=self.engine)
+        self.session = session()
 
-    #####################
-    # basic table search#
-    #####################
-    def search_in_info(self,val,para=None):
-        if para == "name" or para == None:
-            data = self.session.query(db_info).filter_by(name=val)
-        elif para == "UID":
-            data = self.session.query(db_info).filter_by(ID=val)
+        self.db_table = {"db_info" : db_info,
+                         "db_probe" : db_probe,
+                         "db_probe_data" : db_probe_data,
+                         "db_alibava" : db_alibava,
+                         "db_annealing" : db_annealing,
+                         "db_irradiation" : db_irradiation}
+
+    def search_table(self, table, **kwargs):
+        """Basic search operation: search for key-value DB table"""
+        try:
+            if "%" in kwargs["name"]:
+                data = self.session.query(self.db_table[table]).filter(\
+                        self.db_table[table].name.contains(\
+                        kwargs["name"].replace("%", "")))
+                return data
+        except KeyError:
+            pass
+        data = self.session.query(self.db_table[table]).filter_by(**kwargs)
         return data
 
-    def search_in_probe(self,val,para=None):
-        if para == "PID" or para == None:
-            data = self.session.query(db_probe).filter_by(probeid=val)
-        elif para == "UID":
-            data = self.session.query(db_probe).filter_by(ID=val)
-        return data
-
-    def search_in_probe_data(self,val,para=None):
-        if para == "PID" or para == None:
-            data = self.session.query(db_probe_data).filter_by(probeid=val)
-        return data
-
-    def search_in_alibava(self,val,para=None):
-        if para == "run" or para == None:
-            data = self.session.query(db_alibava).filter_by(run=val)
-        elif para == "UID":
-            data = self.session.query(db_alibava).filter_by(alibava_uid=val)
-        elif para == "ID":
-            data = self.session.query(db_alibava).filter_by(ID=val)
-        return data
-
-    def search_in_annealing(self,a_id):
-        data = self.session.query(db_annealing).filter_by(annealing_id=a_id)
-        return data
-
-    def search_in_irradiation(self,i_id):
-        data = self.session.query(db_irradiation).filter_by(uirrad_id=i_id)
-        return data
-
-    ####################
-    # combined searches#
-    ####################
-    def probe_search_for_name(self,name,project):
+    def probe_search(self, name, project):
+        """Combined search operation: searche data for specific name
+        and project"""
         dic = {}
         PID = []
-        for col in self.search_in_info(name,para="name"):
-            if col.project == project:
-                UID = col.ID
-        for row in self.search_in_probe(UID,"UID"):
-            PID.append(row.probeid)
-        for run in PID:
-            sub = self.probe_search_for_PID(run)
-            temp = sub.pop("PID")
-            sub.update({"PID" : temp})
-            dic.update({temp : sub})
+        ID = []
+        for row in self.search_table("db_info", name=name, project=project):
+            ID.append(row.ID)
+        if ID == []:
+            return dic
+        for item in ID:
+            for row in self.search_table("db_probe", ID=item):
+                PID.append(row.probeid)
+            for run in PID:
+                sub = self.probe_search_data(run)
+                pid = sub.pop("PID")
+                sub["PID"] = pid
+                sub["ID"] = item
+                # fluence, pt = self.get_fluence(item, sub["date"])
+                # sub.update({"fluence" : fluence,
+                #             "particletype"  : pt})
+
+                dic.update({pid : sub})
         return dic
 
-    def probe_search_for_PID(self,PID):
+    def probe_search_data(self, pid):
+        """Searches measurement data of given probeid"""
         dic = {}
         dataX = []
         dataY = []
@@ -92,7 +103,7 @@ class KITSearch(object):
         time = []
         bias_cur = []
 
-        for row in self.search_in_probe_data(PID):
+        for row in self.search_table("db_probe_data", probeid=pid):
             dataX.append(row.datax)
             dataY.append(row.datay)
             dataZ.append(row.dataz)
@@ -111,153 +122,161 @@ class KITSearch(object):
                     "time"      : time,
                     "bias_cur"  : bias_cur})
 
-        for col in self.search_in_probe(PID):
-            dic.update({"paraX"     : col.paraX,
-                        "paraY"     : col.paraY,
-                        "t0"        : col.temperature,
-                        "h0"        : col.RH,
-                        "PID"       : col.probeid,
-                        "UID"       : col.ID,
-                        "date"      : col.date})
+        for row in self.search_table("db_probe", probeid=pid):
+            dic.update({"paraX"     : row.paraX,
+                        "paraY"     : row.paraY,
+                        "t0"        : row.temperature,
+                        "h0"        : row.RH,
+                        "PID"       : row.probeid,
+                        "ID"        : row.ID,
+                        "date"      : row.date,
+                        "flag"      : row.flag})
 
-        for col in self.search_in_info(dic["UID"],para="UID"):
-            dic.update({"name"      : col.name,
-                        "project"   : col.project})
+        for row in self.search_table("db_info", ID=dic["ID"]):
+            dic.update({"name"      : row.name,
+                        "project"   : row.project})
 
-        #TODO
-        dic.update({"fluence"       : 0,
-                    "particletype"  : ""})
+        fluence, pt = self.get_fluence(dic["ID"], dic["date"])
+        dic.update({"annealing"     : self.get_annealing(dic["ID"], dic["date"])})
+        dic.update({"fluence"       : fluence,
+                    "particletype"  : pt})
         return dic
 
-    def ali_search_for_run(self,nr):
+    def ali_search_for_run(self, run):
+        """Combined search operation: search for run data according to given
+        run number"""
         dic = {}
-        for col in self.search_in_alibava(nr):
-            dic.update({"voltage"       : col.voltage,
-                        "e_sig"         : col.electron_sig,
-                        "e_sig_err"     : col.signal_e_err,
-                        "gain"          : col.gain,
-                        "seed"          : col.SeedSigENC_MPV,
-                        "seed_err"      : col.SeedSigENC_MPV_err,
-                        "seedADC"       : col.SeedSig_MPV,
-                        "seedADC_err"   : col.SeedSig_MPV_err})
-            ID = col.ID
-            date = col.date
-            a_id = col.annealing_id
-            dic.update({"annealing" : self.getAnnealing(col.annealing_id)})
-            fluence, particle = self.getFluence(sub["irradiation_id"])
-            sub.update({"fluence"       : fluence,
+        for row in self.search_table("db_alibava", run=run):
+            dic.update({"voltage"       : row.voltage,
+                        "e_sig"         : row.electron_sig,
+                        "e_sig_err"     : row.signal_e_err,
+                        "gain"          : row.gain,
+                        "seed"          : row.SeedSigENC_MPV,
+                        "seed_err"      : row.SeedSigENC_MPV_err,
+                        "seedADC"       : row.SeedSig_MPV,
+                        "seedADC_err"   : row.SeedSig_MPV_err})
+            ID = row.ID
+            # date = row.date
+            a_id = row.annealing_id
+            i_id = row.irradiation_id
+            dic.update({"annealing" : self.get_annealing(a_id)})
+            fluence, particle = self.get_fluence(i_id)
+            dic.update({"fluence"       : fluence,
                         "particletype"  : particle})
 
 
-        for col in self.search_in_info(ID,para="UID"):
-            dic.update({"name"      : col.name,
-                        "Fp"        : col.F_p_aim_n_cm2,
-                        "Fn"        : col.F_n_aim_n_cm2,
-                        "project"   : col.project})
+        for row in self.search_table("db_info", ID=ID):
+            dic.update({"name"      : row.name,
+                        "project"   : row.project})
         return dic
 
-    def ali_search_for_name_voltage(self,name,voltage,project):
+    def ali_search_data(self, name, project, search_para, search_val):
+        """Combined search operation: search for measurement data according to
+        item name and project which satisfie certain frame conditions
+
+        Args:
+            - search_para (str): 'Voltage' or 'Annealing'
+            - search_val (float): voltage or annealing value you are
+                                  looking for
+        """
         dic = {}
-        ID = None
-        for col in self.search_in_info(name,"name"):
-            if col.project == project:
-                ID = col.ID
-        for col in self.search_in_alibava(ID,"ID"):
-            sub = {}
-            if (voltage*0.99)<abs(col.voltage)<(voltage*1.01):
-                sub.update({"voltage"       : col.voltage,
-                            "date"          : col.date,
-                            "e_sig"         : col.electron_sig,
-                            "e_sig_err"     : col.signal_e_err,
-                            "gain"          : col.gain,
-                            # wrong entries in db
-                            # "seed_e"        : col.SeedSigENC_MPV,
-                            # "seed_e_err"    : col.SeedSigENC_MPV_err,
-                            "seed"          : col.SeedSig_MPV,
-                            "seed_err"      : col.SeedSig_MPV_err,
-                            "annealing"     : self.getAnnealing(col.annealing_id),
-                            "name"          : name,
-                            "UID"           : col.ID,
-                            "project"       : project})
-                fluence, particle = self.getFluence(col.irradiation_id)
-                sub.update({"fluence"       : fluence,
-                            "particletype"  : particle})
-                dic.update({col.run : sub})
+        ID = []
+        for row in self.search_table("db_info", name=name, project=project):
+            if row.project == project:
+                ID.append(row.ID)
+        for item in ID:
+            for row in self.search_table("db_alibava", ID=item):
+                sub = {}
+                if search_para == "Voltage" and (search_val*0.99) \
+                        < abs(row.voltage) < (search_val*1.01):
+                    sub.update({"voltage"       : row.voltage})
+                    sub.update({"date"          : row.date,
+                                "e_sig"         : row.electron_sig,
+                                "e_sig_err"     : row.signal_e_err,
+                                "gain"          : row.gain,
+                                # wrong entries in db
+                                # "seed_e"        : row.SeedSigENC_MPV,
+                                # "seed_e_err"    : row.SeedSigENC_MPV_err,
+                                "seed"          : row.SeedSig_MPV,
+                                "seed_err"      : row.SeedSig_MPV_err,
+                                "annealing"     : self.get_annealing(row.annealing_id),
+                                "name"          : name,
+                                "ID"           : row.ID,
+                                "project"       : project})
+                    fluence, particle = self.get_fluence(row.irradiation_id)
+                    sub.update({"fluence"       : fluence,
+                                "particletype"  : particle})
+                    dic.update({row.run : sub})
+                if search_para == "Annealing":
+                    tot_an = self.get_annealing(row.annealing_id)
+                    if (search_val*0.9) <= abs(tot_an) <= (search_val*1.1):
+                        sub.update({"voltage"       : row.voltage})
+                        sub.update({"date"          : row.date,
+                                    "e_sig"         : row.electron_sig,
+                                    "e_sig_err"     : row.signal_e_err,
+                                    "gain"          : row.gain,
+                                    # wrong entries in db
+                                    # "seed_e"        : row.SeedSigENC_MPV,
+                                    # "seed_e_err"    : row.SeedSigENC_MPV_err,
+                                    "seed"          : row.SeedSig_MPV,
+                                    "seed_err"      : row.SeedSig_MPV_err,
+                                    "annealing"     : self.get_annealing(row.annealing_id),
+                                    "name"          : name,
+                                    "ID"           : row.ID,
+                                    "project"       : project})
+
+                        fluence, particle = self.get_fluence(row.irradiation_id)
+                        sub.update({"fluence"       : fluence,
+                                    "particletype"  : particle})
+                        dic.update({row.run : sub})
         return dic
 
-    def ali_search_for_name_annealing(self,name,annealing,project):
-        dic = {}
-        for col in self.search_in_info(name,"name"):
-            if col.project == project:
-                ID = col.ID
-        for col in self.search_in_alibava(ID,"ID"):
-            sub = {}
-            totan = self.getAnnealing(col.annealing_id)
-            if (annealing*0.9)<=abs(totan)<=(annealing*1.1):
-                sub.update({"voltage"       : col.voltage,
-                            "date"          : col.date,
-                            "e_sig"         : col.electron_sig,
-                            "e_sig_err"     : col.signal_e_err,
-                            "gain"          : col.gain,
-                            # wrong entries in db
-                            # "seed_e"        : col.SeedSigENC_MPV,
-                            # "seed_e_err"    : col.SeedSigENC_MPV_err,
-                            "seed"          : col.SeedSig_MPV,
-                            "seed_err"      : col.SeedSig_MPV_err,
-                            "annealing"     : self.getAnnealing(col.annealing_id),
-                            "name"          : name,
-                            "UID"           : col.ID,
-                            "project"       : project})
-                fluence, particle = self.getFluence(col.irradiation_id)
-                sub.update({"fluence"       : fluence,
-                            "particletype"  : particle})
-                dic.update({col.run : sub})
-        return dic
-
-    def getAnnealing(self,a_id):
-        if a_id == None:
+    def get_annealing(self, eyedee, date=None):
+        """Get annealing information"""
+        if eyedee is None:
             return 0
-        for col in self.search_in_annealing(a_id):
-            if col.sum == None:
-                return 0
-            else:
-                return round(col.sum)
-    #     annealing = 0
-    #     for col in self.search_in_annealing(ID):
-    #         if date>col.date:
-    #             annealing += col.equiv
-    #     return round(annealing)
-
-    def getFluence(self,ID):
-        if ID == None:
-            return (0,"")
+        if date is None:
+            for row in self.search_table("db_annealing", annealing_id=eyedee):
+                if row.sum is None:
+                    return 0
+                return round(row.sum)
         else:
-            for col in self.search_in_irradiation(ID):
-                return (round(col.F_sum), col.particles)
-        # fluence = 0
-        # pt = []
-        # for col in self.search_in_irradiation(ID):
-        #     if date.date()>col.date:
-        #         fluence += col.F_n_cm2
-        #         pt.append(col.particletype)
-        # if set(pt) == set(["n","p"]):
-        #     pt = "(n,p)"
-        # elif len(pt) == 1:
-        #     pt = pt[0]
-        # else:
-        #     pt = ""
-        # return ("{:0.0e}".format(fluence), pt)
+            annealing = 0
+            for row in self.search_table("db_annealing", ID=eyedee):
+                if date > row.date:
+                    annealing += row.equiv
+            return round(annealing)
+
+    def get_fluence(self, eyedee, date=None):
+        """Get information about irradiation"""
+        if eyedee is None:
+            return (0, "")
+        elif date is None:
+            for row in self.search_table("db_irradiation", uirrad_id=eyedee):
+                return (row.F_sum, row.particles)
+        else:
+            fluence = 0
+            pt = []
+            for row in self.search_table("db_irradiation", ID=eyedee):
+                if date.date() > row.date:
+                    fluence += row.F_n_cm2
+                    pt.append(row.particletype)
+            return (fluence, pt)
 
     def getSession(self):
+        """Return session object"""
         return self.session
+
 
 if __name__ == '__main__':
 
-    # db = {"host"      : "...",
-    #         "database"  : "...",
-    #         "user"      : "...",
-    #         "passwd"    : "..."}
 
-    s = KITSearch(db)
-    print(s.probe_search_for_name("Irradiation_04"))
-    # print(s.ali_search_for_name_voltage("KIT_Test_07",600))
+    S = KITSearch("C:\\Users\\Marius\\KITScripts\\db.cfg")
+
+    # for row in S.search_table("db_info", {"name":"KIT_Test_07", "project":"HPK_2S_II"}):
+    # for line in S.search_table("db_info", name="%"):
+    #     print(line.project)
+    # for line in S.search_table("db_info", name="FBK_W%", project="CalibrationDiodes"):
+        # print(line.ID, line.name)
+    # for sec in S.probe_search(name="FBK_W%", project="CalibrationDiodes"):
+    #     print(sec)

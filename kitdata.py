@@ -288,7 +288,7 @@ class KITData(object):
 
         """
 
-        data = KITData.dbSession.probe_search_for_PID(pid)
+        data = KITData.dbSession.probe_search_data(pid)
 
         self.__x = data["dataX"]
         self.__y = data["dataY"]
@@ -316,7 +316,7 @@ class KITData(object):
         self.__name = "ALiBaVa"
         self.__project = "Default_Project"
 
-        data = KITData.dbSession.search_for_run(run)
+        data = KITData.dbSession.ali_search_for_run(run)
 
         self.__x = [data["voltage"]]
         self.__y = [data["e_sig"]]
@@ -877,7 +877,7 @@ class KITData(object):
 
     def getScaleY(self):
 
-        return 0, 1.3*max(__y)
+        return 0, 1.3*max(self.__y)
 
     def getProject(self):
         return self.__project
