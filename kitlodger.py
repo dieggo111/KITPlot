@@ -15,6 +15,7 @@ class KITLodger(object):
         self.__style = kwargs.get('style', 1)
         self.__text = kwargs.get('text', None)
         self.__fontsize = kwargs.get('fontsize', 14)
+        self.__alpha = kwargs.get('alpha', 1)
 
         self.__paraDict =  {    "x"         : self.__x,
                                 "y"         : self.__y,
@@ -23,7 +24,8 @@ class KITLodger(object):
                                 "width"     : self.__width,
                                 "style"     : self.__style,
                                 "text"      : self.__text,
-                                "fontsize"  : self.__fontsize
+                                "fontsize"  : self.__fontsize,
+                                "alpha"     : self.__alpha
                             }
 
         self.__paraDict = self.stripDict()
@@ -38,12 +40,14 @@ class KITLodger(object):
             print("Lodger:::Draw vertical line at x = " + str(self.__x))
             self.lodger_type = "verticle line"
             ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width, linestyle=self.__style)
-        elif self.__x is None and isinstance(self.__y, (int, float)):
+                       linewidth=self.__width, linestyle=self.__style,
+                       alpha=self.__alpha)
+        elif self.__x == None and isinstance(self.__y, (int, float)):
             print("Lodger:::Draw horizontal line at y = " + str(self.__y))
             self.lodger_type = "horizontal line"
             ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width, linestyle=self.__style)
+                       linewidth=self.__width, linestyle=self.__style,
+                       alpha=self.__alpha)
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
             print("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
