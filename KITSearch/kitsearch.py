@@ -12,7 +12,6 @@ except ImportError:
     from .db_map import db_info, db_probe, db_probe_data
     from .db_map import db_alibava, db_annealing, db_irradiation
 
-
 class KITSearch(object):
     """Module for searching data in ETP Measurement DB.
     Primary keys:
@@ -66,7 +65,7 @@ class KITSearch(object):
         data = self.session.query(self.db_table[table]).filter_by(**kwargs)
         return data
 
-    def probe_search(self, name, project):
+    def probe_search(self, name, project, pid_list=None):
         """Combined search operation: searche data for specific name
         and project"""
         dic = {}
@@ -78,7 +77,10 @@ class KITSearch(object):
             return dic
         for item in ID:
             for row in self.search_table("db_probe", ID=item):
-                PID.append(row.probeid)
+                if pid_list is None:
+                    PID.append(row.probeid)
+                elif row.probeid in pid_list:
+                    PID.append(row.probeid)
             for run in PID:
                 sub = self.probe_search_data(run)
                 pid = sub.pop("PID")
