@@ -156,7 +156,7 @@ class db_irradiation(BASE):
     uirrad_id           = Column(Integer,primary_key=True)
     ID                  = Column(Integer)
     F_n_cm2             = Column(Float)
-    particletype        = Column(Enum("n","p","pi"))
+    particletype        = Column(Enum("n", "p", "pi", "x"))
     date                = Column(DateTime)
     starttime           = Column(DateTime)
     endtime             = Column(DateTime)
