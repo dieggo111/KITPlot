@@ -12,7 +12,7 @@ import logging
 
 class KITMatplotlib(object):
 
-    def __init__(self, cfg=None,is_cfg_new=None):
+    def __init__(self, cfg=None, is_cfg_new=None):
 
         self.__graphs = []
         self.__lodgers = []
@@ -79,6 +79,8 @@ class KITMatplotlib(object):
         # KITPlot specific options
         self.norm = kitutils.extractList(cfg['Misc','Normalization'])
         self.splitGraph = cfg['Misc','SplitGraph']
+        # try:
+        #     self.
 
         # legend options
         self.__entryDict = cfg['Legend','EntryList']
@@ -246,13 +248,27 @@ class KITMatplotlib(object):
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
+
         # set error bars
         for i, table in enumerate(self.__graphs):
             if len(table) == 4 and self.err == True:
-                ax.errorbar(table[0],table[1],xerr=table[2],yerr=table[3],
+                ax.errorbar(table[0], table[1], xerr=table[2], yerr=table[3],
                             color=self.getColor(i),
                             elinewidth=1)
-            elif len(table) != 4 and self.err == True:
+            elif len(table) == 4 and self.err == "filled":
+                y1 = []
+                y2 = []
+                if all(table[2]) == 0:
+                    for y, err in zip(table[1], table[3]):
+                        y1.append(y - err)
+                        y2.append(y + err)
+                else:
+                    for y, min, max in zip(table[1], table[2], table[3]):
+                        y1.append(y - min)
+                        y2.append(y + max)
+
+                ax.fill_between(table[0], y1, y2)
+            elif len(table) != 4 and self.err in [True, "filled"]:
                 print("Warning::Can't find x- and y-errors in file. Request "
                       "rejected.")
 
@@ -289,28 +305,6 @@ class KITMatplotlib(object):
 
         self.setLegend(ax)
 
-        # x = [graph[0][0] for graph in self.__graphs]
-        # y = [graph[1][0] for graph in self.__graphs]
-        # x = self.__graphs[0][0][2:4]
-        # y = self.__graphs[0][1][2:4]
-        # print(x,y)
-        # y = [y for y in self.__graphs[0][1]]
-        # y2 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
-        # y3 = [y for y in self.__graphs[1][1] if y > 0.3e-12]
-        # y = y1+y2+y3
-        # print(y)
-        # print(np.mean(y), np.std(y))
-        # m,b = np.polyfit(x,y,1)
-        # print(1/m,b)
-        # t = np.arange(0,35,1)
-        # f = m*t+b
-        # ax.plot(t, f, color='black')
-        # # ax.xaxis.get_children()[1].set_size(14)
-        # ax.xaxis.get_children()[1].set_weight("bold")
-        # ax.set_xticklabels
-        # ax.axhline(y=12000,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
-        # ax.axhline(y=8400,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
-        # ax.axhline(y=2100,color=self.KITcolor['KITred'][3][1],linewidth=10,linestyle='-',zorder=0)
         return fig
 
 
@@ -488,7 +482,7 @@ class KITMatplotlib(object):
 
         values = list(self.__entryDict.values())
         new = OrderedDict(zip(fixed_order, values))
-        self.__cfg['Legend','EntryList'] = new
+        self.cfg['Legend','EntryList'] = new
 
 
     def getDefaultEntryDict(self,List):
