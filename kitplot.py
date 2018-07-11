@@ -603,13 +603,25 @@ class KITPlot(object):
 
         return True
 
-    def get_fit(self, data_lst):
-        x = [tup[0][0] for tup in data_lst]
-        y = [tup[1][0] for tup in data_lst]
-        m, b = np.polyfit(x, y, 1)
-        print("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
-        t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
-        f = m * t + b
+    def get_fit(self, data_lst, data_opt="pointwise", fit_opt="linear"):
+        """Fits data points. 'data_lst' is expected to a list containing list
+        elements with list(x) and list(y) values.
+        Args:
+            - data_lst = [[[x1], [y1]], [[x2], [y2]], [[x3], [y3]], ...]
+        Returns:
+            Data points (x-list, y-list) for fit graph
+        """
+        if data_opt == "pointwise":
+            x = [tup[0][0] for tup in data_lst]
+            y = [tup[1][0] for tup in data_lst]
+        if data_opt == "listwise":
+            x = data_lst[0]
+            y = data_lst[1]
+        if fit_opt == "linear":
+            m, b = np.polyfit(x, y, 1)
+            print("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
+            t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
+            f = m * t + b
         return (f, t)
 
 
@@ -632,12 +644,12 @@ class KITPlot(object):
                 ix.append(valY)
                 iy.append(valZ)
             else:
-                dic[bias] = zip(ix,iy)
+                dic[bias] = zip(ix, iy)
                 bias = valX
                 ix = [valY]
                 iy = [valZ]
 
-        dic[bias] = zip(ix,iy)
+        dic[bias] = zip(ix, iy)
 
         self.__RDict = dic
 
@@ -650,13 +662,13 @@ class KITPlot(object):
         elif (len(self.__graphs) != 1) and (graph is None):
             return self.__graphs
         else:
-            if isinstance(graph,str):
-                if (len(self.__graphs) != 1) and (graph.isdigit()):
+            if isinstance(graph, str):
+                if len(self.__graphs) != 1 and graph.isdigit():
                     return self.__graphs[int(graph)]
                 else:
                     return False
-            elif isinstance(graph,int):
-                if (len(self.__graphs) != 1):
+            elif isinstance(graph, int):
+                if len(self.__graphs) != 1:
                     return self.__graphs[graph]
                 else:
                     return False
@@ -665,16 +677,16 @@ class KITPlot(object):
 
         if len(self.__files) == 1:
             return self.__files[0]
-        elif (len(self.__files) != 1) and (KITFile is None):
-            return self.__file
+        elif len(self.__files) != 1 and KITFile is None:
+            return self.__files
         else:
-            if isinstance(KITFile,str):
-                if (len(self.__files) != 1) and (KITFile.isdigit()):
+            if isinstance(KITFile, str):
+                if len(self.__files) != 1 and KITFile.isdigit():
                     return self.__files[int(KITFile)]
                 else:
                     return False
-            elif isinstance(KITFile,int):
-                if (len(self.__files) != 1):
+            elif isinstance(KITFile, int):
+                if len(self.__files) != 1:
                     return self.__files[KITFile]
                 else:
                     return False
