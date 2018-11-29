@@ -224,17 +224,17 @@ kPlot1.showCanvas(save=True)
 
 """
 
-import numpy as np
 import os
 import sys
+import warnings
+import logging
+import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 from .kitdata import KITData
 from .KITConfig import KITConfig
 from .kitmatplotlib import KITMatplotlib
-from collections import OrderedDict
 from .kitlodger import KITLodger
-from .Utils import kitutils
-import warnings
 
 class KITPlot(object):
 
@@ -254,6 +254,15 @@ class KITPlot(object):
 
     def __init__(self, dataInput=None, defaultCfg=None, name=None,
                  name_lst=None):
+
+        self.log = logging.getLogger(__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
+        format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+        formatter = logging.Formatter(format_string)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        self.log.addHandler(console_handler)
+        self.log.info("KITPlot initialized...")
 
         # ignore warning that is raised because of back-end bug while using 'waitforbuttonpress'
         warnings.filterwarnings("ignore",".*GUI is implemented.*")

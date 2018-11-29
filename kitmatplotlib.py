@@ -12,7 +12,7 @@ import logging
 
 class KITMatplotlib(object):
 
-    def __init__(self, cfg=None, is_cfg_new=None):
+    def __init__(self, cfg=None, cfg_present=None):
 
         self.__graphs = []
         self.__lodgers = []
@@ -22,7 +22,7 @@ class KITMatplotlib(object):
 
         # load style parameters from cfg file
         self.__initStyle(cfg)
-        self.__is_cfg_new = is_cfg_new
+        self.__cfg_present = cfg_present
 
 
     def __initStyle(self, cfg):
@@ -191,11 +191,9 @@ class KITMatplotlib(object):
 
 
     def draw(self, fileList):
-        """
-        doc
-
-        """
-
+        """Extracts data sets from fileList, extracts plot parameters from cfg
+        (plot options, legend information, plot dimensions, axis labeling,
+        marker and graph options, ...) and applies them"""
         # create self.__graphs list
         for dset in fileList:
             self.addGraph(dset)
@@ -301,7 +299,6 @@ class KITMatplotlib(object):
             ax.set_xlim(self.rangeX)
         if self.rangeY != 'auto':
             ax.set_ylim(self.rangeY)
-
 
         self.setLegend(ax)
 
@@ -456,7 +453,7 @@ class KITMatplotlib(object):
         if self.cfg['Legend','EntryList'] == "":
             self.cfg['Legend','EntryList'] = def_list
             self.__entryDict = def_list
-            if self.__is_cfg_new == False:
+            if self.__cfg_present is True:
                 print("EntryDict was set back to default!")
         # calculate expected number of entries in 'EntryList'
         if len(self.__entryDict) != exp_len and self.splitGraph == False:

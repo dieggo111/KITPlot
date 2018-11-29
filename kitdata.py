@@ -61,8 +61,7 @@ class KITData(object):
         self.__seed = None
         self.__seederr = None
 
-        # Sometimes integers are interpreted as strings, therefore
-        # isdigit() is called to check for missinterpreted integers
+        # in case PID is in string format make it an integer
         try:
             if isinstance(dataInput, str) and dataInput.isdigit():
                 dataInput = int(dataInput)
@@ -76,19 +75,18 @@ class KITData(object):
         # A single PID for either a probe station or ALiBaVa measurement
         elif isinstance(dataInput, int):
             self.__id = dataInput
-
             # Establish database connection if its no already established
             if KITData.dbSession is None:
                 self.__init_db_connection(credentials)
 
             # Distinguish between probe station and ALiBaVa ID
-            if measurement is "alibava":
+            if measurement == "alibava":
                 if show_input is not False:
                     print("Input: ALiBaVa run")
                 else:
                     pass
                 self.__allo_db_alibava(dataInput)
-            elif measurement is "probe" and show_input is not False:
+            elif measurement == "probe" and show_input is not False:
                 if show_input is not False:
                     print("Input: Probe station PID")
                 else:
@@ -287,7 +285,6 @@ class KITData(object):
             pid: probe id in the IEKP database
 
         """
-
         data = KITData.dbSession.probe_search_data(pid)
 
         self.__x = data["dataX"]
