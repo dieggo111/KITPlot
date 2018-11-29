@@ -282,30 +282,13 @@ class KITPlot(object):
             self.__cfg.Default(defaultCfg)
         self.__cfg.Dir("cfg")
 
-        # extract name from data input
-        if name is None:
-            self.__inputName = self.getDataName(dataInput)
-        else:
-            self.__inputName = name
+        self.__inputName = name
+        self.name_lst = name_lst
+        self.cavas = None
 
-        # check if cfg is already there
-        if os.path.isfile(os.path.join("cfg", self.__inputName) + ".cfg") == False:
-            self.is_cfg_new = True
-        else:
-            self.is_cfg_new = False
-
-        # load dict with parameters from cfg file
-        self.__cfg.load(self.__inputName)
-
-        if name_lst is not None:
-            self.name_lst = name_lst
-
-#        a = self.__cfg['General','Measurement']
-        a = "probe"
         # add files
-        # TODO: 'probe' is hard-coded ??? wtf???
         if dataInput is not None:
-            self.addFiles(dataInput, a)
+            self.addFiles(dataInput, self.__cfg['General', 'Measurement'])
         else:
             pass
 
@@ -399,7 +382,7 @@ class KITPlot(object):
     ### Graph methods ###
     #####################
 
-    def addFiles(self, dataInput=None, measurement="probe"):
+    def addFiles(self, dataInput=None, measurement="probe", name=None, name_lst=None):
         """ Depending on the type, the 'self.__files' list is filled with
         KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
@@ -412,140 +395,193 @@ class KITPlot(object):
             measurement(str): probe station and ALiBaVa measurements must be
                 handled differently due to different database paramters
         """
+        # extract name from data input
+        if name is None:
+            self.__inputName = self.getDataName(dataInput)
+        else:
+            self.__inputName = name
+        if name_lst is not None:
+            self.name_lst = name_lst
 
         #TODO: handle multiple KITPlot objects to create canvas with multiple subplots
         # if isinstance(dataInput, KITPlot):
+        if measurement == "probe":
+            # Load KITData
+            if isinstance(dataInput, KITData):
+                self.log.info("Input interpreted as KITData object")
+                self.__files.append(dataInput)
+                # self.addGraph(dataInput.getX(),dataInput.getY())
 
-
-        # Load KITData
-        if isinstance(dataInput, KITData):
-            print("Input interpreted as KITData object")
-            self.__files.append(dataInput)
-            # self.addGraph(dataInput.getX(),dataInput.getY())
-
-        # NEW FEATURE: Load list/tuple with raw data
-        elif isinstance(dataInput, (list, tuple)):
-            print("Input interpreted as raw data")
-            for i, tup in enumerate(dataInput):
-                self.__files.append(KITData(tup))
-                try:
-                    self.__files[-1].setName(self.name_lst[i])
-                except:
-                    pass
-        # Load single PID
-        # ???
-        elif isinstance(dataInput, int):
-            self.__files.append(KITData(dataInput))
-
-        elif isinstance(dataInput, str):
-            # Load single PID
-            if dataInput.isdigit():
-                self.__files.append(KITData(dataInput))
-                if "Ramp" in self.__files[-1].getParaY():
-                    print("Input interpreted as ramp measurement")
-                    x = []
-                    y = []
-                    # labels = []
-
-                    if len(self.__files) > 1:
-                        raise ValueError("You can only print one RPunch ramp"
-                                         " at once!")
-
-                    # get the values from the KITData file and convert it into
-                    # a dictionary: section=V_bias,key=(V_edge, I_edge) [tuple]
-                    kdict = self.getRDict(self.__files[0])
-                    self.__files = []
-                    for i, bias in enumerate(kdict):
-                        # create an empty KITData object
-                        kdata = KITData()
-                        # extract each single bias value from the dictionary
-                        # and create KITData files for every value
-                        x, y = zip(*kdict[bias])
-                        kdata.setX(list(x))
-                        kdata.setY(list(y))
-                        kdata.setName(str(bias) + " V")
-                        kdata.setPX("Voltage")
-                        kdata.setPY("Rpunch")
-
-                        self.__files.append(kdata)
-
+            # Load list/tuple with raw data or list with PIDs
+            elif isinstance(dataInput, (list, tuple)):
+                if all([int(elem) for elem in dataInput]):
+                    self.log.info("Input interpreted as multiple PIDs")
                 else:
-                    pass
-
-
-            # Load multiple data files in a folder
-            elif os.path.isdir(dataInput):
-                print("Input interpreted as folder with files")
-                for i, inputFile in enumerate(os.listdir(dataInput)):
-                    if os.path.splitext(inputFile)[1] == ".txt":
-                        self.__files.append(KITData(dataInput + inputFile))
-                        try:
-                            self.__files[-1].setName(self.name_lst[i])
-                        except:
-                            pass
-                    else:
-                        pass
-
-            # Load file
-            elif os.path.isfile(dataInput):
-                # multiple PIDs
-                if self.checkPID(dataInput) is True:
-                    print("Input interpreted as multiple PIDs")
-                    with open(dataInput) as inputFile:
-                        fileList = []
-                        for i, line in enumerate(inputFile):
-                            entry = line.split()
-                            if entry[0].isdigit():
-                                fileList.append(KITData(entry[0], measurement))
-                                try:
-                                    fileList[-1].setName(self.name_lst[i])
-                                except:
-                                    pass
-                        if measurement == "probe":
-                            self.__files = fileList
-                        elif measurement == "alibava":
-                            self.__files.append(KITData(fileList))
-
-                # TODO Rpunch/REdge Ramp file
-                # elif "REdge" in dataInput:
-                    # data = KITData(dataInput).getRPunchDict()
-                    #
-                    # x = []
-                    # y = []
-                    # labels = []
-                    #
-                    # for i, bias in enumerate(data):
-                    #     x, y = zip(*data[bias])
-                    #     kdata = KITData()
-                    #     kdata.setX(list(x))
-                    #     kdata.setY(list(y))
-                    #     kdata.setName(str(bias) + " V")
-                    #     kdata.setPX("Voltage")
-                    #     kdata.setPY("Rpunch")
-                    #     self.__files.append(kdata)
-
-
-                # singel file
-                else:
-                    print("Input interpreted as single file")
-                    self.__files.append(KITData(dataInput))
+                    self.log.info("Input interpreted as raw data")
+                for i, tup in enumerate(dataInput):
+                    self.__files.append(KITData(tup))
                     try:
-                        self.__files[-1].setName(self.name_lst[0])
+                        self.__files[-1].setName(self.name_lst[i])
                     except:
                         pass
+            # Load single integer PID
+            elif isinstance(dataInput, int):
+                self.__files.append(KITData(dataInput))
+            elif isinstance(dataInput, str):
+                # Load single string PID
+                if dataInput.isdigit():
+                    kdata = KITData(dataInput)
+                    # PID represents a Rpunch measurement
+                    if "Ramp" in kdata.getParaY():
+                        self.log.info("Input interpreted as ramp measurement")
+                # split data so that each ramp step becomes a KITData object
+                        kdict = self.get_r_dict(kdata)
+                        kdata_lst = self.handle_ramp(kdict)
+                        self.__files = kdata_lst
+
+                    else:
+                        self.log.info("Input interpreted as single PID")
+                        self.__files.append(kdata)
+
+                # Load multiple data files in a folder
+                elif os.path.isdir(dataInput):
+                    self.log.info("Input interpreted as folder with files")
+                    for i, inputFile in enumerate(os.listdir(dataInput)):
+                        if os.path.splitext(inputFile)[1] == ".txt":
+                            self.__files.append(KITData(dataInput + inputFile))
+                            try:
+                                self.__files[-1].setName(self.name_lst[i])
+                            except:
+                                pass
+                        else:
+                            pass
+
+                # Load file
+                elif os.path.isfile(dataInput):
+                    # multiple PIDs
+                    if self.checkPID(dataInput) is True:
+                        self.log.info("Input interpreted as multiple PIDs")
+                        with open(dataInput) as inputFile:
+                            fileList = []
+                            for i, line in enumerate(inputFile):
+                                entry = line.split()
+                                if entry[0].isdigit():
+                                    fileList.append(KITData(entry[0], measurement))
+                                    try:
+                                        fileList[-1].setName(self.name_lst[i])
+                                    except:
+                                        pass
+                            # if measurement == "probe":
+                            self.__files = fileList
+                            # elif measurement == "alibava":
+                            #     self.__files.append(KITData(fileList))
+
+                    # singel file
+                    else:
+                        self.log.info("Input interpreted as single file")
+                        self.__files.append(KITData(dataInput))
+                        try:
+                            self.__files[-1].setName(self.name_lst[0])
+                        except:
+                            pass
+                # new feature: multiple PIDs in argument
+                elif any(n in inputFile for n in ["[", "]", "(", ")"]):
+                    entry = inputFile.replace("[", "").replace("]", "")\
+                            .replace("(", "").replace(")", "").split(",")
+                    if all([n.isdigit() for n in entry]):
+                        self.log.info("Input interpreted as argument with multiple PIDs ")
+
+
+
+        if "Rpunch" in measurement and os.path.isfile(dataInput):
+            self.log.info("Input interpreted as multiple PIDs of Ramp measurements")
+            with open(dataInput) as inputFile:
+                val_lst = []
+                res_lst = []
+                fileList = []
+                # loop through file and create KITData object for every PID
+                for i, line in enumerate(inputFile):
+                    entry = line.split()
+                    if entry[0].isdigit():
+                        self.__files.append(KITData(entry[0]))
+                    else:
+                        raise ValueError
+                    kdict = self.get_r_dict(self.__files[-1])
+                    # plot graph for every single PID
+                    if "@" not in measurement:
+                        x_lst = []
+                        y_lst = []
+                        kdata_lst = self.handle_ramp(kdict)
+                        for kdata in kdata_lst:
+                            x = [abs(x) for x in kdata.getX()]
+                            y = [abs(y) for y in kdata.getY()]
+                            m = self.get_fit([x, y], data_opt="listwise",
+                                             name=kdata.getName(),
+                                             returns="result")[0]
+                            y_lst.append(1/m)
+                            # y_lst.append(1/m*0.46/0.02)
+                            x_lst.append(kdata.getZ())
+
+                        kdata_new = KITData()
+                        kdata_new.setX(x_lst)
+                        kdata_new.setY(y_lst)
+                        try:
+                            kdata_new.setName(self.name_lst[i])
+                        except:
+                            kdata_new.setName(str(i))
+                        kdata_new.setPX("Voltage")
+                        kdata_new.setPY("Resistance")
+                        self.__files[-1] = kdata_new
+                    # plot only values at given bias voltage of all PIDs
+                    else:
+                        bias_aim = measurement.split("@")[1]
+                        x, y = self.handle_ramp(kdict, bias_aim=int(bias_aim))
+                        x = [abs(xi) for xi in x]
+                        y = [abs(yi) for yi in y]
+                        m, _, res = self.get_fit([x, y], data_opt="listwise",
+                                                 name=entry[0],
+                                                 returns="result",
+                                                 residual=True)
+                        # val_lst.append(1/m)
+                        val_lst.append(1/m*0.46/0.02)
+                        res_lst.append(res/((m + res)*(m + res)))
+                if "@" in measurement:
+                    kdata_new = KITData()
+                    kdata_new.setX(range(0, len(val_lst)))
+                    # kdata_new.setX([2, 3.8, 5.5, 7, 8.6, 10.25, 11.9, 13.5,
+                    #                 16.8, 20.3, 28, 37, 48])
+                    kdata_new.setX([10, 20, 30, 40, 50, 60, 70, 80,
+                                    100, 120, 160, 200, 240])
+                    # kdata_new.setX([0.3, 0.5, 0.8, 1.0, 1.2, 1.5, 1.7, 1.9,
+                    #                 2.4, 2.9, 4.0, 5.3, 6.9])
+
+                    kdata_new.setY(val_lst)
+                    self.__files = []
+                    self.__files.append(kdata_new)
+
+
         return True
 
 
-    def draw(self):
+    def draw(self, dataInput=None):
+        """Searches for cfg file, load plot parameters, creates canvas graphs
+        and lodgers.
         """
-        doc
-        """
-        # if dataInput comes from database then apply titles according to measurement type
-        if self.is_cfg_new is True:
+        # load dict with parameters from cfg file
+        self.__cfg.load(self.__inputName)
+
+        cfg_present = os.path.isfile(os.path.join("cfg", self.__inputName)
+                                     + ".cfg")
+        # if dataInput comes from database then apply axis titles according
+        # to measurement type
+        if cfg_present is False:
             self.MeasurementType()
 
         # create graphs and canvas
-        self.canvas = KITMatplotlib(self.__cfg, self.is_cfg_new).draw(self.__files)
+        if dataInput is None:
+            self.canvas = KITMatplotlib(self.__cfg, cfg_present).draw(self.__files)
+        else:
+            self.canvas = KITMatplotlib(self.__cfg, cfg_present).draw(dataInput)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
@@ -553,15 +589,18 @@ class KITPlot(object):
         return True
 
     def showCanvas(self, save=None):
-        self.canvas.show()
-        if save is True:
-            self.saveCanvas()
-        # this will wait for indefinite time
         try:
-            plt.waitforbuttonpress(0)
-        except:
-            pass
-        plt.close(self.canvas)
+            self.canvas.show()
+            if save is True:
+                self.saveCanvas()
+            # this will wait for indefinite time
+            try:
+                plt.waitforbuttonpress(0)
+            except:
+                pass
+            plt.close(self.canvas)
+        except AttributeError:
+            self.log.info("There is no canvas to show")
         return True
 
     def saveCanvas(self):
@@ -612,7 +651,8 @@ class KITPlot(object):
 
         return True
 
-    def get_fit(self, data_lst, data_opt="pointwise", fit_opt="linear"):
+    def get_fit(self, data_lst, data_opt="pointwise", fit_opt="linear",
+                returns="fit", residual=False, name=None):
         """Fits data points. 'data_lst' is expected to a list containing list
         elements with list(x) and list(y) values.
         Args:
@@ -627,42 +667,79 @@ class KITPlot(object):
             x = data_lst[0]
             y = data_lst[1]
         if fit_opt == "linear":
-            m, b = np.polyfit(x, y, 1)
-            print("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
+            m, b, _, _, err = stats.linregress(x, y)
+
+            if name is None and residual is False:
+                self.log.info("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
+            if name is None and residual is True:
+                self.log.info("Fit result:::(m = " + str(m) + ", y0 = " + str(b) \
+                      + ", res = " + str(err) + ")")
+            if name is not None and residual is False:
+                self.log.info("Fit result[" + name + "]:::(m = " + str(m) + ", y0 = "
+                      + str(b)  +")")
+            if name is not None and residual is True:
+                self.log.info("Fit result[" + name + "]:::(m = " + str(m) + ", y0 = "\
+                      + str(b) + ", res = " + str(err) +")")
             t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
             f = m * t + b
-        return (f, t)
+        if returns == "fit":
+            return (f, t)
+        if returns == "result":
+            try:
+                return (m, b, err)
+            except:
+                return (m, b)
 
+
+    def handle_ramp(self, kdict, bias_aim=None):
+        x = []
+        y = []
+        kdata_lst = []
+        for bias in kdict.keys():
+            # create an empty KITData object
+            kdata = KITData()
+            # extract each single bias value from the dictionary
+            # and create KITData files for every value
+            if bias_aim is None:
+                x, y = zip(*kdict[bias])
+                kdata.setX(list(x))
+                kdata.setY(list(y))
+                kdata.setZ(bias)
+                kdata.setName(str(bias) + " V")
+                kdata.setPX("Voltage")
+                kdata.setPY("Rpunch")
+                kdata_lst.append(kdata)
+            else:
+                if int(bias) == bias_aim:
+                    return zip(*kdict[bias])
+        return kdata_lst
 
 ###################
 ### Get methods ###
 ###################
 
 
-    def getRDict(self, kdata):
-
-        dic = OrderedDict()
-        bias = kdata.getX()[0]
-        ix = []
-        iy = []
-
-        # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
-        for (valX, valY, valZ) in zip(kdata.getX(), kdata.getY(), kdata.getZ()):
-            # create the IV keys for one bias voltage
-            if bias == valX:
-                ix.append(valY)
-                iy.append(valZ)
-            else:
-                dic[bias] = zip(ix, iy)
-                bias = valX
-                ix = [valY]
-                iy = [valZ]
-
-        dic[bias] = zip(ix, iy)
-
-        self.__RDict = dic
-
-        return self.__RDict
+    def get_r_dict(self, kdata):
+        """Get the values from the KITData file and convert it into
+        a dictionary: {V_bias_0 = (V_edge, I_edge),
+                       V_bias_0 = (V_edge, I_edge), ...,
+                       V_bias_1 = (V_edge, I_edge), ...}
+        """
+        ramp = []
+        dic = {}
+        for x in kdata.getX():
+            if x not in ramp:
+                ramp.append(int(round(x)))
+        for bias in ramp:
+            ix = []
+            iy = []
+            # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
+            for (valX, valY, valZ) in zip(kdata.getX(), kdata.getY(), kdata.getZ()):
+                if bias == valX:
+                    ix.append(valY)
+                    iy.append(valZ)
+                    dic[bias] = zip(ix, iy)
+        return dic
 
     def getGraph(self, graph=None):
 
@@ -701,6 +778,8 @@ class KITPlot(object):
                     return False
 
     def getCanvas(self):
+        if self.canvas is None:
+            return None
         return self.canvas
 
     def getX(self):
@@ -716,11 +795,19 @@ class KITPlot(object):
         return Y
 
     def getDataName(self, dataInput):
+        """Check data input and try to extract the name for legend, cfg and
+        outputfile"""
+        if dataInput is None:
+            self.log.info("No data input. Name not extractable.")
+            return None
         if isinstance(dataInput, str):
+            self.log.info("Extracting name from data input")
             return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+        elif isinstance(dataInput, int):
+            self.log.info("Data input interpreted as PID. Name is PID.")
+            return str(dataInput)
         else:
-            raise ValueError("Unknown name...")
-
+            raise ValueError("Unkonwn case in 'getDataName' function")
 
 # if __name__ == '__main__':
 #     plot = KITPlot(38268)

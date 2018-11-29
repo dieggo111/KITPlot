@@ -336,15 +336,15 @@ class KITMatplotlib(object):
             obj.legend(handles,labels,bbox_to_anchor=(0., 0.,1.,1.),
                        loc='lower left',ncol=3, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles,labels,bbox_to_anchor=(0., -0.32, 1., .102),
-                       loc='lower center',ncol=3, mode="expand", borderaxespad=0.)
+            obj.legend(handles,labels,bbox_to_anchor=(0., -0.25, 1., .102),
+                       loc='lower center',ncol=2, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
             if total_len > 8:
                 ncol = 2
             else:
                 ncol = 1
             obj.legend(handles,labels,bbox_to_anchor=(1, 1.01),
-                       loc='upper left',ncol=ncol)
+                       loc='upper left',ncol=1)
         return True
 
 

@@ -127,7 +127,6 @@ class KITData(object):
 
                 # Reorder variables if file contains a RPunch measurement
                 if self.checkRpunch(self.__x):
-
                     dic = OrderedDict()
                     bias = self.__x[0]
                     ix = []
