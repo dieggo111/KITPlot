@@ -159,7 +159,7 @@ class KITData(object):
 
         # Data input contains list of KITData objects
         # TODO
-        elif isinstance(dataInput,list) and all(isinstance(i, KITData)
+        elif isinstance(dataInput, list) and all(isinstance(i, KITData)
                                                 for i in dataInput):
 
             self.__px = dataInput[0].getParaX()
@@ -177,7 +177,7 @@ class KITData(object):
 
         # NEW FEATURE: Data input is an array or tuple containing lists or
         # tuples with raw data
-        elif isinstance(dataInput,(list, tuple)) \
+        elif isinstance(dataInput, (list, tuple)) \
         and all(isinstance(i, (list, tuple)) for i in dataInput):
             try:
                 # First two columns are always interpreted as x and y
@@ -192,14 +192,14 @@ class KITData(object):
                     self.__dx = dataInput[2]
                     self.__dy = dataInput[3]
                 # Six column are seen as x,y,z and their errors dx,dy,dz
-                elif len(splited) == 6:
+                elif len(dataInput) == 6:
                     self.__z = dataInput[2]
                     self.__dx = dataInput[3]
                     self.__dy = dataInput[4]
                     self.__dz = dataInput[5]
-                # # Rpunch measurement from file
-                # elif len(splited) > 6 and "REdge" in dataInput:
-                #     self.__z.append(dataInput[2])
+                    # # Rpunch measurement from file
+                    # elif len(splited) > 6 and "REdge" in dataInput:
+                    #     self.__z.append(dataInput[2])
             except:
                 pass
 

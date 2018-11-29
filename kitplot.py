@@ -387,7 +387,7 @@ class KITPlot(object):
         KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
         A RPunch measurement, however, origionaly consist of one KITData file
-        that needs to be split up into several KITData objects for one bias
+        that needs to be split up into several KITData objects since one bias
         value (x value) represents one graph.
         Args:
             dataInput(None|int|str): Determines the way the 'self.__files'
@@ -396,9 +396,9 @@ class KITPlot(object):
                 handled differently due to different database paramters
         """
         # extract name from data input
-        if name is None:
+        if name is None and self.__inputName is None:
             self.__inputName = self.getDataName(dataInput)
-        else:
+        if name is not None and self.__inputName is None:
             self.__inputName = name
         if name_lst is not None:
             self.name_lst = name_lst
@@ -414,8 +414,8 @@ class KITPlot(object):
 
             # Load list/tuple with raw data or list with PIDs
             elif isinstance(dataInput, (list, tuple)):
-                if all([int(elem) for elem in dataInput]):
-                    self.log.info("Input interpreted as multiple PIDs")
+                if all([isinstance(elem, int) for elem in dataInput]):
+                    self.log.info("Input interpreted as list with multiple PIDs")
                 else:
                     self.log.info("Input interpreted as raw data")
                 for i, tup in enumerate(dataInput):
@@ -668,18 +668,17 @@ class KITPlot(object):
             y = data_lst[1]
         if fit_opt == "linear":
             m, b, _, _, err = stats.linregress(x, y)
-
             if name is None and residual is False:
-                self.log.info("Fit result:::(m = " + str(m) + ", y0 = " + str(b)  +")")
+                self.log.info("Fit result:::(m = %s, y0 = %s)", str(m), str(b))
             if name is None and residual is True:
-                self.log.info("Fit result:::(m = " + str(m) + ", y0 = " + str(b) \
-                      + ", res = " + str(err) + ")")
+                self.log.info("Fit result:::(m = %s, y0 = %s, res = %s)",
+                              str(m), str(b), str(err))
             if name is not None and residual is False:
-                self.log.info("Fit result[" + name + "]:::(m = " + str(m) + ", y0 = "
-                      + str(b)  +")")
+                self.log.info("Fit result[%s]:::(m = %s, y0 = %s)",
+                              name, str(m), str(b))
             if name is not None and residual is True:
-                self.log.info("Fit result[" + name + "]:::(m = " + str(m) + ", y0 = "\
-                      + str(b) + ", res = " + str(err) +")")
+                self.log.info("Fit result[%s]:::(m = %s, y0 = %s, res = %s)",
+                              name, str(m), str(b), str(err))
             t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
             f = m * t + b
         if returns == "fit":
@@ -807,6 +806,7 @@ class KITPlot(object):
             self.log.info("Data input interpreted as PID. Name is PID.")
             return str(dataInput)
         else:
+            print(dataInput)
             raise ValueError("Unkonwn case in 'getDataName' function")
 
 # if __name__ == '__main__':
