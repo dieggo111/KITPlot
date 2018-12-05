@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
-from .KITConfig import KITConfig
 from .kitdata import KITData
 from .kitlodger import KITLodger
 from collections import OrderedDict
@@ -17,8 +16,13 @@ class KITMatplotlib(object):
         self.__graphs = []
         self.__lodgers = []
 
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(logging.DEBUG)
+        format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+        formatter = logging.Formatter(format_string)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        self.log.addHandler(console_handler)
 
         # load style parameters from cfg file
         self.__initStyle(cfg)
@@ -111,7 +115,7 @@ class KITMatplotlib(object):
         elif self.colorPalette == "KIT":
             return list(self.KITcolor.keys())
         else:
-            print("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
+            self.log.warning("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
             return list(self.KITcolor.keys())
 
     def addGraph(self, arg):
@@ -128,7 +132,7 @@ class KITMatplotlib(object):
         dx = []
         dy = []
         if isinstance(arg, KITData):
-            if KITData().getRPunchDict() == None:
+            if KITData().getRPunchDict() is None:
                 # toggle absolute mode
                 if self.absX:
                     x = list(np.absolute(arg.getX()))
@@ -214,7 +218,7 @@ class KITMatplotlib(object):
                 self.cfg["Legend","EntryList"] = self.__entryDict
 
         elif self.splitGraph is True and len(self.__graphs) != 1:
-            print("Warning::Can only split single graph. Request rejected")
+            self.log.warning("Warning::Can only split single graph. Request rejected")
 
         # apply user defined normalization or manipulation of y values of each graph
         self.__graphs = kitutils.manipulate(self.__graphs, self.norm)
@@ -267,7 +271,7 @@ class KITMatplotlib(object):
 
                 ax.fill_between(table[0], y1, y2)
             elif len(table) != 4 and self.err in [True, "filled"]:
-                print("Warning::Can't find x- and y-errors in file. Request "
+                self.log.warning("Warning::Can't find x- and y-errors in file. Request "
                       "rejected.")
 
         # set titles
@@ -378,7 +382,7 @@ class KITMatplotlib(object):
                     if index == i:
                         return list(self.markers.keys())[item]
         except:
-            print("Warning:::Invalid value in 'MarkerSet'. Using default instead.")
+            self.log.warning("Warning:::Invalid value in 'MarkerSet'. Using default instead.")
             return list(self.markers.keys())[index]
 
 
@@ -411,7 +415,7 @@ class KITMatplotlib(object):
                         pass
 
         except:
-            print("Warning:::Invalid input in 'ColorSet'. Using default instead.")
+            self.log.warning("Warning:::Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
                 if i == index:
                     return list(self.KITcolor[color].values())[0]
@@ -435,7 +439,7 @@ class KITMatplotlib(object):
                     if index == i:
                         return self.lines[item]
         except:
-            print("Warning:::Invalid value in 'LineStyle'. Using default instead.")
+            self.log.warning("Warning:::Invalid value in 'LineStyle'. Using default instead.")
             return self.lines[1]
 
 
@@ -454,7 +458,7 @@ class KITMatplotlib(object):
             self.cfg['Legend','EntryList'] = def_list
             self.__entryDict = def_list
             if self.__cfg_present is True:
-                print("EntryDict was set back to default!")
+                self.log.info("EntryDict was set back to default!")
         # calculate expected number of entries in 'EntryList'
         if len(self.__entryDict) != exp_len and self.splitGraph == False:
             raise KeyError("Unexpected 'EntryList' value! Number of graphs and "

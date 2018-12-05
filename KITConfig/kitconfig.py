@@ -26,32 +26,44 @@ class KITConfig(object):
         Args:
             cfg (str): The config file that is loaded
 
+        Members:
+            __cfgFile (str): absolute path of cfg file
+            __dir (str): absolute path of cfg dir where cfg are stored
+            __default (OrderedDict): default config dictionary
+            __cfg (OrderedDict): loaded config dictionary
+
         """
+        self.log = logging.getLogger(__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
+        if self.log.hasHandlers() is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
+
         self.__dir = KITConfig.configDir
-        self.__cfgFile = ""
+        self.__cfgFile = cfg
 
         self.__cfg = {}
         self.__default = KITConfig.defaultConfig
 
-        self.__setupLogger()
 
         if cfg is not None:
-            self.__cfgFile = cfg
             self.load(cfg)
 
-
     def Default(self, fName='default.cfg'):
+        """Set default config file"""
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
                 self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        except Exception:
+        except (TypeError, FileNotFoundError):
             pass
-
         try:
             with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
                 KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)
         except Exception as e:
-            print(e)
+            self.log.debug(e)
             raise OSError("Default config file not found")
 
 
@@ -75,13 +87,11 @@ class KITConfig(object):
 
         if isinstance(keys, str):
             keys = [keys]
-
         # Looking for key in config file
         try:
             return self.__getFromDict(self.__cfg, keys)
         except:
             pass
-
         # If key is not present in config use default value instead
         # and save that value in the config file
         if len(self.__default):
@@ -103,50 +113,51 @@ class KITConfig(object):
         Args:
             key (dict): List of keys with unlimited levels
             value (): Value that will be set
-
         """
-
         if isinstance(keys, str):
             keys = [keys]
 
-        #print("KEYTYPE: {0}".format(keys))
         self.__setInDict(self.__cfg, keys, value)
-        self.write(self.__cfgFile)
+        self.write(self.__cfgFile, log=False)
 
 
-    def load(self, cfg='default', **kwargs):
-
-
-        """ Load config file
+    def load(self, cfg='default', log=True):
+        """ Look at path in __cfgFile or create path if not present. Try to
+        load config file. If it is not there yet, then create a cfg
+        file using the default values.
 
         Args:
-            cfg (str): Name of cfg file inside the working directory
-
+            cfg (str): Name of the input without ".cfg" ending
         """
 
-        if self.__cfgFile is "":
-            self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
+        if self.__cfgFile is None:
+            self.__cfgFile = os.path.join(self.__dir, self.__getfName(cfg))
+
         try:
             with open(self.__cfgFile) as cfgFile:
                 self.__cfg = json.load(cfgFile, object_pairs_hook=OrderedDict)
-            print("Found {0}".format(self.__cfgFile))
-        except Exception:
-            if len(self.__default):
+            if log is True:
+                self.log.info("Found %s", self.__cfgFile)
+        except (TypeError, FileNotFoundError):
+            if self.__default != {}:
                 self.__cfg = self.__default
-                self.write(self.__cfgFile)
+                self.write(self.__cfgFile, log=True)
             else:
                 raise OSError("Cfg not found and no default config specified")
 
 
-    def write(self, cfg='default.cfg'):
+    def write(self, cfg='default.cfg', log=True):
+        """Create new cfg file. If folder doesn't exist create it.
 
+        Args:
+            cfg (str): absolute path of cfg file that needs to be written
+        """
         if self.__dir != "" and not os.path.exists(self.__dir):
             os.makedirs(self.__dir)
-
-        self.__cfgFile = os.path.join(os.getcwd(), self.__dir, self.__getfName(cfg))
         with open(self.__cfgFile, 'w') as cfgFile:
             json.dump(OrderedDict(self.__cfg), cfgFile, indent=4, sort_keys=True)
-            # json.dump(OrderedDict(self.__cfg), cfgFile, indent=4)
+            if log is True:
+                self.log.info("Created %s", self.__cfgFile)
 
 
     def setDefaultCfg(self, fName='default.cfg'):
@@ -182,108 +193,25 @@ class KITConfig(object):
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):
         # Set new value if key already exists
-
-        #print("Dict at call: {0}".format(dataDict))
-        #print("Maplist at call: {0}".format(mapList))
-        #print("Maplist Type: {0}".format(type(mapList)))
-
         for i, key in enumerate(mapList[:-1]):
 
             prevDict = dataDict
             try:
-                #print("Before: {0}".format(dataDict))
-                #print("Key: {0}".format(key))
+
                 dataDict = dataDict[key]
-                #print("After: {0} \ntype: {1}".format(dataDict, type(dataDict)))
             except KeyError:
                 dataDict[key] = {mapList[i+1]: None}
                 dataDict = dataDict[key]
-                #print("Created {0}".format(key))
 
             if not (isinstance(dataDict, dict) or isinstance(dataDict, OrderedDict)):
-                #print("Not of type OrderedDict or dict\n")
                 dataDict = prevDict
                 dataDict[key] = {mapList[i+1]: None}
                 dataDict = dataDict[key]
 
         dataDict[mapList[-1]] = value
 
-    def get(keyList, defaultValue):
+    def get(self, keyList, defaultValue):
         try:
             return self.__cfg[keyList]
         except Exception:
             return defaultValue
-
-
-    def __setupLogger(self):
-        self.__log = logging.getLogger(__name__)
-        self.__log.setLevel(logging.DEBUG)
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setLevel(logging.DEBUG)
-
-        consoleFormatter = logging.Formatter('%(levelname)s - %(message)s')
-        consoleHandler.setFormatter(consoleFormatter)
-
-        self.__log.addHandler(consoleHandler)
-
-
-    # Old API
-
-    def init(self, dictionary):
-        self.setDict(dictionary)
-
-    def setParameter(self, cfg, sec, key, val):
-        self.__cfg[sec][key] = val
-        self.write(cfg)
-
-    def setValue(self, mapList, value):
-        """ Set or change a value of a new or existing parameter
-
-        Args:
-            mapList (dict): Dictionary with unlimited levels
-            value (): Value that will be set
-
-        """
-        self.__setInDict(self.__cfg, mapList, value)
-
-
-
-if __name__ == '__main__':
-
-
-    testDict = { "a": 1,
-                 "b": 2,
-                 "c":
-                 { "d": 3,
-                   "e": 4,
-                   "f": 5}}
-
-    print("Set first dictionary")
-    cfg = KITConfig()
-    cfg.setDict(testDict)
-    cfg.write()
-
-
-    print("Change one value")
-    cfg["c","d"]=5
-
-    print("c,f: %s" %cfg["c", "f"])
-
-    d = {'a': 1,
-         'b': 2,
-         'c': { 'd' : 3,
-                'e' : 4,
-                'f' : { 'f' : 5,
-                        'g' : 6
-                },
-                'h' : { 'i' : 7,
-                        'j' : { 'l' : 8
-                        }
-                },
-                'k' : 9
-         }
-    }
-
-    print("Update")
-    cfg.update(d)

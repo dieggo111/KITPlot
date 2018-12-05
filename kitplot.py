@@ -97,39 +97,41 @@ The script consists of 4 modules:
           same name. The former output will be overwritten with the new plot.
 
     A basic example of a main file could look like this:
-
-####################################################
-
-
 ####################################################
 #!/usr/bin/env python3
 # Mathtext doc: https://matplotlib.org/users/mathtext.html
-import sys, os
-from KITPlot import KITData
+import sys,os
 from KITPlot import KITPlot
-import numpy as np
-import matplotlib.pyplot as plt
+
 if len(sys.argv) > 2:
-    kPlot1 = KITPlot(sys.argv[1],sys.argv[2])
+    kPlot1 = KITPlot(sys.argv[2])
 else:
-    kPlot1 = KITPlot(sys.argv[1],defaultCfg=os.path.join("KITPlot","Utils","default.cfg"))
-kPlot1.draw("matplotlib")
+    kPlot1 = KITPlot(defaultCfg=os.path.join("KITPlot", "Utils", "default.cfg"))
+
+# x_data = kPlot1.getX()
+# y_data = kPlot1.getY()
+# for x_lst, y_lst in zip(x_data, y_data):
+# f, t, err = kPlot1.get_fit([x_data[0], y_data[0]], data_opt="listwise",
+#                       fit_opt="linear", residual=True, returns="result")
+
+kPlot1.addFiles(sys.argv[1])
+# kPlot1.addFiles([46359, 45947], name="test")
+kPlot1.draw()
 fig = kPlot1.getCanvas()
 
 ##### LODGERS #####
 # draw horizontal line
-# kPlot1.addLodger(fig,y=7,style="--",color="r0",name="test",width=2)
+# kPlot1.addLodger(fig,y=12000,style="-",color="r0",name="test",width=2,alpha=0.3)
 # draw vertical line
-# kPlot1.addLodger(fig,x=5,style="-.",color="r0",name="test",width=2)
+# kPlot1.addLodger(fig, x=180, style="-", color="b0", name="test", width=6)
 # draw xy-graph
-# kPlot1.addLodger(fig,x=[0,10],y=[0,10],style=2,color="r0",name="test",width=2)
+# kPlot1.addLodger(fig,x=t,y=f,style=2,color="r0",name="test",width=2)
 # draw text
 # kPlot1.addLodger(fig,x=1,y=10,text="Test",fontsize=20)
-###################
+####################################################
 kPlot1.showCanvas(save=True)
 ####################################################
 
-####################################################
 
     If no errors are being raised, the plot will show up on your screen.
     You can now start to edit plot with the related cfg file in your cfg folder.
@@ -274,23 +276,16 @@ class KITPlot(object):
         self.__graphs = []
 
         # Load parameters and apply default style
-        # Default-function expects (working directory) path
         self.__cfg = KITConfig()
+        self.__cfg.Dir("cfg")
         if defaultCfg is None:
             self.__cfg.Default("default.cfg")
         else:
             self.__cfg.Default(defaultCfg)
-        self.__cfg.Dir("cfg")
 
         self.__inputName = name
         self.name_lst = name_lst
         self.cavas = None
-
-        # add files
-        if dataInput is not None:
-            self.addFiles(dataInput, self.__cfg['General', 'Measurement'])
-        else:
-            pass
 
     ##################
     ### Auto Title ###
@@ -382,18 +377,21 @@ class KITPlot(object):
     ### Graph methods ###
     #####################
 
-    def addFiles(self, dataInput=None, measurement="probe", name=None, name_lst=None):
+    def addFiles(self, dataInput=None, name=None, name_lst=None):
         """ Depending on the type, the 'self.__files' list is filled with
         KITData objects. An integer represents a single probe ID. A string
         represents a .txt file or a folder path.
         A RPunch measurement, however, origionaly consist of one KITData file
         that needs to be split up into several KITData objects since one bias
         value (x value) represents one graph.
+
         Args:
             dataInput(None|int|str): Determines the way the 'self.__files'
                 is filled.
             measurement(str): probe station and ALiBaVa measurements must be
                 handled differently due to different database paramters
+            name (str): specified name of the measured item for plot legend
+            name_lst (list): if there are multiple items that need to be named
         """
         # extract name from data input
         if name is None and self.__inputName is None:
@@ -403,9 +401,12 @@ class KITPlot(object):
         if name_lst is not None:
             self.name_lst = name_lst
 
+        # load dict with plot parameters or create one if not present
+        self.__cfg.load(self.__inputName)
+
         #TODO: handle multiple KITPlot objects to create canvas with multiple subplots
         # if isinstance(dataInput, KITPlot):
-        if measurement == "probe":
+        if self.__cfg['General', 'Measurement'] == "probe":
             # Load KITData
             if isinstance(dataInput, KITData):
                 self.log.info("Input interpreted as KITData object")
@@ -466,7 +467,7 @@ class KITPlot(object):
                             for i, line in enumerate(inputFile):
                                 entry = line.split()
                                 if entry[0].isdigit():
-                                    fileList.append(KITData(entry[0], measurement))
+                                    fileList.append(KITData(entry[0], self.__cfg['General', 'Measurement']))
                                     try:
                                         fileList[-1].setName(self.name_lst[i])
                                     except:
@@ -493,7 +494,7 @@ class KITPlot(object):
 
 
 
-        if "Rpunch" in measurement and os.path.isfile(dataInput):
+        if "Rpunch" in self.__cfg['General', 'Measurement'] and os.path.isfile(dataInput):
             self.log.info("Input interpreted as multiple PIDs of Ramp measurements")
             with open(dataInput) as inputFile:
                 val_lst = []
@@ -508,7 +509,7 @@ class KITPlot(object):
                         raise ValueError
                     kdict = self.get_r_dict(self.__files[-1])
                     # plot graph for every single PID
-                    if "@" not in measurement:
+                    if "@" not in self.__cfg['General', 'Measurement']:
                         x_lst = []
                         y_lst = []
                         kdata_lst = self.handle_ramp(kdict)
@@ -522,7 +523,7 @@ class KITPlot(object):
                             # y_lst.append(1/m*0.46/0.02)
                             x_lst.append(kdata.getZ())
 
-                        kdata_new = KITData()
+                        kdata_new = KITData(logger=self.log)
                         kdata_new.setX(x_lst)
                         kdata_new.setY(y_lst)
                         try:
@@ -534,7 +535,7 @@ class KITPlot(object):
                         self.__files[-1] = kdata_new
                     # plot only values at given bias voltage of all PIDs
                     else:
-                        bias_aim = measurement.split("@")[1]
+                        bias_aim = self.__cfg['General', 'Measurement'].split("@")[1] #pylint: disable=E1101
                         x, y = self.handle_ramp(kdict, bias_aim=int(bias_aim))
                         x = [abs(xi) for xi in x]
                         y = [abs(yi) for yi in y]
@@ -545,8 +546,8 @@ class KITPlot(object):
                         # val_lst.append(1/m)
                         val_lst.append(1/m*0.46/0.02)
                         res_lst.append(res/((m + res)*(m + res)))
-                if "@" in measurement:
-                    kdata_new = KITData()
+                if "@" in self.__cfg['General', 'Measurement']:
+                    kdata_new = KITData(logger=self.log)
                     kdata_new.setX(range(0, len(val_lst)))
                     # kdata_new.setX([2, 3.8, 5.5, 7, 8.6, 10.25, 11.9, 13.5,
                     #                 16.8, 20.3, 28, 37, 48])
@@ -567,15 +568,12 @@ class KITPlot(object):
         """Searches for cfg file, load plot parameters, creates canvas graphs
         and lodgers.
         """
-        # load dict with parameters from cfg file
-        self.__cfg.load(self.__inputName)
+        cfg_path = os.path.join(os.getcwd(), "cfg", self.__inputName) + ".cfg"
+        cfg_present = os.path.isfile(cfg_path)
 
-        cfg_present = os.path.isfile(os.path.join("cfg", self.__inputName)
-                                     + ".cfg")
-        # if dataInput comes from database then apply axis titles according
-        # to measurement type
-        if cfg_present is False:
-            self.MeasurementType()
+        # if data is downloaded then apply axis titles according to measurement type
+        # if cfg_present is False:
+        #     self.MeasurementType()
 
         # create graphs and canvas
         if dataInput is None:
@@ -696,7 +694,7 @@ class KITPlot(object):
         kdata_lst = []
         for bias in kdict.keys():
             # create an empty KITData object
-            kdata = KITData()
+            kdata = KITData(logger=self.log)
             # extract each single bias value from the dictionary
             # and create KITData files for every value
             if bias_aim is None:
@@ -800,15 +798,11 @@ class KITPlot(object):
             self.log.info("No data input. Name not extractable.")
             return None
         if isinstance(dataInput, str):
-            self.log.info("Extracting name from data input")
-            return os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+            name = os.path.splitext(os.path.basename(os.path.normpath(str(dataInput))))[0]
+            self.log.info("Extracted name from data input: %s", name)
+            return name
         elif isinstance(dataInput, int):
             self.log.info("Data input interpreted as PID. Name is PID.")
             return str(dataInput)
         else:
-            print(dataInput)
             raise ValueError("Unkonwn case in 'getDataName' function")
-
-# if __name__ == '__main__':
-#     plot = KITPlot(38268)
-#     plot.draw('APL')

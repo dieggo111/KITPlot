@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import os,sys
+import os
+import sys
+import datetime
+import logging
 import numpy as np
-import mysql.connector
 from .KITConfig import KITConfig
 from .KITSearch import KITSearch
 from collections import OrderedDict
-import datetime
 
 class KITData(object):
     """ The KITData class is a very simple data container that is able
@@ -27,8 +28,16 @@ class KITData(object):
                 station or alibava measurement
             credentials (str): Specify the credentials file for the database if
                 the file is not located in the current working directory
-
         """
+        self.log = logging.getLogger(__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
+        if self.log.hasHandlers() is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
+
         self.__id = None
         self.__name = None
 
@@ -82,13 +91,13 @@ class KITData(object):
             # Distinguish between probe station and ALiBaVa ID
             if measurement == "alibava":
                 if show_input is not False:
-                    print("Input: ALiBaVa run")
+                    self.log.info("Input: ALiBaVa run")
                 else:
                     pass
                 self.__allo_db_alibava(dataInput)
             elif measurement == "probe" and show_input is not False:
                 if show_input is not False:
-                    print("Input: Probe station PID")
+                    self.log.info("Input: Probe station PID")
                 else:
                     pass
                 self.__allo_db(dataInput)
@@ -96,7 +105,7 @@ class KITData(object):
         # Check if dataInput is a file
         elif isinstance(dataInput, str) and os.path.isfile(dataInput):
 
-            print("Input: File: " + dataInput)
+            self.log.info("Input: File: " + dataInput)
 
             with open(dataInput, 'r') as inputFile:
                 for line in inputFile:
@@ -236,7 +245,7 @@ class KITData(object):
                              "database parameters to 'db.cfg'")
         try:
             KITData.dbSession = KITSearch(db_config)
-            print("Database connection established")
+            self.log.info("Database connection established")
         except:
             raise ValueError("Database connection failed.")
 
@@ -472,7 +481,7 @@ class KITData(object):
                 self.__x = inputArray
                 return True
             except:
-                print("Cannot set x: wrong format")
+                self.log.info("Cannot set x: wrong format")
                 return False
 
 
@@ -492,7 +501,7 @@ class KITData(object):
                 self.__y = inputArray
                 return True
             except:
-                print("Cannot set y: wrong format")
+                self.log.info("Cannot set y: wrong format")
                 return False
 
 
@@ -513,7 +522,7 @@ class KITData(object):
                 self.__z = inputArray
                 return True
             except:
-                print("Cannot set z: wrong format")
+                self.log.info("Cannot set z: wrong format")
                 return False
 
 
@@ -860,26 +869,5 @@ class KITData(object):
         return self.__fluence
 
 
-    #TODO: Do we need these two methods?
-    def getScaleX(self):
-        """Returns min and max of x dataset
-
-        Returns:
-            float,float: min and max of x
-
-        """
-
-        return min(self.__x), max(self.__x)
-
-    def getScaleY(self):
-
-        return 0, 1.3*max(self.__y)
-
     def getProject(self):
         return self.__project
-
-
-if __name__ == '__main__':
-
-    data = KITData(38268)
-    print(data.getX())
