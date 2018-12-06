@@ -115,7 +115,7 @@ class KITMatplotlib(object):
         elif self.colorPalette == "KIT":
             return list(self.KITcolor.keys())
         else:
-            self.log.warning("Warning:::Invalid 'ColorPalette' value. Using KITcolor as default")
+            self.log.warning("Invalid 'ColorPalette' value. Using KITcolor as default")
             return list(self.KITcolor.keys())
 
     def addGraph(self, arg):
@@ -382,7 +382,7 @@ class KITMatplotlib(object):
                     if index == i:
                         return list(self.markers.keys())[item]
         except:
-            self.log.warning("Warning:::Invalid value in 'MarkerSet'. Using default instead.")
+            self.log.warning("Invalid value in 'MarkerSet'. Using default instead.")
             return list(self.markers.keys())[index]
 
 
@@ -415,7 +415,7 @@ class KITMatplotlib(object):
                         pass
 
         except:
-            self.log.warning("Warning:::Invalid input in 'ColorSet'. Using default instead.")
+            self.log.warning("Invalid input in 'ColorSet'. Using default instead.")
             for i, color in enumerate(itertools.cycle(self.colors)):
                 if i == index:
                     return list(self.KITcolor[color].values())[0]
@@ -439,7 +439,7 @@ class KITMatplotlib(object):
                     if index == i:
                         return self.lines[item]
         except:
-            self.log.warning("Warning:::Invalid value in 'LineStyle'. Using default instead.")
+            self.log.warning("Invalid value in 'LineStyle'. Using default instead.")
             return self.lines[1]
 
 

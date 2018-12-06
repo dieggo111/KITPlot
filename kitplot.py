@@ -37,13 +37,7 @@ The script consists of 4 modules:
         - and a .cfg file that will be automatically stored in your cfg folder
           (will be created in your main folder if necessary)
 
-    c) ##### obsolete for matplotlib #####
-       The LegHandler module handles the arrangement, position and style of the
-       legend box and its elements. It also uses a very rudimentary algorithm
-       to search for the most convinient spot inside the canvas
-       (one of the 4 corners), so that the legend doesn't cover any data points.
-
-    d) The ConfigHandler module writes/reads/edits a plot-specific .cfg file.
+    c) The ConfigHandler module writes/reads/edits a plot-specific .cfg file.
        Since KITPlot is console-based and has no graphical interface, the
        config file solution makes up for it.
 
@@ -52,7 +46,7 @@ The script consists of 4 modules:
 3) Installation:
     a) Create a main folder and give it a nice name (f.e. 'KITPlot')
     b) Inside this folder you ought to create a folder for cfg files named
-       "cfg" and for output files named "output" .Clone the KITPlot
+       "cfg" and for output files named "output". Clone the KITPlot
        repository from 'https://github.com/dieggo111/KITPlot',
        put its content inside an extra folder within your main folder and name
        it 'KITPlot'.
@@ -69,14 +63,9 @@ The script consists of 4 modules:
                   repository. Open consol/terminal and go to PyMySQL-0.7.11
                   folder. Type "python setup.py build" and then
                   "python setup.py install".
-    e) There are 2 'plot s' you can use: ROOT or matplotlib.
+    e) Plotting is based on matplotlib.
        - matplotlib: 'pip3 install matplotlib'
-       - ###### ROOT: ###### no longger supported ######
-               Download and build ROOT v5.34/36 or 6 on your system. When
-               building ROOT, make sure you enable the use of pyROOT. This is
-               easy on Linux. However,doing this on Windows or Mac is a
-               different story... although it's generally possible to do this
-               on every system.
+
     f) Lastly, you need login informations to access the database, which are
        stored in the 'db.cfg'. For security reasons the login file can not be
        downloaded, but must be requested from Daniel or Marius.
@@ -87,7 +76,8 @@ The script consists of 4 modules:
     or other modules you need. KITPlot needs at least 1 arguement to do its
     magic. A second argument is optional.
         - First argument: data input. As described earlier, this can be a path
-          of a file, folder or a run number from the database.
+          of a file, folder or a run number from the database. It is also
+          possible to pass a list with PIDs or a single PID.
 
         - Second argument: cfg file. If this is not given (None), then the
           script will search the cfg folder for a cfg file with the same name
@@ -131,7 +121,6 @@ fig = kPlot1.getCanvas()
 ####################################################
 kPlot1.showCanvas(save=True)
 ####################################################
-
 
     If no errors are being raised, the plot will show up on your screen.
     You can now start to edit plot with the related cfg file in your cfg folder.
@@ -224,6 +213,13 @@ kPlot1.showCanvas(save=True)
                                              incorporates our self-made color
                                              palette.
 
+6) Lodgers:
+    You can add graphs, lines and texts to your canvas by using lodgers.
+    Examples of how to use them are given in the suggested main.
+
+7) Fits:
+    You can also use the fit function for analysis. The results can be added to
+    your canvas via lodgers.
 """
 
 import os
@@ -254,8 +250,7 @@ class KITPlot(object):
     __init = False
     __color = 0
 
-    def __init__(self, dataInput=None, defaultCfg=None, name=None,
-                 name_lst=None):
+    def __init__(self, defaultCfg=None):
 
         self.log = logging.getLogger(__class__.__name__)
         self.log.setLevel(logging.DEBUG)
@@ -267,7 +262,7 @@ class KITPlot(object):
         self.log.info("KITPlot initialized...")
 
         # ignore warning that is raised because of back-end bug while using 'waitforbuttonpress'
-        warnings.filterwarnings("ignore",".*GUI is implemented.*")
+        warnings.filterwarnings("ignore", ".*GUI is implemented.*")
 
         self.iter = iter(["lodger1", "lodger2", "lodger3"])
 
@@ -283,8 +278,8 @@ class KITPlot(object):
         else:
             self.__cfg.Default(defaultCfg)
 
-        self.__inputName = name
-        self.name_lst = name_lst
+        self.__inputName = None
+        self.name_lst = None
         self.cavas = None
 
     ##################
@@ -467,7 +462,8 @@ class KITPlot(object):
                             for i, line in enumerate(inputFile):
                                 entry = line.split()
                                 if entry[0].isdigit():
-                                    fileList.append(KITData(entry[0], self.__cfg['General', 'Measurement']))
+                                    fileList.append(\
+                    KITData(entry[0], self.__cfg['General', 'Measurement']))
                                     try:
                                         fileList[-1].setName(self.name_lst[i])
                                     except:
@@ -490,7 +486,8 @@ class KITPlot(object):
                     entry = inputFile.replace("[", "").replace("]", "")\
                             .replace("(", "").replace(")", "").split(",")
                     if all([n.isdigit() for n in entry]):
-                        self.log.info("Input interpreted as argument with multiple PIDs ")
+                        self.log.info("Input interpreted as argument with"
+                                      "multiple PIDs ")
 
 
 
@@ -523,7 +520,7 @@ class KITPlot(object):
                             # y_lst.append(1/m*0.46/0.02)
                             x_lst.append(kdata.getZ())
 
-                        kdata_new = KITData(logger=self.log)
+                        kdata_new = KITData()
                         kdata_new.setX(x_lst)
                         kdata_new.setY(y_lst)
                         try:
@@ -547,7 +544,7 @@ class KITPlot(object):
                         val_lst.append(1/m*0.46/0.02)
                         res_lst.append(res/((m + res)*(m + res)))
                 if "@" in self.__cfg['General', 'Measurement']:
-                    kdata_new = KITData(logger=self.log)
+                    kdata_new = KITData()
                     kdata_new.setX(range(0, len(val_lst)))
                     # kdata_new.setX([2, 3.8, 5.5, 7, 8.6, 10.25, 11.9, 13.5,
                     #                 16.8, 20.3, 28, 37, 48])
@@ -694,7 +691,7 @@ class KITPlot(object):
         kdata_lst = []
         for bias in kdict.keys():
             # create an empty KITData object
-            kdata = KITData(logger=self.log)
+            kdata = KITData()
             # extract each single bias value from the dictionary
             # and create KITData files for every value
             if bias_aim is None:
