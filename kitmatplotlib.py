@@ -89,6 +89,8 @@ class KITMatplotlib(object):
         # legend options
         self.__entryDict = cfg['Legend','EntryList']
         self.legPosition = cfg['Legend','Position']
+        self.show_pid = cfg['Legend','ShowPID']
+        self.leg_col = cfg['Legend','Columns']
 
         # sets
         self.markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
@@ -163,7 +165,6 @@ class KITMatplotlib(object):
                 raise ValueError("Dictionary error")
 
         elif isinstance(arg, list) and len(arg) in [2,4]:
-
             if self.absX:
                 x = list(np.absolute(arg[0]))
             else:
@@ -213,12 +214,12 @@ class KITMatplotlib(object):
             newLength = len(self.__graphs)
             if len(self.__entryDict) != newLength:
                 self.__entryDict = OrderedDict([])
-                for i in range(0,newLength):
+                for i in range(0, newLength):
                     self.__entryDict.update({str(i) : "Data"+str(i)})
-                self.cfg["Legend","EntryList"] = self.__entryDict
+                self.cfg["Legend", "EntryList"] = self.__entryDict
 
         elif self.splitGraph is True and len(self.__graphs) != 1:
-            self.log.warning("Warning::Can only split single graph. Request rejected")
+            self.log.warning("Can only split single graph. Request rejected")
 
         # apply user defined normalization or manipulation of y values of each graph
         self.__graphs = kitutils.manipulate(self.__graphs, self.norm)
@@ -232,9 +233,9 @@ class KITMatplotlib(object):
 
         # adjust axis tick
         if self.tickX:
-            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+            plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
         if self.tickY:
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
@@ -253,7 +254,7 @@ class KITMatplotlib(object):
 
         # set error bars
         for i, table in enumerate(self.__graphs):
-            if len(table) == 4 and self.err == True:
+            if len(table) == 4 and self.err is True:
                 ax.errorbar(table[0], table[1], xerr=table[2], yerr=table[3],
                             color=self.getColor(i),
                             elinewidth=1)
@@ -271,8 +272,8 @@ class KITMatplotlib(object):
 
                 ax.fill_between(table[0], y1, y2)
             elif len(table) != 4 and self.err in [True, "filled"]:
-                self.log.warning("Warning::Can't find x- and y-errors in file. Request "
-                      "rejected.")
+                self.log.warning("Can't find x- and y-errors in file. Request "
+                                 "rejected.")
 
         # set titles
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
@@ -317,38 +318,38 @@ class KITMatplotlib(object):
         total_len = len(self.__graphs)
 
         # reorder legend items according to 'EntryList'
-        handles,labels = obj.get_legend_handles_labels()
+        handles, labels = obj.get_legend_handles_labels()
         # handles = self.adjustOrder(handles)
         # labels = self.adjustOrder(labels)
         handles = kitutils.adjustOrder(handles, self.__entryDict, total_len)
         labels = kitutils.adjustOrder(labels, self.__entryDict, total_len)
 
         if self.legPosition == "auto":
-            obj.legend(handles,labels)
+            obj.legend(handles, labels)
         elif self.legPosition == "TL":
-            obj.legend(handles,labels,loc='upper left')
+            obj.legend(handles, labels, loc='upper left')
         elif self.legPosition == "BL":
-            obj.legend(handles,labels,loc='lower left')
+            obj.legend(handles, labels, loc='lower left')
         elif self.legPosition == "TR":
-            obj.legend(handles,labels,loc='upper right')
+            obj.legend(handles, labels, loc='upper right')
         elif self.legPosition == "BR":
-            obj.legend(handles,labels,loc='lower right')
+            obj.legend(handles, labels, loc='lower right')
         elif self.legPosition == "test2":
-            obj.legend(handles,labels,bbox_to_anchor=(0., 1.17, 1., .102),
-                       loc='upper right',ncol=3, mode="expand", borderaxespad=0.)
+            obj.legend(handles, labels, bbox_to_anchor=(0., 1.17, 1., .102),
+                       loc='upper right', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "test":
-            obj.legend(handles,labels,bbox_to_anchor=(0., 0.,1.,1.),
-                       loc='lower left',ncol=3, mode="expand", borderaxespad=0.)
+            obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
+                       loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles,labels,bbox_to_anchor=(0., -0.25, 1., .102),
-                       loc='lower center',ncol=2, mode="expand", borderaxespad=0.)
+            obj.legend(handles, labels, bbox_to_anchor=(0., -0.25, 1., .102),
+                       loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
             if total_len > 8:
                 ncol = 2
             else:
                 ncol = 1
-            obj.legend(handles,labels,bbox_to_anchor=(1, 1.01),
-                       loc='upper left',ncol=1)
+            obj.legend(handles,labels, bbox_to_anchor=(1, 1.01),
+                       loc='upper left', ncol=self.leg_col)
         return True
 
 
@@ -473,20 +474,19 @@ class KITMatplotlib(object):
 
         # key list should start at 0 and should have a length of len(keys)
         straight_list = list(range(len(keys)))
-        # print("fix", straight_list)
 
         # get reference list in respect to the original order of key list
-        ref_list = [y for (x,y) in sorted(zip(keys, straight_list))]
+        ref_list = [y for (x, y) in sorted(zip(keys, straight_list))]
 
         # reorder reference list so that values stay in the same order as before
-        fixed_order = [y for (x,y) in sorted(zip(ref_list, straight_list))]
+        fixed_order = [y for (x, y) in sorted(zip(ref_list, straight_list))]
 
         values = list(self.__entryDict.values())
         new = OrderedDict(zip(fixed_order, values))
         self.cfg['Legend','EntryList'] = new
 
 
-    def getDefaultEntryDict(self,List):
+    def getDefaultEntryDict(self, List):
         """ Loads default names and order in respect to the KITData objects
         in 'self.__files' list. Both keys and values of the dictionary must be
         strings.
@@ -500,5 +500,9 @@ class KITMatplotlib(object):
                 entryDict[i] = "graph" + str(i)
                 i += 1
             else:
-                entryDict[i] = str(graph.getName())
+                if self.show_pid is True:
+                    entryDict[i] = str(graph.getID()) + " - " + graph.getName()
+                else:
+                    entryDict[i] = graph.getName()
+
         return entryDict
