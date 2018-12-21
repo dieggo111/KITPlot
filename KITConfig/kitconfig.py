@@ -210,6 +210,9 @@ class KITConfig(object):
 
         dataDict[mapList[-1]] = value
 
+    def getDir(self):
+        return self.__dir
+
     def get(self, keyList, defaultValue):
         try:
             return self.__cfg[keyList]

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#pylint: disable=C0103,R0902,R0912,R0915,R0914,W0201
 import numpy as np
 import matplotlib.pyplot as plt
 from .kitdata import KITData
@@ -10,23 +11,27 @@ import logging
 
 
 class KITMatplotlib(object):
-
-    def __init__(self, cfg=None, cfg_present=None):
+    """Matplotlib based automated plotting class for KITPlot"""
+    def __init__(self, cfg=None, new_cfg=None):
 
         self.__graphs = []
         self.__lodgers = []
 
+        # KITcolor dictionary
+        self.KITcolor = kitutils.get_KITcolor()
+
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
-        format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-        formatter = logging.Formatter(format_string)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        self.log.addHandler(console_handler)
+        if self.log.hasHandlers is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
 
         # load style parameters from cfg file
         self.__initStyle(cfg)
-        self.__cfg_present = cfg_present
+        self.__new_cfg = new_cfg
 
 
     def __initStyle(self, cfg):
@@ -36,61 +41,61 @@ class KITMatplotlib(object):
         """
         self.cfg = cfg
         # Canvas Options
-        self.canvasSize = kitutils.extractList(cfg['Canvas','CanvasSize'], 'float')
+        self.canvasSize = kitutils.extractList(cfg['Canvas', 'CanvasSize'], 'float')
 
         # Pad Options
         self.grid = True
         self.gridOptions = ('w', '-', '0.5')
-        self.padSize = kitutils.extractList(cfg['Canvas','PadSize'], 'float')
+        self.padSize = kitutils.extractList(cfg['Canvas', 'PadSize'], 'float')
 
         # Title options
-        self.title = cfg['Title','Title']
-        self.titleFont = cfg['Title','Font']
-        self.titleFontSize = cfg['Title','FontSize']
-        self.titleFontStyle = cfg['Title','FontStyle']
-        self.titleOffset = 1 + cfg['Title','Offset']/100.
+        self.title = cfg['Title', 'Title']
+        self.titleFont = cfg['Title', 'Font']
+        self.titleFontSize = cfg['Title', 'FontSize']
+        self.titleFontStyle = cfg['Title', 'FontStyle']
+        self.titleOffset = 1 + cfg['Title', 'Offset']/100.
 
         # Axis Options
-        self.labelX = cfg['XAxis','Title']
-        self.labelY = cfg['YAxis','Title']
-        self.rangeX = kitutils.extractList(cfg['XAxis','Range'], "float")
-        self.rangeY = kitutils.extractList(cfg['YAxis','Range'], "float")
-        self.fontX = cfg['XAxis','Font']
-        self.fontY = cfg['YAxis','Font']
-        self.fontSizeX = cfg['XAxis','FontSize']
-        self.fontSizeY = cfg['YAxis','FontSize']
-        self.fontStyleX = cfg['XAxis','FontStyle']
-        self.fontStyleY = cfg['YAxis','FontStyle']
-        self.absX = cfg['XAxis','Abs']
-        self.absY = cfg['YAxis','Abs']
-        self.logX = cfg['XAxis','Log']
-        self.logY = cfg['YAxis','Log']
-        self.tickX = cfg['XAxis','SciTick']
-        self.tickY = cfg['YAxis','SciTick']
+        self.labelX = cfg['XAxis', 'Title']
+        self.labelY = cfg['YAxis', 'Title']
+        self.rangeX = kitutils.extractList(cfg['XAxis', 'Range'], "float")
+        self.rangeY = kitutils.extractList(cfg['YAxis', 'Range'], "float")
+        self.fontX = cfg['XAxis', 'Font']
+        self.fontY = cfg['YAxis', 'Font']
+        self.fontSizeX = cfg['XAxis', 'FontSize']
+        self.fontSizeY = cfg['YAxis', 'FontSize']
+        self.fontStyleX = cfg['XAxis', 'FontStyle']
+        self.fontStyleY = cfg['YAxis', 'FontStyle']
+        self.absX = cfg['XAxis', 'Abs']
+        self.absY = cfg['YAxis', 'Abs']
+        self.logX = cfg['XAxis', 'Log']
+        self.logY = cfg['YAxis', 'Log']
+        self.tickX = cfg['XAxis', 'SciTick']
+        self.tickY = cfg['YAxis', 'SciTick']
 
         # Marker Options
-        self.markerSize = cfg['Marker','Size']
-        self.markerSet = kitutils.extractList(cfg['Marker','Set'])
-        self.hollowMarker = kitutils.extractList(cfg['Marker','HollowMarker'])
+        self.markerSize = cfg['Marker', 'Size']
+        self.markerSet = kitutils.extractList(cfg['Marker', 'Set'])
+        self.hollowMarker = kitutils.extractList(cfg['Marker', 'HollowMarker'])
 
         #Line options
-        self.colorPalette = cfg['Line','ColorPalette']
-        self.colorSet = kitutils.extractList(cfg['Line','Color'])
-        self.lineWidth = cfg['Line','Width']
-        self.lineStyle = kitutils.extractList(cfg['Line','Style'])
-        self.err = cfg['Line','ErrorBars']
+        self.colorPalette = cfg['Line', 'ColorPalette']
+        self.colorSet = kitutils.extractList(cfg['Line', 'Color'])
+        self.lineWidth = cfg['Line', 'Width']
+        self.lineStyle = kitutils.extractList(cfg['Line', 'Style'])
+        self.err = cfg['Line', 'ErrorBars']
 
         # KITPlot specific options
-        self.norm = kitutils.extractList(cfg['Misc','Normalization'])
-        self.splitGraph = cfg['Misc','SplitGraph']
+        self.norm = kitutils.extractList(cfg['Misc', 'Normalization'])
+        self.splitGraph = cfg['Misc', 'SplitGraph']
         # try:
         #     self.
 
         # legend options
-        self.__entryDict = cfg['Legend','EntryList']
-        self.legPosition = cfg['Legend','Position']
-        self.show_pid = cfg['Legend','ShowPID']
-        self.leg_col = cfg['Legend','Columns']
+        self.__entryDict = cfg['Legend', 'EntryList']
+        self.legPosition = cfg['Legend', 'Position']
+        self.show_pid = cfg['Legend', 'ShowPID']
+        self.leg_col = cfg['Legend', 'Columns']
 
         # sets
         self.markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
@@ -108,17 +113,14 @@ class KITMatplotlib(object):
 
         # standard mpl colorSet
         mpl_std = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-        # KITcolor dictionary
-        self.KITcolor = kitutils.get_KITcolor()
 
         if self.colorPalette == "std":
-            mpl_std_sorted = [item for (i,item) in sorted(zip(self.colorSet, mpl_std))]
+            mpl_std_sorted = [item for (i, item) in sorted(zip(self.colorSet, mpl_std))]
             return mpl_std_sorted
         elif self.colorPalette == "KIT":
             return list(self.KITcolor.keys())
-        else:
-            self.log.warning("Invalid 'ColorPalette' value. Using KITcolor as default")
-            return list(self.KITcolor.keys())
+        self.log.warning("Invalid 'ColorPalette' value. Using KITcolor as default")
+        return list(self.KITcolor.keys())
 
     def addGraph(self, arg):
         """ Converts data of KITData objects or lists into a respective formate
@@ -204,7 +206,7 @@ class KITMatplotlib(object):
             self.addGraph(dset)
 
         # read and adjsut .__entryDict before drawing
-        self.readEntryDict(len(self.__graphs),self.getDefaultEntryDict(fileList))
+        self.readEntryDict(len(self.__graphs), self.getDefaultEntryDict(fileList))
 
         # interpret all entries in single file as graphs instead of a singel graph
         if self.splitGraph is True and len(self.__graphs) == 1:
@@ -277,6 +279,13 @@ class KITMatplotlib(object):
 
         # set titles
         # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
+        if self.__new_cfg is True:
+            self.title, self.labelX, self.labelY = \
+                auto_axis_labeling(fileList)
+            self.cfg['XAxis', 'Title'] = self.labelX
+            self.cfg['YAxis', 'Title'] = self.labelY
+            self.cfg['Title', 'Title'] = self.title
+
         ax.set_title(self.title,
                      fontsize=self.titleFontSize,
                      y=self.titleOffset,
@@ -458,7 +467,7 @@ class KITMatplotlib(object):
         if self.cfg['Legend','EntryList'] == "":
             self.cfg['Legend','EntryList'] = def_list
             self.__entryDict = def_list
-            if self.__cfg_present is True:
+            if self.__new_cfg is False:
                 self.log.info("EntryDict was set back to default!")
         # calculate expected number of entries in 'EntryList'
         if len(self.__entryDict) != exp_len and self.splitGraph == False:
@@ -483,14 +492,13 @@ class KITMatplotlib(object):
 
         values = list(self.__entryDict.values())
         new = OrderedDict(zip(fixed_order, values))
-        self.cfg['Legend','EntryList'] = new
+        self.cfg['Legend', 'EntryList'] = new
 
 
     def getDefaultEntryDict(self, List):
         """ Loads default names and order in respect to the KITData objects
-        in 'self.__files' list. Both keys and values of the dictionary must be
+        in 'file_lst' list. Both keys and values of the dictionary must be
         strings.
-
         """
         i = 0
         entryDict = OrderedDict()
@@ -506,3 +514,71 @@ class KITMatplotlib(object):
                     entryDict[i] = graph.getName()
 
         return entryDict
+
+def auto_axis_labeling(file_lst):
+    """ If KITPlot is initialized with probe IDs it is able to determine the
+    measurement type by checking database information. The default axis
+    labels and titles are then set according to this information as soon as
+    the respective cfg file is created.
+    """
+
+    if file_lst[0].getParaY() is None:
+        autotitle = "Title"
+        autotitleY = "Y Value"
+        autotitleX = "X Value"
+    else:
+        MT = file_lst[0].getParaY()
+        if MT == "I_tot":
+            autotitle = "Current Voltage Characteristics"
+            autotitleY = "Current (A)"
+            autotitleX = "Voltage (V)"
+        elif MT == "Pinhole":
+            autotitle = "Pinhole Leakage"
+            autotitleY = "Current (A)"
+            autotitleX = "Strip No"
+        elif MT == "I_leak_dc":
+            autotitle = "Strip Leakage Current"
+            autotitleY = "Current (A)"
+            autotitleX = "Strip No"
+        elif MT == "C_tot":
+            autotitle = "Capacitance Voltage Characteristics"
+            autotitleY = "Capacitance (F)"
+            autotitleX = "Voltage (V)"
+        elif MT == "C_int":
+            autotitle = "Interstrip Capacitance Measurement"
+            autotitleY = "Capacitance (F)"
+            autotitleX = "Strip No"
+        elif MT == "CC":
+            autotitle = "Coupling Capacitance Measurement"
+            autotitleY = "Capacitance (F)"
+            autotitleX = "Strip No"
+        elif MT == "R_int":
+            autotitle = "Interstrip Resistance Measurement"
+            autotitleY = "Resistance (#Omega)"
+            autotitleX = "Strip No"
+        elif MT == "R_poly_dc":
+            autotitle = "Strip Resistance Measurement"
+            autotitleY = "Resistance (#Omega)"
+            autotitleX = "Strip No"
+        elif MT == "C_int_Ramp":
+            autotitle = "Interstrip Capacitance Measurement"
+            autotitleY = "Capacitance (F)"
+            autotitleX = "Voltage (V)"
+        elif MT == "R_int_Ramp":
+            autotitle = "Strip Resistance Measurement"
+            autotitleY = "Resistance (#Omega)"
+            autotitleX = "Voltage (V)"
+        elif MT == "I_leak_dc_Ramp":
+            autotitle = "Interstrip Current Leakage"
+            autotitleY = "Current (A)"
+            autotitleX = "Voltage (V)"
+        elif MT == "V_Ramp":
+            autotitle = "R_{Edge} Measurement"
+            autotitleY = "Current (A)"
+            autotitleX = "Voltage (V)"
+        else:
+            autotitle = "Title"
+            autotitleY = "Y Value"
+            autotitleX = "X Value"
+
+    return autotitle, autotitleX, autotitleY

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-#pylint: disable=C0103,W0201,W0702
-""" A simple ROOT based python plot script
+#pylint: disable=C0103,W0201,W0702,R1710,R1702
+""" A simple matplotlib based python plot script
 
 1) Synopsis:
 Hello World! Welcome to the KITPlot script. This script was created by
@@ -235,20 +235,7 @@ from .kitmatplotlib import KITMatplotlib
 from .kitlodger import KITLodger
 
 class KITPlot(object):
-
-    # deprecated?
-    __kitGreen = []
-    __kitBlue = []
-    __kitMay = []
-    __kitYellow = []
-    __kitOrange = []
-    __kitBrown = []
-    __kitRed = []
-    __kitPurple = []
-    __kitCyan = []
-
-    __init = False
-    __color = 0
+    """Discription is shown on top of file"""
 
     def __init__(self, defaultCfg=None):
 
@@ -283,91 +270,6 @@ class KITPlot(object):
         self.name_lst = None
         self.cavas = None
 
-    ##################
-    ### Auto Title ###
-    ##################
-
-    def MeasurementType(self):
-        """ If KITPlot is initialized with probe IDs it is able to determine the
-        measurement type by checking database information. The default axis
-        labels and titles are then set according to this information as soon as
-        the respective cfg file is created.
-        """
-
-        if self.__files[0].getParaY() == None:
-            self.autotitle = "Title"
-            self.autotitleY = "Y Value"
-            self.autotitleX = "X Value"
-
-        if self.__files[0].getParaY() != None:
-            self.MT = self.__files[0].getParaY()
-            if self.MT == "I_tot":
-                self.autotitle = "Current Voltage Characteristics"
-                self.autotitleY = "Current (A)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "Pinhole":
-                self.autotitle = "Pinhole Leakage"
-                self.autotitleY = "Current (A)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "I_leak_dc":
-                self.autotitle = "Strip Leakage Current"
-                self.autotitleY = "Current (A)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "C_tot":
-                self.autotitle = "Capacitance Voltage Characteristics"
-                self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "C_int":
-                self.autotitle = "Interstrip Capacitance Measurement"
-                self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "CC":
-                self.autotitle = "Coupling Capacitance Measurement"
-                self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "R_int":
-                self.autotitle = "Interstrip Resistance Measurement"
-                self.autotitleY = "Resistance (#Omega)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "R_poly_dc":
-                self.autotitle = "Strip Resistance Measurement"
-                self.autotitleY = "Resistance (#Omega)"
-                self.autotitleX = "Strip No"
-            elif self.MT == "C_int_Ramp":
-                self.autotitle = "Interstrip Capacitance Measurement"
-                self.autotitleY = "Capacitance (F)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "R_int_Ramp":
-                self.autotitle = "Strip Resistance Measurement"
-                self.autotitleY = "Resistance (#Omega)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "I_leak_dc_Ramp":
-                self.autotitle = "Interstrip Current Leakage"
-                self.autotitleY = "Current (A)"
-                self.autotitleX = "Voltage (V)"
-            elif self.MT == "V_Ramp":
-                self.autotitle = "R_{Edge} Measurement"
-                self.autotitleY = "Current (A)"
-                self.autotitleX = "Voltage (V)"
-            else:
-                self.autotitle = "Title"
-                self.autotitleY = "Y Value"
-                self.autotitleX = "X Value"
-
-        if len(self.__files) >= 2 and self.__files[0].getParaY() != None:
-            if self.__files[0].getParaY() != self.__files[1].getParaY():
-                sys.exit("Measurement types are not equal!")
-
-        return True
-
-    def checkPID(self, dataInput):
-        # checks if PIDs are listed in the file
-        if os.path.isfile(dataInput):
-            with open(dataInput) as inputFile:
-                if len(inputFile.readline().split()) == 1:
-                    return True
-                else:
-                    return False
 
     #####################
     ### Graph methods ###
@@ -397,11 +299,12 @@ class KITPlot(object):
         if name_lst is not None:
             self.name_lst = name_lst
 
+        # check if cfg file is there of if a new one is about to be created
+        self.new_cfg = check_if_new_cfg(self.__cfg.getDir(), self.__inputName)
+
         # load dict with plot parameters or create one if not present
         self.__cfg.load(self.__inputName)
 
-        #TODO: handle multiple KITPlot objects to create canvas with multiple subplots
-        # if isinstance(dataInput, KITPlot):
         if self.__cfg['General', 'Measurement'] == "probe":
             # Load KITData
             if isinstance(dataInput, KITData):
@@ -456,7 +359,7 @@ class KITPlot(object):
                 # Load file
                 elif os.path.isfile(dataInput):
                     # multiple PIDs
-                    if self.checkPID(dataInput) is True:
+                    if checkPID(dataInput) is True:
                         self.log.info("Input interpreted as multiple PIDs")
                         with open(dataInput) as inputFile:
                             fileList = []
@@ -563,21 +466,19 @@ class KITPlot(object):
 
 
     def draw(self, dataInput=None):
-        """Searches for cfg file, load plot parameters, creates canvas graphs
+        """Searches for cfg file, load plot parameters, creates canvas, graphs
         and lodgers.
         """
-        cfg_path = os.path.join(os.getcwd(), "cfg", self.__inputName) + ".cfg"
-        cfg_present = os.path.isfile(cfg_path)
-
         # if data is downloaded then apply axis titles according to measurement type
-        # if cfg_present is False:
+        # if self.new_cfg is True:
         #     self.MeasurementType()
+        #     print(self.new_cfg, self.autotitle)
 
         # create graphs and canvas
         if dataInput is None:
-            self.canvas = KITMatplotlib(self.__cfg, cfg_present).draw(self.__files)
+            self.canvas = KITMatplotlib(self.__cfg, self.new_cfg).draw(self.__files)
         else:
-            self.canvas = KITMatplotlib(self.__cfg, cfg_present).draw(dataInput)
+            self.canvas = KITMatplotlib(self.__cfg, self.new_cfg).draw(dataInput)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
@@ -585,6 +486,7 @@ class KITPlot(object):
         return True
 
     def showCanvas(self, save=None):
+        """Make canvas pop up """
         try:
             self.canvas.show()
             if save is True:
@@ -600,6 +502,7 @@ class KITPlot(object):
         return True
 
     def saveCanvas(self):
+        """Saves output as png and pdf file"""
         png_out = os.path.join("output", self.__inputName) + ".png"
         pdf_out = os.path.join("output", self.__inputName) + ".pdf"
         self.canvas.savefig(png_out)
@@ -612,8 +515,7 @@ class KITPlot(object):
 
     def getLodgers(self):
         """ Read the cfg and create a lodger object for every entry in
-            'Lodgers'.
-        """
+            'Lodgers'."""
         try:
             for lodger in self.__cfg['Lodgers']:
                 paraDict = dict(self.__cfg['Lodgers'][lodger])
@@ -637,7 +539,7 @@ class KITPlot(object):
 
     def addLodger(self, fig, x=None, y=None, name=None, color=None, style=None,
                   width=None, text=None, fontsize=None, alpha=None):
-
+        """Create new Lodger object and add it to canvas"""
         newLodger = KITLodger(fig, x=x, y=y, name=name, color=color,
                               style=style, width=width, text=text,
                               fontsize=fontsize, alpha=alpha)
@@ -804,3 +706,19 @@ class KITPlot(object):
             return str(dataInput)
         else:
             raise ValueError("Unkonwn case in 'getDataName' function")
+
+def check_if_new_cfg(path, name):
+    """If cfg is new (no cfg present yet) return True, else False"""
+    if os.path.isfile(os.path.join(path, name + ".cfg")) is True:
+        return False
+    return True
+
+def checkPID(dataInput):
+    """Checks if PIDs are listed in the file"""
+    if os.path.isfile(dataInput):
+        with open(dataInput) as inputFile:
+            if len(inputFile.readline().split()) == 1:
+                return True
+            return False
+    else:
+        raise ValueError("Input is not a file.")
