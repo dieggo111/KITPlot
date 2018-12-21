@@ -196,6 +196,7 @@ class KITSearch(object):
                                 "e_sig"         : row.electron_sig,
                                 "e_sig_err"     : row.signal_e_err,
                                 "gain"          : row.gain,
+                                "flag"          : row.flag,
                                 # wrong entries in db
                                 # "seed_e"        : row.SeedSigENC_MPV,
                                 # "seed_e_err"    : row.SeedSigENC_MPV_err,

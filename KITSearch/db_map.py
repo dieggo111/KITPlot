@@ -57,6 +57,8 @@ class db_probe(BASE):
     bias            = Column(Float)
     Vdep            = Column(Float)
     fitmode         = Column(Integer)
+    annealing_id    = Column(Integer)
+    irradiation_id  = Column(Integer)
 
 class db_probe_data(BASE):
 

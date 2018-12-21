@@ -254,11 +254,12 @@ class KITPlot(object):
 
         self.log = logging.getLogger(__class__.__name__)
         self.log.setLevel(logging.DEBUG)
-        format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-        formatter = logging.Formatter(format_string)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        self.log.addHandler(console_handler)
+        if self.log.hasHandlers() is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
         self.log.info("KITPlot initialized...")
 
         # ignore warning that is raised because of back-end bug while using 'waitforbuttonpress'
