@@ -270,7 +270,7 @@ class KITMatplotlib(object):
                         y1.append(y - min)
                         y2.append(y + max)
 
-                ax.fill_between(table[0], y1, y2)
+                ax.fill_between(table[0], y1, y2, alpha=0.3, lineWidth=0, color=self.getColor(i))
             elif len(table) != 4 and self.err in [True, "filled"]:
                 self.log.warning("Can't find x- and y-errors in file. Request "
                                  "rejected.")
