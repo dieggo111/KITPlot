@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#pylint: disable=C0103,W0201,W0703,C0111,W0702,R1710,R1702
 import os
 import re
 import json
@@ -17,7 +18,7 @@ class KITConfig(object):
     defaultConfig = {}
     configDir = ""
 
-    def __init__(self, cfg=None, **kwargs):
+    def __init__(self, cfg=None):
         """ Initialize KITConfig by loading the config file.
 
         The __init__ method sets the working directory to ./cfg and loads the
@@ -47,7 +48,6 @@ class KITConfig(object):
 
         self.__cfg = {}
         self.__default = KITConfig.defaultConfig
-
 
         if cfg is not None:
             self.load(cfg)
@@ -176,8 +176,7 @@ class KITConfig(object):
         if os.path.isdir(str(name)):
             #return os.path.normpath(str(name)).split("/")[-1] + ".cfg"
             return re.split(r'[/\\]', os.path.normpath(str(name)))[-1]+".cfg"
-        else:
-            return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
+        return os.path.splitext(os.path.basename(os.path.normpath(str(name))))[0] + ".cfg"
 
 
     # Get data from a dictionary with position provided as a list
@@ -203,7 +202,7 @@ class KITConfig(object):
                 dataDict[key] = {mapList[i+1]: None}
                 dataDict = dataDict[key]
 
-            if not (isinstance(dataDict, dict) or isinstance(dataDict, OrderedDict)):
+            if not isinstance(dataDict, (dict, OrderedDict)):
                 dataDict = prevDict
                 dataDict[key] = {mapList[i+1]: None}
                 dataDict = dataDict[key]
