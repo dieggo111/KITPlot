@@ -357,7 +357,7 @@ class KITMatplotlib(object):
                 ncol = 2
             else:
                 ncol = 1
-            obj.legend(handles,labels, bbox_to_anchor=(1, 1.01),
+            obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
                        loc='upper left', ncol=self.leg_col)
         return True
 

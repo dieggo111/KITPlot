@@ -53,12 +53,15 @@ class KITSearch(object):
                          "db_irradiation" : db_irradiation}
 
     def search_table(self, table, **kwargs):
-        """Basic search operation: search for key-value DB table"""
+        """Basic search operation: search for key-value DB table. You can add
+        '%' in kwargs['name'] for a wildcard search"""
         try:
             if "%" in kwargs["name"]:
+                kwargs_name = kwargs["name"]
+                kwargs.pop("name")
                 data = self.session.query(self.db_table[table]).filter(\
-                        self.db_table[table].name.contains(\
-                        kwargs["name"].replace("%", "")))
+                    self.db_table[table].name.contains(\
+                    kwargs_name.replace("%", ""))).filter_by(**kwargs)
                 return data
         except KeyError:
             pass
