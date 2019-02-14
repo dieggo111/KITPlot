@@ -2,6 +2,7 @@
 """KITSearch module"""
 # import sys
 # import os
+import logging
 import yaml
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
@@ -32,6 +33,15 @@ class KITSearch(object):
                         "user"      : "...",
                         "passwd"    : "..."}
         """
+        self.log = logging.getLogger(__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
+        if self.log.hasHandlers() is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
+
         if isinstance(cred, str):
             with open(cred, "r") as crx:
                 dic = yaml.load(crx)
@@ -54,17 +64,23 @@ class KITSearch(object):
 
     def search_table(self, table, **kwargs):
         """Basic search operation: search for key-value DB table. You can add
-        '%' in kwargs['name'] for a wildcard search"""
-        try:
-            if "%" in kwargs["name"]:
-                kwargs_name = kwargs["name"]
-                kwargs.pop("name")
-                data = self.session.query(self.db_table[table]).filter(\
-                    self.db_table[table].name.contains(\
-                    kwargs_name.replace("%", ""))).filter_by(**kwargs)
-                return data
-        except KeyError:
-            pass
+        '%' in a kwarg for a wildcard search. One wildcard allowed at a time."""
+        wildcard = {}
+        # check vor wildcards in kwargs
+        for key, val in kwargs.items():
+            if "%" in val:
+                wildcard[key] = val.replace("%", "")
+        if len(wildcard) > 1:
+            self.log.warning("Only 1 wildcard per search allowed!")
+            return None
+        # use wildcard + rest of kwargs to filter DB data
+        if wildcard != {}:
+            wc_key = list(wildcard.keys())[0]
+            kwargs.pop(wc_key)
+            data = self.session.query(self.db_table[table]).filter(\
+                    getattr(self.db_table[table], wc_key).contains(\
+                    wildcard[wc_key])).filter_by(**kwargs)
+            return data
         data = self.session.query(self.db_table[table]).filter_by(**kwargs)
         return data
 
