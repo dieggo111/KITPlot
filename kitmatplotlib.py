@@ -432,7 +432,6 @@ class KITMatplotlib(object):
 
 
     def getLineStyle(self, index):
-
         try:
             if isinstance(self.lineStyle, int):
                 return self.lines[self.lineStyle]

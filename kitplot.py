@@ -21,7 +21,7 @@ class KITPlot():
         - defaultCfg (str): Path to existing cfg file that is used as a
                             blueprint for creating a new cfg file
     """
-    def __init__(self, cfg=None, defaultCfg=None):
+    def __init__(self, cfg=None, defaultCfg=None, auto_labeling=True):
         self.log = logging.getLogger(__class__.__name__)
         self.log.setLevel(logging.DEBUG)
         if self.log.hasHandlers() is False:
@@ -51,10 +51,10 @@ class KITPlot():
             self.__cfg.Default()
         else:
             self.__cfg.Default(defaultCfg)
-
         self.__inputName = None
         self.name_lst = None
         self.cavas = None
+        self.auto_labeling = auto_labeling
 
 
     #####################
@@ -84,9 +84,6 @@ class KITPlot():
             self.__inputName = name
         if name_lst is not None:
             self.name_lst = name_lst
-
-        # check if cfg file is there or if a new one is about to be created
-        self.new_cfg = check_if_new_cfg(self.__cfg.getDir(), self.__inputName)
 
         # load dict with plot parameters or create one if not present
         self.__cfg.load(self.__inputName)
@@ -262,9 +259,9 @@ class KITPlot():
 
         # create graphs and canvas
         if dataInput is None:
-            self.canvas = KITMatplotlib(self.__cfg, self.new_cfg).draw(self.__files)
+            self.canvas = KITMatplotlib(self.__cfg, self.check_if_new_cfg(self.__cfg.getDir(), self.__inputName)).draw(self.__files)
         else:
-            self.canvas = KITMatplotlib(self.__cfg, self.new_cfg).draw(dataInput)
+            self.canvas = KITMatplotlib(self.__cfg, self.check_if_new_cfg(self.__cfg.getDir(), self.__inputName)).draw(dataInput)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
@@ -489,11 +486,13 @@ class KITPlot():
         else:
             raise ValueError("Unkonwn case in 'getDataName' function")
 
-def check_if_new_cfg(path, name):
-    """If cfg is new (no cfg present yet) return True, else False"""
-    if os.path.isfile(os.path.join(path, name + ".cfg")) is True:
-        return False
-    return True
+    def check_if_new_cfg(self, path, name):
+        """If cfg is new (no cfg present yet) return True, else False"""
+        if self.auto_labeling is False:
+            return False
+        if os.path.isfile(os.path.join(path, name + ".cfg")) is True:
+            return False
+        return True
 
 def checkPID(dataInput):
     """Checks if PIDs are listed in the file"""

@@ -53,22 +53,24 @@ class KITConfig(object):
         self.__cfgFile = cfg
 
         self.__cfg = {}
+        # initialize the default dict
         self.__default = KITConfig.defaultConfig
 
         if cfg is not None:
             self.load(cfg)
 
     def Default(self, fName='default.cfg'):
-        """Set default config file"""
-        try:
-            if os.path.isabs(fName):
-                with open(fName, 'r') as defaultCfg:
-                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-            else:
-                with open(os.path.join(os.getcwd(), "KITPlot", "Utils", fName), 'r') as defaultCfg:
-                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        except (TypeError, FileNotFoundError):
-            pass
+        """Load parameters from default config Set default config file which
+        is the blueprint for creating new cfg files"""
+        # try:
+        if os.path.isabs(fName):
+            with open(fName, 'r') as defaultCfg:
+                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        else:
+            with open(os.path.join(os.getcwd(), "KITPlot", "Utils", fName), 'r') as defaultCfg:
+                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        # except (TypeError, FileNotFoundError):
+        #     pass
         try:
             with open(os.path.join(KITConfig.defaultConfigPath, fName), 'r') as defaultCfg:
                 KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)
@@ -92,6 +94,9 @@ class KITConfig(object):
 
     def getDict(self):
         return self.__cfg
+
+    def getDefDict(self):
+        return self.__default
 
     def __getitem__(self, keys):
 
@@ -128,6 +133,7 @@ class KITConfig(object):
             keys = [keys]
 
         self.__setInDict(self.__cfg, keys, value)
+
         self.write(self.__cfgFile, log=False)
 
 
@@ -139,7 +145,6 @@ class KITConfig(object):
         Args:
             cfg (str): Name of the input without ".cfg" ending
         """
-
         if self.__cfgFile is None:
             self.__cfgFile = os.path.join(self.__dir, self.__getfName(cfg))
 
@@ -170,12 +175,12 @@ class KITConfig(object):
                 self.log.info("Created %s", self.__cfgFile)
 
 
-    def setDefaultCfg(self, fName='default.cfg'):
-        try:
-            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
-                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        except Exception:
-            raise OSError("Default config file not found")
+    # def setDefaultCfg(self, fName='default.cfg'):
+    #     try:
+    #         with open(os.path.join(KITConfig.defaultConfigPath, fName), 'r') as defaultCfg:
+    #             self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+    #     except Exception:
+    #         raise OSError("Default config file not found")
 
 
     def setDict(self, dictionary):
