@@ -2,8 +2,10 @@
 #pylint: disable=C0103,W0201,W0703,C0111,W0702,R1710,R1702
 import os
 import re
+import inspect
 import json
 import logging
+from pathlib import Path
 from collections import OrderedDict
 
 class KITConfig(object):
@@ -16,6 +18,10 @@ class KITConfig(object):
     """
 
     defaultConfig = {}
+    defaultConfigPath = os.path.join(
+        Path(os.path.dirname(os.path.abspath(
+            inspect.getfile(inspect.currentframe())))).parents[0],
+        "Utils")
     configDir = ""
 
     def __init__(self, cfg=None):
@@ -55,12 +61,16 @@ class KITConfig(object):
     def Default(self, fName='default.cfg'):
         """Set default config file"""
         try:
-            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
-                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+            if os.path.isabs(fName):
+                with open(fName, 'r') as defaultCfg:
+                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+            else:
+                with open(os.path.join(os.getcwd(), "KITPlot", "Utils", fName), 'r') as defaultCfg:
+                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
         except (TypeError, FileNotFoundError):
             pass
         try:
-            with open(os.path.join(os.getcwd(), fName), 'r') as defaultCfg:
+            with open(os.path.join(KITConfig.defaultConfigPath, fName), 'r') as defaultCfg:
                 KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)
         except Exception as e:
             self.log.debug(e)

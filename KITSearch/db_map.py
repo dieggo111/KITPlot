@@ -132,7 +132,7 @@ class db_alibava(BASE):
     Signal_chi2_ndf         = Column(Float)
     calib_run               = Column(Integer)
     gain                    = Column(Float)
-    pdf                     = Column(LargeBinary)
+    # pdf                     = Column(LargeBinary)
     last_analyzed           = Column(DateTime)
     ThresholdAt995          = Column(Float)
     annealing_id            = Column(Integer)

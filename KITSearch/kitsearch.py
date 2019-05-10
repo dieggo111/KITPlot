@@ -68,8 +68,11 @@ class KITSearch(object):
         wildcard = {}
         # check vor wildcards in kwargs
         for key, val in kwargs.items():
-            if "%" in val:
-                wildcard[key] = val.replace("%", "")
+            try:
+                if "%" in val:
+                    wildcard[key] = val.replace("%", "")
+            except TypeError:
+                pass
         if len(wildcard) > 1:
             self.log.warning("Only 1 wildcard per search allowed!")
             return None

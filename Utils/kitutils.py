@@ -124,7 +124,7 @@ def manipulate(graphList, arg):
                 graph[1] = graph[1]/float(facList[i])
 
     # normalization via single factor
-    elif isinstance(arg, (float,int)):
+    elif isinstance(arg, (float, int)):
         for i, graph in enumerate(graphList):
             tempList = []
             try:
@@ -133,6 +133,13 @@ def manipulate(graphList, arg):
                 graph[1] = tempList
             except:
                 graph[1] = graph[1]/arg
+    elif "--x" in arg:
+        fac = float(arg.split(" ")[1])
+        temp_lst = []
+        for graph in graphList:
+            for val in graph[0]:
+                temp_lst.append(val/fac)
+            graph[0] = temp_lst
     else:
         print("Warning::Unknown normalization Input. Request rejected.")
 
