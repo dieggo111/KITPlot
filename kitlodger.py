@@ -32,34 +32,35 @@ class KITLodger(object):
 
     def add_to_plot(self):
 
-        ax = self.fig.add_subplot(1,1,1)
+        ax = self.fig.add_subplot(1, 1, 1)
 
         if self.__x is None and self.__y is None and self.__text is None:
             print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
-        elif self.__y is None and isinstance(self.__x, (int, float)):
-            print("Lodger:::Draw vertical line at x = " + str(self.__x))
-            self.lodger_type = "verticle line"
-            ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width, linestyle=self.__style,
-                       alpha=self.__alpha)
-        elif self.__x == None and isinstance(self.__y, (int, float)):
-            print("Lodger:::Draw horizontal line at y = " + str(self.__y))
-            self.lodger_type = "horizontal line"
-            ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
-                       linewidth=self.__width, linestyle=self.__style,
-                       alpha=self.__alpha)
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
             print("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
             ax.plot(self.__x, self.__y, color=self.get_lodger_color(self.__color))
-        elif self.__text != None:
-            print("Lodger:::Draw text at (x,y)")
-            self.lodger_type = "text"
-            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize)
         elif isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
             print("Lodger:::Draw function.")
             self.lodger_type = "function"
-            ax.plot(self.__y, self.__x, color='black')
+            ax.plot(self.__x, self.__y, color='black')
+        elif self.__y is None or self.__x is None:
+            if isinstance(self.__x, (int, float)):
+                print("Lodger:::Draw vertical line at x = " + str(self.__x))
+                self.lodger_type = "verticle line"
+                ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
+                           linewidth=self.__width, linestyle=self.__style,
+                           alpha=self.__alpha)
+            if isinstance(self.__y, (int, float)):
+                print("Lodger:::Draw horizontal line at y = " + str(self.__y))
+                self.lodger_type = "horizontal line"
+                ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
+                           linewidth=self.__width, linestyle=self.__style,
+                           alpha=self.__alpha)
+        elif self.__text is not None:
+            print("Lodger:::Draw text at (x,y)")
+            self.lodger_type = "text"
+            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize)
         return self.fig
 
     def add_to_cfg(self, cfg):
@@ -89,13 +90,11 @@ class KITLodger(object):
 
         KITcolor = kitutils.get_KITcolor()
         try:
+            if color == "black":
+                return color
             # if color is string and corresponds with KITcolor dict
             for colorDict in list(KITcolor.values()):
-                try:
-                    return colorDict[color]
-                except:
-                    pass
-            raise Exception
+                return colorDict[color]
         except:
             # go with default color
             print("Warning:::%s is an invalid lodger color. Using default color 'r0' instead." %(color))

@@ -69,8 +69,10 @@ class KITSearch(object):
         # check vor wildcards in kwargs
         for key, val in kwargs.items():
             try:
-                if "%" in val:
+                if val[-1] == "%":
                     wildcard[key] = val.replace("%", "")
+                elif "%" in val:
+                    wildcard[key] = val.split("%")
             except TypeError:
                 pass
         if len(wildcard) > 1:
@@ -80,9 +82,17 @@ class KITSearch(object):
         if wildcard != {}:
             wc_key = list(wildcard.keys())[0]
             kwargs.pop(wc_key)
-            data = self.session.query(self.db_table[table]).filter(\
-                    getattr(self.db_table[table], wc_key).contains(\
-                    wildcard[wc_key])).filter_by(**kwargs)
+            if isinstance(wildcard[wc_key], list):
+                data = self.session.query(self.db_table[table])\
+                       .filter(getattr(self.db_table[table], wc_key)\
+                       .contains(wildcard[wc_key][0])\
+                       .contains(wildcard[wc_key][1]))\
+                       .filter_by(**kwargs)
+            else:
+                data = self.session.query(self.db_table[table])\
+                       .filter(getattr(self.db_table[table], wc_key)\
+                       .contains(wildcard[wc_key]))\
+                       .filter_by(**kwargs)
             return data
         data = self.session.query(self.db_table[table]).filter_by(**kwargs)
         return data

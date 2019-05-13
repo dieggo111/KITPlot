@@ -62,15 +62,15 @@ class KITConfig(object):
     def Default(self, fName='default.cfg'):
         """Load parameters from default config Set default config file which
         is the blueprint for creating new cfg files"""
-        # try:
-        if os.path.isabs(fName):
-            with open(fName, 'r') as defaultCfg:
-                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        else:
-            with open(os.path.join(os.getcwd(), "KITPlot", "Utils", fName), 'r') as defaultCfg:
-                self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
-        # except (TypeError, FileNotFoundError):
-        #     pass
+        try:
+            if os.path.isabs(fName):
+                with open(fName, 'r') as defaultCfg:
+                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+            else:
+                with open(os.path.join(os.getcwd(), "KITPlot", "Utils", fName), 'r') as defaultCfg:
+                    self.__default = json.load(defaultCfg, object_pairs_hook=OrderedDict)
+        except (TypeError, FileNotFoundError):
+            pass
         try:
             with open(os.path.join(KITConfig.defaultConfigPath, fName), 'r') as defaultCfg:
                 KITConfig.defaultConfig = json.load(defaultCfg, object_pairs_hook=OrderedDict)

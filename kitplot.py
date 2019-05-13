@@ -356,7 +356,7 @@ class KITPlot():
             if name is not None and residual is True:
                 self.log.info("Fit result[%s]:::(m = %s, y0 = %s, res = %s)",
                               name, str(m), str(b), str(err))
-            t = np.arange(min(x), max(x)*1.1, (min(x) + max(x)/5))
+            t = np.arange(min(x), max(x)*1.1, (min(x) + max(x))/5)
             f = m * t + b
         if returns == "fit":
             return (f, t)
