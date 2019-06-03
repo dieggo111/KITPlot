@@ -2,6 +2,8 @@
 """
 
 from collections import OrderedDict
+import numpy as np
+from KITPlot import KITData
 
 def get_KITcolor():
 
@@ -85,14 +87,25 @@ def adjustOrder(List, entryDict, len_total):
 
 
 def manipulate(graphList, arg):
-
-    facList = []
-    newList = []
+    print(arg, type(arg))
     # no normalization
     if arg == 'off':
         pass
+    elif isinstance(arg, OrderedDict):
+        for val in arg.values():
+            val = extractList(val)
+            print(val)
+            graphList = normalize(graphList, val)
+    else:
+        graphList = normalize(graphList, arg)
+    return graphList
+
+
+def normalize(graphList, arg):
+    facList = []
+    newList = []
     # normalization for CV plots
-    elif arg in ["1/C^{2}", "CV"]:
+    if arg in ["1/C^{2}", "CV"]:
         for i, graph in enumerate(graphList):
             try:
                 tempList = []
