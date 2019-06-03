@@ -10,7 +10,7 @@ import itertools
 import logging
 
 
-class KITMatplotlib(object):
+class KITMatplotlib():
     """Matplotlib based automated plotting class for KITPlot"""
     def __init__(self, cfg=None, new_cfg=None):
 
@@ -197,7 +197,7 @@ class KITMatplotlib(object):
         return True
 
 
-    def draw(self, fileList):
+    def draw(self, fileList, reset=False):
         """Extracts data sets from fileList, extracts plot parameters from cfg
         (plot options, legend information, plot dimensions, axis labeling,
         marker and graph options, ...) and applies them"""
@@ -206,7 +206,13 @@ class KITMatplotlib(object):
             self.addGraph(dset)
 
         # read and adjsut .__entryDict before drawing
-        self.readEntryDict(len(self.__graphs), self.getDefaultEntryDict(fileList))
+        if reset is True:
+            self.readEntryDict(len(self.__graphs),
+                               self.getDefaultEntryDict(fileList),
+                               True)
+        else:
+            self.readEntryDict(len(self.__graphs),
+                               self.getDefaultEntryDict(fileList))
 
         # interpret all entries in single file as graphs instead of a singel graph
         if self.splitGraph is True and len(self.__graphs) == 1:
@@ -350,7 +356,7 @@ class KITMatplotlib(object):
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
                        loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles, labels, bbox_to_anchor=(0., -0.25, 1., .102),
+            obj.legend(handles, labels, bbox_to_anchor=(0., -0.2, 1., .102),
                        loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
             if total_len > 8:
@@ -456,15 +462,15 @@ class KITMatplotlib(object):
         return self.__graphs
 
 
-    def readEntryDict(self, exp_len, def_list):
+    def readEntryDict(self, exp_len, def_list, reset=False):
         """'EntryList' makes the names and order of all graphs accessible. This
         subsection is read every time KITPlot is executed. An empty value ("")
         can be used to reset the entry to its default value (the original order
         and names given by .__files).
         """
         # writes entry dict to cfg and sets it back to default if value is ""
-        if self.cfg['Legend','EntryList'] == "":
-            self.cfg['Legend','EntryList'] = def_list
+        if self.cfg['Legend', 'EntryList'] == "" or reset is True:
+            self.cfg['Legend', 'EntryList'] = def_list
             self.__entryDict = def_list
             if self.__new_cfg is False:
                 self.log.info("EntryDict was set back to default!")

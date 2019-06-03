@@ -21,7 +21,7 @@ class KITPlot():
         - defaultCfg (str): Path to existing cfg file that is used as a
                             blueprint for creating a new cfg file
     """
-    def __init__(self, cfg=None, defaultCfg=None, auto_labeling=True):
+    def __init__(self, cfg=None, defaultCfg=None, auto_labeling=True, opt=None):
         self.log = logging.getLogger(__class__.__name__)
         self.log.setLevel(logging.DEBUG)
         if self.log.hasHandlers() is False:
@@ -55,7 +55,9 @@ class KITPlot():
         self.name_lst = None
         self.cavas = None
         self.auto_labeling = auto_labeling
-
+        self.reset = False
+        if opt == "r":
+            self.reset = True
 
     #####################
     ### Graph methods ###
@@ -130,7 +132,8 @@ class KITPlot():
                 elif os.path.isdir(dataInput):
                     self.log.info("Input interpreted as folder with files")
                     for i, inputFile in enumerate(os.listdir(dataInput)):
-                        if os.path.splitext(inputFile)[1] == ".txt":
+                        if os.path.splitext(inputFile)[1] == ".txt" \
+                                or os.path.splitext(inputFile)[1] == ".yml":
                             self.__files.append(KITData(dataInput + inputFile))
                             try:
                                 self.__files[-1].setName(self.name_lst[i])
@@ -259,9 +262,17 @@ class KITPlot():
 
         # create graphs and canvas
         if dataInput is None:
-            self.canvas = KITMatplotlib(self.__cfg, self.check_if_new_cfg(self.__cfg.getDir(), self.__inputName)).draw(self.__files)
+            self.canvas = KITMatplotlib(
+                self.__cfg,
+                self.check_if_new_cfg(
+                    self.__cfg.getDir(), self.__inputName)).draw(
+                        self.__files, reset=self.reset)
         else:
-            self.canvas = KITMatplotlib(self.__cfg, self.check_if_new_cfg(self.__cfg.getDir(), self.__inputName)).draw(dataInput)
+            self.canvas = KITMatplotlib(
+                self.__cfg,
+                self.check_if_new_cfg(
+                    self.__cfg.getDir(), self.__inputName)).draw(
+                        dataInput, reset=self.reset)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
