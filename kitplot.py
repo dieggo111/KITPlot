@@ -21,7 +21,7 @@ class KITPlot():
         - defaultCfg (str): Path to existing cfg file that is used as a
                             blueprint for creating a new cfg file
     """
-    def __init__(self, cfg=None, defaultCfg=None, auto_labeling=True, opt=None):
+    def __init__(self, **kwargs):
         self.log = logging.getLogger(__class__.__name__)
         self.log.setLevel(logging.DEBUG)
         if self.log.hasHandlers() is False:
@@ -42,6 +42,12 @@ class KITPlot():
         self.__graphs = []
 
         # Load parameters from cfg file or load default cfg
+        cfg = kwargs.get('cfg', None)
+        defaultCfg = kwargs.get('defaultCfg', None)
+        self.auto_labeling = kwargs.get('auto_labeling', True)
+        self.opt_reset = kwargs.get('reset_legend', None)
+        self.opt_split = kwargs.get('split_graph', None)
+        print(kwargs)
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
         else:
@@ -54,10 +60,6 @@ class KITPlot():
         self.__inputName = None
         self.name_lst = None
         self.cavas = None
-        self.auto_labeling = auto_labeling
-        self.reset = False
-        if opt == "r":
-            self.reset = True
 
     #####################
     ### Graph methods ###
@@ -86,6 +88,8 @@ class KITPlot():
             self.__inputName = name
         if name_lst is not None:
             self.name_lst = name_lst
+        if self.opt_split:
+            self.name_lst, dataInput = split_data(dataInput)
 
         # load dict with plot parameters or create one if not present
         self.__cfg.load(self.__inputName)
@@ -266,13 +270,13 @@ class KITPlot():
                 self.__cfg,
                 self.check_if_new_cfg(
                     self.__cfg.getDir(), self.__inputName)).draw(
-                        self.__files, reset=self.reset)
+                        self.__files, reset=self.opt_reset)
         else:
             self.canvas = KITMatplotlib(
                 self.__cfg,
                 self.check_if_new_cfg(
                     self.__cfg.getDir(), self.__inputName)).draw(
-                        dataInput, reset=self.reset)
+                        dataInput, reset=self.opt_reset)
 
         # check if there are lodgers in cfg and if so, add them to plot
         self.getLodgers()
@@ -318,22 +322,20 @@ class KITPlot():
                 text = paraDict.get('text', None)
                 fontsize = paraDict.get('fontsize', None)
                 alpha = paraDict.get('alpha', None)
+                opt_dict = paraDict.get('opt_dict', dict())
 
 
                 self.addLodger(self.canvas, x=x, y=y, name=name, color=color,
                                style=style, width=width, text=text,
-                               fontsize=fontsize, alpha=alpha)
+                               fontsize=fontsize, alpha=alpha,
+                               opt_dict=opt_dict)
         except:
             pass
 
 
-    def addLodger(self, fig, x=None, y=None, name=None, color=None, style=None,
-                  width=None, text=None, fontsize=None, alpha=None):
+    def addLodger(self, fig, **kwargs):
         """Create new Lodger object and add it to canvas"""
-        newLodger = KITLodger(fig, x=x, y=y, name=name, color=color,
-                              style=style, width=width, text=text,
-                              fontsize=fontsize, alpha=alpha)
-
+        newLodger = KITLodger(fig, **kwargs)
         self.canvas = newLodger.add_to_plot()
         newLodger.add_to_cfg(self.__cfg)
 
@@ -367,7 +369,7 @@ class KITPlot():
             if name is not None and residual is True:
                 self.log.info("Fit result[%s]:::(m = %s, y0 = %s, res = %s)",
                               name, str(m), str(b), str(err))
-            t = np.arange(min(x), max(x)*1.1, (min(x) + max(x))/5)
+            t = np.arange(min(x), max(x)*1.1, min(x)/2)
             f = m * t + b
         if returns == "fit":
             return (f, t)
@@ -514,3 +516,19 @@ def checkPID(dataInput):
             return False
     else:
         raise ValueError("Input is not a file.")
+
+def split_data(data_input):
+    name_lst = []
+    line_data = []
+    with open(data_input, "r") as data:
+        for line in data:
+            splitted = line.split()
+            name_lst.append(splitted[0])
+            try:
+                line_data.append(([float(splitted[1])], [float(splitted[2])],
+                                  [float(splitted[3])], [float(splitted[4])]))
+            except IndexError:
+                line_data.append(([float(splitted[1])], [float(splitted[2])],
+                                  [0], [0]))
+
+    return name_lst, line_data

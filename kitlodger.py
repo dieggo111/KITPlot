@@ -1,9 +1,19 @@
 import numpy as np
+import logging
 from .Utils import kitutils
 
 class KITLodger(object):
 
     def __init__(self, figure, **kwargs):
+
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(logging.DEBUG)
+        if self.log.hasHandlers is False:
+            format_string = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            self.log.addHandler(console_handler)
 
         self.fig = figure
         self.lodger_type = None
@@ -16,6 +26,7 @@ class KITLodger(object):
         self.__text = kwargs.get('text', None)
         self.__fontsize = kwargs.get('fontsize', 14)
         self.__alpha = kwargs.get('alpha', 1)
+        self.__opt_dict = kwargs.get('opt_dict', dict())
 
         self.__paraDict =  {    "x"         : self.__x,
                                 "y"         : self.__y,
@@ -25,7 +36,8 @@ class KITLodger(object):
                                 "style"     : self.__style,
                                 "text"      : self.__text,
                                 "fontsize"  : self.__fontsize,
-                                "alpha"     : self.__alpha
+                                "alpha"     : self.__alpha,
+                                "opt_dict"  : self.__opt_dict
                             }
 
         self.__paraDict = self.stripDict()
@@ -35,32 +47,32 @@ class KITLodger(object):
         ax = self.fig.add_subplot(1, 1, 1)
 
         if self.__x is None and self.__y is None and self.__text is None:
-            print("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
+            self.log.info("Lodger:::Lodger arrived with an empty suitcase. Goodbye.")
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
-            print("Lodger:::Draw graph according to [x],[y]")
+            self.log.info("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
             ax.plot(self.__x, self.__y, color=self.get_lodger_color(self.__color))
         elif isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
-            print("Lodger:::Draw function.")
+            self.log.info("Lodger:::Draw function.")
             self.lodger_type = "function"
             ax.plot(self.__x, self.__y, color='black')
         elif self.__y is None or self.__x is None:
             if isinstance(self.__x, (int, float)):
-                print("Lodger:::Draw vertical line at x = " + str(self.__x))
+                self.log.info("Lodger:::Draw vertical line at x = " + str(self.__x))
                 self.lodger_type = "verticle line"
                 ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
                            linewidth=self.__width, linestyle=self.__style,
                            alpha=self.__alpha)
             if isinstance(self.__y, (int, float)):
-                print("Lodger:::Draw horizontal line at y = " + str(self.__y))
+                self.log.info("Lodger:::Draw horizontal line at y = " + str(self.__y))
                 self.lodger_type = "horizontal line"
                 ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
                            linewidth=self.__width, linestyle=self.__style,
                            alpha=self.__alpha)
         elif self.__text is not None:
-            print("Lodger:::Draw text at (x,y)")
+            self.log.info("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
-            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize)
+            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize, **self.__opt_dict)
         return self.fig
 
     def add_to_cfg(self, cfg):
@@ -71,48 +83,60 @@ class KITLodger(object):
                 pass
             # lodger is not yet in section
             else:
-                lodger_count = len(list(cfg["Lodgers"].keys()))
-                lodger_name = self.lodger_type + str(lodger_count+1)
-                print("addLodgerEntry - update")
+                lodger_name = self.assign_lodger_name(cfg["Lodgers"])
+                self.log.info("addLodgerEntry - update")
                 new = cfg["Lodgers"]
                 new.update({lodger_name : self.__paraDict})
                 cfg["Lodgers"] = new
-
         # create lodgers section in cfg
         except:
-            print("addLodgerEntry - add_new")
+            self.log.info("addLodgerEntry - add_new")
             lodger_name = self.lodger_type
             cfg["Lodgers"] = {lodger_name : self.__paraDict}
 
         return True
 
-    def get_lodger_color(self, color):
+    def assign_lodger_name(self, lodger_dict):
+        """Assign lodger name. Add multiplicity index if a lodger of
+        same type already exists"""
+        lodger_count = len(lodger_dict)-1
+        lodger_name = self.lodger_type
+        if self.lodger_type in lodger_dict.keys():
+            lodger_name += str(lodger_count+1)
+        return lodger_name
 
+
+    def get_lodger_color(self, color):
+        """Assign color"""
         KITcolor = kitutils.get_KITcolor()
         try:
-            if color == "black":
-                return color
             # if color is string and corresponds with KITcolor dict
-            for colorDict in list(KITcolor.values()):
-                return colorDict[color]
+            for colorDict in KITcolor.values():
+                if color in colorDict.keys():
+                    return colorDict[color]
+            raise Exception
         except:
             # go with default color
-            print("Warning:::%s is an invalid lodger color. Using default color 'r0' instead." %(color))
+            self.log.warning("Warning:::%s is an invalid lodger color. "\
+                             "Using default color 'r0' instead.", color)
             return KITcolor["KITred"]["r0"]
 
-    def check_for_lodger_in_section(self,cfg):
+    def check_for_lodger_in_section(self, cfg):
+        """Checks if specific lodger is already in cfg file"""
         for lodger in cfg["Lodgers"]:
             if self.__paraDict == dict(cfg["Lodgers"][lodger]):
                 return True
         return False
 
     def stripDict(self):
-        """ Strip dict from all values that are None"""
+        """ Strip dict from all values that are None or empty"""
         new = {}
         for key, val in self.__paraDict.items():
             if isinstance(val, np.ndarray):
-                print(val, [elem for elem in val])
                 new[key] = [elem for elem in val]
+            if isinstance(val, dict):
+                if val != {}:
+                    new[key] = val
             elif self.__paraDict[key] is not None:
                 new[key] = val
         return new

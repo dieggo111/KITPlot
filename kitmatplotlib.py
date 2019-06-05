@@ -230,7 +230,9 @@ class KITMatplotlib():
             self.log.warning("Can only split single graph. Request rejected")
 
         # apply user defined normalization or manipulation of y values of each graph
-        self.__graphs = kitutils.manipulate(self.__graphs, self.norm)
+        self.__graphs, msg = kitutils.manipulate(self.__graphs, self.norm)
+        if msg != "":
+            self.log.info(msg)
 
         # create an empty canvas with canvas size in [inch]: 1 inch = 2.54 cm
         fig = plt.figure(figsize=list(map(lambda x: x/2.54, self.canvasSize)))
@@ -246,8 +248,9 @@ class KITMatplotlib():
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
         for i, table in enumerate(self.__graphs):
-            if isinstance(self.hollowMarker, list) and i in self.hollowMarker:
-                markerface = 'white'
+            if isinstance(self.hollowMarker, list) and i in self.hollowMarker\
+                    or self.hollowMarker is True:
+                markerface = 'None'
             else:
                 markerface = self.getColor(i)
             ax.plot(table[0],                           # x-axis
@@ -441,19 +444,22 @@ class KITMatplotlib():
         try:
             if isinstance(self.lineStyle, int):
                 return self.lines[self.lineStyle]
-            elif all(isinstance(item, str) for item in self.lineStyle) \
+            if all(isinstance(item, str) for item in self.lineStyle) \
                     and isinstance(self.lineStyle, list):
                 for i, item in enumerate(itertools.cycle(self.lineStyle)):
                     if item not in self.lines:
                         raise ValueError
                     if index == i:
                         return item
-            elif all(isinstance(item, int) for item in self.lineStyle) \
+            if all(isinstance(item, int) for item in self.lineStyle) \
                     and isinstance(self.lineStyle, list):
                 for i, item in enumerate(itertools.cycle(self.lineStyle)):
                     if index == i:
                         return self.lines[item]
-        except:
+            if self.lineStyle == "None":
+                return "None"
+            raise ValueError
+        except ValueError:
             self.log.warning("Invalid value in 'LineStyle'. Using default instead.")
             return self.lines[1]
 

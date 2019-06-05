@@ -214,7 +214,7 @@ class KITData(object):
 
         else:
             raise OSError("Input could not be identified (Input: %s)"
-                          %(dataInput))
+                          %(str(dataInput)))
 
 
     def getRPunchDict(self):

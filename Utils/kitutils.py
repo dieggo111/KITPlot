@@ -1,6 +1,6 @@
 """ Utility methods
 """
-
+#pylint: disable=C0103,C0330,C0326
 from collections import OrderedDict
 import numpy as np
 from KITPlot import KITData
@@ -63,6 +63,13 @@ def get_KITcolor():
                                     ("c2" , (140./255, 213./255, 245./255)),
                                     ("c3" , (186./255, 229./255, 249./255)),
                                     ("c4" , (221./255, 242./255, 252./255))
+                                    ])),
+                       ("KITblack"  , OrderedDict([
+                                    ("bl0", (0./255, 0./255, 0./255)),
+                                    ("bl1", (50./255, 50./255, 50./255)),
+                                    ("bl2", (100./255, 100./255, 100./255)),
+                                    ("bl3", (150./255, 150./255, 150./255)),
+                                    ("bl4", (200./255, 200./255, 200./255))
                                     ]))
                         ])
     return KITcolor
@@ -87,18 +94,21 @@ def adjustOrder(List, entryDict, len_total):
 
 
 def manipulate(graphList, arg):
-    print(arg, type(arg))
     # no normalization
+    msg = ""
     if arg == 'off':
         pass
     elif isinstance(arg, OrderedDict):
         for val in arg.values():
             val = extractList(val)
-            print(val)
-            graphList = normalize(graphList, val)
+            graphList, text = normalize(graphList, val)
+            if msg == "":
+                msg = text
+            else:
+                msg = msg + ", " + text
     else:
-        graphList = normalize(graphList, arg)
-    return graphList
+        graphList, msg = normalize(graphList, arg)
+    return graphList, msg
 
 
 def normalize(graphList, arg):
@@ -120,6 +130,8 @@ def normalize(graphList, arg):
                     pass
                 else:
                     graph[1] = 1/(graph[1]*graph[1])
+        msg = "Manipulated y-values by inverting their square"
+
     # normalization via list of factors
     elif isinstance(arg, list):
         for fac in arg:
@@ -135,6 +147,7 @@ def normalize(graphList, arg):
                 graph[1] = tempList
             except:
                 graph[1] = graph[1]/float(facList[i])
+        msg = "Normalized y-values by given denominators"
 
     # normalization via single factor
     elif isinstance(arg, (float, int)):
@@ -146,6 +159,8 @@ def normalize(graphList, arg):
                 graph[1] = tempList
             except:
                 graph[1] = graph[1]/arg
+        msg = "Normalized y-values by given denominator {}".format(arg)
+
     elif "--x" in arg:
         fac = float(arg.split(" ")[1])
         temp_lst = []
@@ -153,10 +168,12 @@ def normalize(graphList, arg):
             for val in graph[0]:
                 temp_lst.append(val/fac)
             graph[0] = temp_lst
+        msg = "Normalized x-values by given denominator {}".format(arg)
+
     else:
         print("Warning::Unknown normalization Input. Request rejected.")
 
-    return graphList
+    return graphList, msg
 
 def extractList(arg, output="int"):
     """ Turns a 'str(list)' into a list. Converts its elements into
@@ -261,25 +278,3 @@ def interpolate(List, x=None, y=None):
             v.append((name, abs(m)))
 
     return v
-
-def makeFit(List, print_fit, draw_fit):
-
-    x = []
-    y = []
-
-    print("Fit Results:")
-
-    if isinstance(List, KITData):
-        x = List.getX()
-        y = List.getY()
-
-        p0, p1 = abs(np.polyfit(x ,y, 1))
-
-
-        print("{:>8} {:>8} {:>8}".format(List.getName(),
-                                         " : m = " + str(round(p0,5)),
-                                         " ; R = " + str(round(1./p0,5))))
-
-    else:
-        #TODO non-kitdata objects
-        pass
