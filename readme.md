@@ -109,10 +109,10 @@ The script consists of 4 modules:
                    See ROOT documentation for other options.
     - *Log = false*: This needs to be a boolean value. Remember that having a 0
                      in your data table may raise errors.
-    - *Abs = True*: This needs to be a boolean value.
-    - *Title = Voltage (V)*: You can announce special characters here with an
-                             *#* like *#circ*, *#sigma* or super/subscript
-                             by *_{i}* and *^{2}*.
+    - *Abs = true*: This needs to be a boolean value.
+    - *Title = ""*: You can announce special characters here in latex style
+                    *$* like *$\\circ*, *$\\sigma* or super/subscript
+                    by *$_{i}$* and *$^{2}$*.
     - *GraphGroup = off*: Default values are *off*, *name*, *fluence*.
                           Sometimes you might want to visualize that certain
                           graphs belong together by giving them a similar color.
@@ -140,7 +140,12 @@ The script consists of 4 modules:
                              *[7.590296,7.590296,1.277161,1.277161]* in respect
                              of the original sensor order. In this case, every
                              y-value of graph 1 and 2 (original sensor order)
-                             would be divided (normalized) by 7.590296.
+                             would be divided (normalized) by 7.590296. Other
+                             options are *CV* which plots the inverted squared
+                             y-values. If you want to normalize x-values end
+                             the string with *--x*. You can also apply multiple
+                             options by inserting a dict with random keys and
+                             options as values.
     - *Position = auto*: If this is set to auto then the scripts will search all
                          4 corners for the best spot to place the legend. You
                           might wanna adjust this by using
@@ -148,9 +153,11 @@ The script consists of 4 modules:
                          *TL*,
                          *BR* (bottom right corner) or
                          *BL*.
+
     - *BoxPara = 1*: If you change the name of a legend element you might want
                      to adjust the legend box width by changing this factor in
                      between 0.5 and 1.5.
+
     - *EntryList = (0)a, (1)b, (3)c, (2)d*: The legend elements are naturally
                                             ordered by ROOT. This original order
                                             (here: a = 0, b = 1, c = 2, d = 3)
@@ -164,10 +171,8 @@ The script consists of 4 modules:
                                    first line is continuous while the second
                                    line is dashed. You can also just write
                                    something like *Style* = 1 (integer) to draw
-                                   all lines in the same style.
-
-    - *Line* -> *NoLine* = false: If you want happy with just drawing markers
-                                  and no lines then set this option to *false*.
+                                   all lines in the same style. If you want no
+                                   lines at all then insert a *"None"*.
 
     - *Marker* -> *Set* = "[21,20,...]": KITPlot will iterate through this list
                                          when drawing graphs to determine
@@ -191,7 +196,8 @@ The script consists of 4 modules:
 6) Lodgers:
 ################################################################################
     You can add graphs, lines and texts to your canvas by using lodgers.
-    Examples of how to use them are given in the suggested main.
+    Examples of how to use them are given in the suggested main. Additional
+    matplotlib parameters can be passed with the *opt_dict* keyword.
 
 ################################################################################
 7) Fits:
