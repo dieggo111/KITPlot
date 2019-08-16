@@ -4,6 +4,7 @@ import sys
 import datetime
 import logging
 import numpy as np
+import yaml
 from .KITConfig import KITConfig
 from .KITSearch import KITSearch
 from collections import OrderedDict
@@ -237,14 +238,13 @@ class KITData(object):
 
         """
         try:
-            cnxConf = KITConfig()
-            cnxConf.load(credentials)
-            db_config = cnxConf[section]
+            with open(credentials, "r") as cred_file:
+                cred = yaml.load(cred_file, Loader=yaml.FullLoader)
         except:
             raise ValueError("No credentials file found. Please add correct"+
                              "database parameters to 'db.cfg'")
         try:
-            KITData.dbSession = KITSearch(db_config)
+            KITData.dbSession = KITSearch(cred)
             self.log.info("Database connection established")
         except:
             raise ValueError("Database connection failed.")
@@ -255,12 +255,10 @@ class KITData(object):
 
         """
 
-        dic = { "database":
-                {
-                    "host": "",
-                    "database": "",
-                    "user": "",
-                    "passwd": ""}}
+        dic = {"host": "",
+               "database": "",
+               "user": "",
+               "passwd": ""}
 
         cfg = KITConfig()
         cfg.setDict(dic)

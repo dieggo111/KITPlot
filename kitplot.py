@@ -47,7 +47,8 @@ class KITPlot():
         self.auto_labeling = kwargs.get('auto_labeling', True)
         self.opt_reset = kwargs.get('reset_legend', None)
         self.opt_split = kwargs.get('split_graph', None)
-        print(kwargs)
+        self.base_name = kwargs.get('name', None)
+
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
         else:
@@ -81,6 +82,10 @@ class KITPlot():
             name (str): specified name of the measured item for plot legend
             name_lst (list): if there are multiple items that need to be named
         """
+        if self.base_name is True:
+            self.__inputName = dataInput
+            self.base_name = None
+            return True
         # extract name from data input
         if name is None and self.__inputName is None:
             self.__inputName = self.getDataName(dataInput)
