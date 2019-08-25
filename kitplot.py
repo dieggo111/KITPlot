@@ -377,7 +377,7 @@ class KITPlot():
             t = np.arange(min(x), max(x)*1.1, min(x)/2)
             f = m * t + b
         if returns == "fit":
-            return (f, t)
+            return (list(f), list(t))
         if returns == "result":
             try:
                 return (m, b, err)
