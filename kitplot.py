@@ -331,9 +331,11 @@ class KITPlot():
 
 
                 self.addLodger(self.canvas, x=x, y=y, name=name, color=color,
-                               style=style, width=width, text=text,
-                               fontsize=fontsize, alpha=alpha,
-                               opt_dict=opt_dict)
+                                style=style, width=width, text=text,
+                                fontsize=fontsize, alpha=alpha,
+                                opt_dict=opt_dict)
+        except ValueError as err:
+            self.log.error(err)
         except:
             pass
 

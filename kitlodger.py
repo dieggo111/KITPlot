@@ -22,7 +22,7 @@ class KITLodger(object):
         self.__name = kwargs.get('name', None)
         self.__color = kwargs.get('color', 0)
         self.__width = kwargs.get('width', 2)
-        self.__style = kwargs.get('style', 1)
+        self.__style = kwargs.get('style', "-")
         self.__text = kwargs.get('text', None)
         self.__fontsize = kwargs.get('fontsize', 14)
         self.__alpha = kwargs.get('alpha', 1)
@@ -51,28 +51,37 @@ class KITLodger(object):
         elif isinstance(self.__y, list) and isinstance(self.__x, list):
             self.log.info("Lodger:::Draw graph according to [x],[y]")
             self.lodger_type = "graph"
-            ax.plot(self.__x, self.__y, color=self.get_lodger_color(self.__color))
+            ax.plot(self.__x, self.__y, 
+                    color=self.get_lodger_color(self.__color),
+                    linewidth=self.__width, linestyle=self.__style,
+                    alpha=self.__alpha)
         elif isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
             self.log.info("Lodger:::Draw function.")
             self.lodger_type = "function"
-            ax.plot(self.__x, self.__y, color='black')
+            ax.plot(self.__x, self.__y, 
+                    color=self.get_lodger_color(self.__color), 
+                    linewidth=self.__width, linestyle=self.__style, 
+                    alpha=self.__alpha)
         elif self.__y is None or self.__x is None:
             if isinstance(self.__x, (int, float)):
                 self.log.info("Lodger:::Draw vertical line at x = " + str(self.__x))
                 self.lodger_type = "verticle line"
-                ax.axvline(x=self.__x, color=self.get_lodger_color(self.__color),
+                ax.axvline(x=self.__x, 
+                           color=self.get_lodger_color(self.__color),
                            linewidth=self.__width, linestyle=self.__style,
                            alpha=self.__alpha)
             if isinstance(self.__y, (int, float)):
                 self.log.info("Lodger:::Draw horizontal line at y = " + str(self.__y))
                 self.lodger_type = "horizontal line"
-                ax.axhline(y=self.__y, color=self.get_lodger_color(self.__color),
+                ax.axhline(y=self.__y, 
+                           color=self.get_lodger_color(self.__color),
                            linewidth=self.__width, linestyle=self.__style,
                            alpha=self.__alpha)
         elif self.__text is not None:
             self.log.info("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
-            ax.text(self.__x, self.__y, self.__text, fontsize=self.__fontsize, **self.__opt_dict)
+            ax.text(self.__x, self.__y, 
+                    self.__text, fontsize=self.__fontsize, **self.__opt_dict)
         return self.fig
 
     def add_to_cfg(self, cfg):
