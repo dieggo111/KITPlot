@@ -13,7 +13,8 @@ def get_KITcolor():
                                     ("r1" , (205./255, 85./255, 75./255)),
                                     ("r2" , (220./255, 130./255, 110./255)),
                                     ("r3" , (230./255, 175./255, 160./255)),
-                                    ("r4" , (245./255, 215./255, 200./255))
+                                    ("r4" , (230./255, 35./255, 41./255)),
+                                    ("r5" , (130./255, 35./255, 41./255))
                                     ])),
                        ("KITgreen"  , OrderedDict([
                                     ("g0" ,  (0./255, 169./255, 144./255)),
@@ -34,7 +35,8 @@ def get_KITcolor():
                                     ("b1" ,  (120./255, 145./255, 210./255)),
                                     ("b2" ,  (155./255, 170./255, 220./255)),
                                     ("b3" ,  (195./255, 200./255, 235./255)),
-                                    ("b4" ,  (225./255, 225./255, 245./255))
+                                    ("b4" ,  (30./255, 60./255, 194./255)),
+                                    ("b5" ,  (67./255, 60./255, 194./255))
                                     ])),
                        ("KITpurple" , OrderedDict([
                                     ("p0" ,  (188./255, 12./255, 141./255)),
@@ -93,9 +95,11 @@ def adjustOrder(List, entryDict, len_total):
     return List
 
 
-def manipulate(graphList, arg):
-    # no normalization
+def manipulate(graphList, arg, cv_norm):
     msg = ""
+    if cv_norm is True:
+        graphList, msg = normalize(graphList, "CV")
+
     if arg == 'off':
         pass
     elif isinstance(arg, OrderedDict):
@@ -113,7 +117,6 @@ def manipulate(graphList, arg):
 
 def normalize(graphList, arg):
     facList = []
-    newList = []
     # normalization for CV plots
     if arg in ["1/C^{2}", "CV"]:
         for i, graph in enumerate(graphList):
@@ -163,8 +166,8 @@ def normalize(graphList, arg):
 
     elif "--x" in arg:
         fac = float(arg.split(" ")[1])
-        temp_lst = []
         for graph in graphList:
+            temp_lst = []
             for val in graph[0]:
                 temp_lst.append(val/fac)
             graph[0] = temp_lst

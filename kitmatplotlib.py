@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #pylint: disable=C0103,R0902,R0912,R0915,R0914,W0201
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from .kitdata import KITData
 from .kitlodger import KITLodger
@@ -8,7 +9,7 @@ from collections import OrderedDict
 from .Utils import kitutils
 import itertools
 import logging
-
+import matplotlib.ticker
 
 class KITMatplotlib():
     """Matplotlib based automated plotting class for KITPlot"""
@@ -68,7 +69,7 @@ class KITMatplotlib():
         self.fontStyleY = cfg['YAxis', 'FontStyle']
         self.absX = cfg['XAxis', 'Abs']
         self.absY = cfg['YAxis', 'Abs']
-        self.logX = cfg['XAxis', 'Log']
+        self.logX = kitutils.extractList(cfg['XAxis', 'Log'])
         self.logY = cfg['YAxis', 'Log']
         self.tickX = cfg['XAxis', 'SciTick']
         self.tickY = cfg['YAxis', 'SciTick']
@@ -86,6 +87,7 @@ class KITMatplotlib():
         self.err = cfg['Line', 'ErrorBars']
 
         # KITPlot specific options
+        self.cv_norm = cfg['Misc', 'CVMeasurement']
         self.norm = kitutils.extractList(cfg['Misc', 'Normalization'])
         self.splitGraph = cfg['Misc', 'SplitGraph']
         # try:
@@ -230,7 +232,7 @@ class KITMatplotlib():
             self.log.warning("Can only split single graph. Request rejected")
 
         # apply user defined normalization or manipulation of y values of each graph
-        self.__graphs, msg = kitutils.manipulate(self.__graphs, self.norm)
+        self.__graphs, msg = kitutils.manipulate(self.__graphs, self.norm, self.cv_norm)
         if msg != "":
             self.log.info(msg)
 
@@ -242,10 +244,25 @@ class KITMatplotlib():
         ax.set_position(self.padSize)
 
         # adjust axis tick
-        if self.tickX:
-            plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-        if self.tickY:
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        if isinstance(self.tickX, bool):
+            if self.tickX:
+                plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+            # else:
+            #     plt.ticklabel_format(axis='x', useOffset=False)
+        if isinstance(self.tickY, bool):
+            if self.tickY:
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            # else:
+            #     plt.ticklabel_format(axis='y', useOffset=False)
+        if not isinstance(self.tickX, bool):
+            if isinstance(self.tickX, int) or isinstance(self.tickX, float):
+                plt.ticklabel_format(
+                    style='sci', axis='x', scilimits=(self.tickX, self.tickX))
+        if not isinstance(self.tickY, bool):
+            if isinstance(self.tickY, int) or isinstance(self.tickY, float):
+                plt.ticklabel_format(
+                    style='sci', axis='y', scilimits=(self.tickY, self.tickY))
+
 
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker\
@@ -309,8 +326,16 @@ class KITMatplotlib():
         # set log styles
         if self.logX:
             ax.semilogx()
+            if isinstance(self.logX, list):
+                ax.set_xticks(self.logX)
+                ax.get_xaxis().set_tick_params(which='minor', size=0)
+                ax.get_xaxis().set_tick_params(which='minor', width=0) 
+                ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         if self.logY:
             ax.semilogy()
+            if isinstance(self.logY, list):
+                ax.set_yticks(self.logY)
+                ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
         # set grid
         if self.grid == True:
@@ -324,7 +349,7 @@ class KITMatplotlib():
             ax.set_ylim(self.rangeY)
 
         self.setLegend(ax)
-
+        # ax.xaxis.set_major_formatter(FixedOrderFormatter(1e3))
         return fig
 
 
@@ -359,13 +384,9 @@ class KITMatplotlib():
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
                        loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles, labels, bbox_to_anchor=(0., -0.2, 1., .102),
+            obj.legend(handles, labels, bbox_to_anchor=(0., -0.3, 1., .102),
                        loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
-            if total_len > 8:
-                ncol = 2
-            else:
-                ncol = 1
             obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
                        loc='upper left', ncol=self.leg_col)
         return True
@@ -593,3 +614,16 @@ def auto_axis_labeling(file_lst):
             autotitleX = "X Value"
 
     return autotitle, autotitleX, autotitleY
+
+
+class FixedOrderFormatter(matplotlib.ticker.ScalarFormatter):
+    """Formats axis ticks using scientific notation with a constant order of
+    magnitude"""
+    def __init__(self, order_of_mag=0, useOffset=True, useMathText=False):
+        self._order_of_mag = order_of_mag
+        matplotlib.ticker.ScalarFormatter.__init__(
+            self, useOffset=useOffset, useMathText=useMathText)
+
+    def _set_orderOfMagnitude(self, range):
+        """Over-riding this to avoid having orderOfMagnitude reset elsewhere"""
+        self.orderOfMagnitude = self._order_of_mag
