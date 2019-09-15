@@ -78,6 +78,7 @@ class KITMatplotlib():
         self.markerSize = cfg['Marker', 'Size']
         self.markerSet = kitutils.extractList(cfg['Marker', 'Set'])
         self.hollowMarker = kitutils.extractList(cfg['Marker', 'HollowMarker'])
+        self.markerWidth = cfg['Marker', 'Width']
 
         #Line options
         self.colorPalette = cfg['Line', 'ColorPalette']
@@ -276,6 +277,7 @@ class KITMatplotlib():
                     marker=self.getMarker(i),           # marker style
                     markersize=self.markerSize,
                     markerfacecolor=markerface,
+                    markeredgewidth=self.markerWidth,
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
