@@ -101,12 +101,12 @@ class KITMatplotlib():
         self.leg_col = cfg['Legend', 'Columns']
 
         # sets
-        self.markers = {'s': 'square', 'v': 'triangle_down', '^': 'triangle_up',
+        self.markers = {'o': 'circle', 'v': 'triangle_down', '^': 'triangle_up',
                         '<': 'triangle_left', '>': 'triangle_right',
                         '8': 'octagon', 'p': 'pentagon', '*': 'star',
                         'h': 'hexagon1', 'H': 'hexagon2',
                         'D': 'diamond', 'd': 'thin_diamond', 'P': 'plus_filled',
-                        'X': 'x_filled'}
+                        'X': 'x_filled', 's': 'square'}
         self.lines = ['None', '-', '--', '-.', ':']
         self.colors = self.__initColor()
 
@@ -356,9 +356,7 @@ class KITMatplotlib():
 
 
     def setLegend(self, obj):
-
-        # get names from cfg and lodger labels
-        graphEntries = [items[1] for items in list(self.__entryDict.items())]
+        """Set up plot legend"""
 
         total_len = len(self.__graphs)
 
@@ -386,7 +384,7 @@ class KITMatplotlib():
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
                        loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles, labels, bbox_to_anchor=(0., -0.3, 1., .102),
+            obj.legend(handles, labels, bbox_to_anchor=(0., -0.5, 1., .102),
                        loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
             obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
@@ -408,21 +406,22 @@ class KITMatplotlib():
                 index (int): represents an iterator marking a certain graph in
                              .__graphs
         """
-
         try:
             # assign same marker to all graphs
             if isinstance(self.markerSet, int):
                 return list(self.markers.keys())[self.markerSet]
-            # cycle list of strings
-            elif all(isinstance(item, str) for item in self.markerSet):
+            # cycle list
+            if isinstance(self.markerSet, list):
                 for i, item in enumerate(itertools.cycle(self.markerSet)):
-                    if index == i:
-                        return item
-            # cycle list of integers
-            elif all(isinstance(item, int) for item in self.markerSet):
-                for i, item in enumerate(itertools.cycle(self.markerSet)):
-                    if index == i:
-                        return list(self.markers.keys())[item]
+                    if i == index:
+                        if isinstance(item, str):
+                            if item.isdigit():
+                                return list(self.markers.keys())[int(item)]
+                            if item in self.markers:
+                                return item
+                        if isinstance(item, int):
+                            return list(self.markers.keys())[item]
+                        raise Exception                        
         except:
             self.log.warning("Invalid value in 'MarkerSet'. Using default instead.")
             return list(self.markers.keys())[index]

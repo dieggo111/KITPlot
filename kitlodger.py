@@ -1,6 +1,8 @@
 import numpy as np
 import logging
 from .Utils import kitutils
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 class KITLodger(object):
 
@@ -20,7 +22,7 @@ class KITLodger(object):
         self.__x = kwargs.get('x', None)
         self.__y = kwargs.get('y', None)
         self.__name = kwargs.get('name', None)
-        self.__color = kwargs.get('color', 0)
+        self.__color = kwargs.get('color', "bl0")
         self.__width = kwargs.get('width', 2)
         self.__style = kwargs.get('style', "-")
         self.__text = kwargs.get('text', None)
@@ -81,7 +83,29 @@ class KITLodger(object):
             self.log.info("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
             ax.text(self.__x, self.__y, 
-                    self.__text, fontsize=self.__fontsize, **self.__opt_dict)
+                    self.__text, fontsize=self.__fontsize, 
+                    color=self.get_lodger_color(self.__color), 
+                    **self.__opt_dict)
+            try:
+                self.__paraDict.pop("width")
+                self.__paraDict.pop("style")
+            except:
+                pass
+
+        elif "width" in self.__opt_dict.keys() and "height" in self.__opt_dict.keys():
+            self.log.info("Lodger::Draw rectangle at (x,y)")
+            self.lodger_type = "rectangle"
+            rec = Rectangle((self.__x, self.__y), **self.__opt_dict)
+            color = self.get_lodger_color(self.__color)
+            patch = PatchCollection([rec], facecolor=color, 
+                                    edgecolor=color, alpha=self.__alpha)
+            ax.add_collection(patch)
+            try:
+                self.__paraDict.pop("fontsize")
+                self.__paraDict.pop("width")
+                self.__paraDict.pop("style")
+            except:
+                pass
         return self.fig
 
     def add_to_cfg(self, cfg):
