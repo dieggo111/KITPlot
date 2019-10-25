@@ -71,7 +71,7 @@ class KITLodger(object):
                 ax.axvline(x=self.__x, 
                            color=self.get_lodger_color(self.__color),
                            linewidth=self.__width, linestyle=self.__style,
-                           alpha=self.__alpha)
+                           alpha=self.__alpha, **self.__opt_dict)
             if isinstance(self.__y, (int, float)):
                 self.log.info("Lodger:::Draw horizontal line at y = " + str(self.__y))
                 self.lodger_type = "horizontal line"

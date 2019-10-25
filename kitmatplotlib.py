@@ -281,6 +281,11 @@ class KITMatplotlib():
                     linewidth=self.lineWidth,
                     linestyle=self.getLineStyle(i),
                     label=self.getLabel(i))
+            # if i == 0:
+            #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
+            # else:
+            #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=2)
+
 
         # set error bars
         for i, table in enumerate(self.__graphs):
@@ -350,9 +355,12 @@ class KITMatplotlib():
         if self.rangeY != 'auto':
             ax.set_ylim(self.rangeY)
 
+
         self.setLegend(ax)
         # ax.xaxis.set_major_formatter(FixedOrderFormatter(1e3))
         return fig
+
+
 
 
     def setLegend(self, obj):
@@ -384,7 +392,7 @@ class KITMatplotlib():
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
                        loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "below":
-            obj.legend(handles, labels, bbox_to_anchor=(0., -0.5, 1., .102),
+            obj.legend(handles, labels, bbox_to_anchor=(0., -0.24, 1., .102),
                        loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
         elif self.legPosition == "outside":
             obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
