@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #pylint: disable=C0103,R0902,R0912,R0915,R0914,W0201
 import numpy as np
+from scipy.stats import norm
 import matplotlib
 import matplotlib.pyplot as plt
 from .kitdata import KITData
@@ -200,7 +201,7 @@ class KITMatplotlib():
         return True
 
 
-    def draw(self, fileList, reset=False):
+    def draw(self, fileList, reset=False, hist=False):
         """Extracts data sets from fileList, extracts plot parameters from cfg
         (plot options, legend information, plot dimensions, axis labeling,
         marker and graph options, ...) and applies them"""
@@ -244,6 +245,7 @@ class KITMatplotlib():
         # adjust pad size: [left, bottom, width, height]
         ax.set_position(self.padSize)
 
+
         # adjust axis tick
         if isinstance(self.tickX, bool):
             if self.tickX:
@@ -264,27 +266,44 @@ class KITMatplotlib():
                 plt.ticklabel_format(
                     style='sci', axis='y', scilimits=(self.tickY, self.tickY))
 
-
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker\
                     or self.hollowMarker is True:
                 markerface = 'None'
             else:
                 markerface = self.getColor(i)
-            ax.plot(table[0],                           # x-axis
-                    table[1],                           # y-axis
-                    color=self.getColor(i),             # line color
-                    marker=self.getMarker(i),           # marker style
-                    markersize=self.markerSize,
-                    markerfacecolor=markerface,
-                    markeredgewidth=self.markerWidth,
-                    linewidth=self.lineWidth,
-                    linestyle=self.getLineStyle(i),
-                    label=self.getLabel(i))
-            # if i == 0:
-            #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
-            # else:
-            #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=2)
+
+            if hist is True:
+                bins = 200
+                _, bins, _ = ax.hist(table[1], 
+                                     bins,
+                                     color=self.getColor(i),   # bin color
+                                     label=self.getLabel(i))
+                mu, std = norm.fit(table[1])
+                print(table[1][:10])
+                print(mu, std)
+
+                # Calculate the distribution for plotting in a histogram
+                # x = np.linspace(xmin, xmax, 1e-12)
+                # print(x[:10])
+                # p = norm.pdf(x, loc=mu, scale=std)
+                # print(p[:10])
+                # ax.plot(x, p, "r--", color="g")
+            else:
+                ax.plot(table[0],                           # x-axis
+                        table[1],                           # y-axis
+                        color=self.getColor(i),             # line color
+                        marker=self.getMarker(i),           # marker style
+                        markersize=self.markerSize,
+                        markerfacecolor=markerface,
+                        markeredgewidth=self.markerWidth,
+                        linewidth=self.lineWidth,
+                        linestyle=self.getLineStyle(i),
+                        label=self.getLabel(i))
+                # if i == 0:
+                #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
+                # else:
+                #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=2)
 
 
         # set error bars

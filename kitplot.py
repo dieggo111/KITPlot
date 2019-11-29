@@ -48,6 +48,7 @@ class KITPlot():
         self.opt_reset = kwargs.get('reset_legend', None)
         self.opt_split = kwargs.get('split_graph', None)
         self.base_name = kwargs.get('name', None)
+        self.hist = kwargs.get('histogramm', None)
 
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
@@ -273,9 +274,9 @@ class KITPlot():
         if dataInput is None:
             self.canvas = KITMatplotlib(
                 self.__cfg,
-                self.check_if_new_cfg(
-                    self.__cfg.getDir(), self.__inputName)).draw(
-                        self.__files, reset=self.opt_reset)
+                self.check_if_new_cfg(self.__cfg.getDir(), 
+                                      self.__inputName))\
+                    .draw(self.__files, reset=self.opt_reset, hist=self.hist)
         else:
             self.canvas = KITMatplotlib(
                 self.__cfg,
@@ -357,6 +358,9 @@ class KITPlot():
         Returns:
             Data points (x-list, y-list) for fit graph
         """
+        if data_opt == "standard":
+            x = data_lst[0]
+            y = data_lst[1]
         if data_opt == "pointwise":
             x = [tup[0][0] for tup in data_lst]
             y = [tup[1][0] for tup in data_lst]
@@ -376,7 +380,11 @@ class KITPlot():
             if name is not None and residual is True:
                 self.log.info("Fit result[%s]:::(m = %s, y0 = %s, res = %s)",
                               name, str(m), str(b), str(err))
-            t = np.arange(min(x), max(x)*1.1, min(x)/2)
+            if min(x) == 0:
+                steps = max(x)*1.1/8
+            else:
+                steps = min(x)/2
+            t = np.arange(min(x), max(x)*1.1, steps)
             f = m * t + b
         if returns == "fit":
             return (list(f), list(t))
