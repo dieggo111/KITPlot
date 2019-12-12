@@ -272,13 +272,13 @@ class KITPlot():
 
         # create graphs and canvas
         if dataInput is None:
-            self.canvas = KITMatplotlib(
+            self.canvas, self.ax = KITMatplotlib(
                 self.__cfg,
                 self.check_if_new_cfg(self.__cfg.getDir(), 
                                       self.__inputName))\
                     .draw(self.__files, reset=self.opt_reset, hist=self.hist)
         else:
-            self.canvas = KITMatplotlib(
+            self.canvas, self.ax = KITMatplotlib(
                 self.__cfg,
                 self.check_if_new_cfg(
                     self.__cfg.getDir(), self.__inputName)).draw(
@@ -480,6 +480,11 @@ class KITPlot():
                     return self.__files[KITFile]
                 else:
                     return False
+
+    def getAxis(self):
+        if self.ax is None:
+            return None
+        return self.ax
 
     def getCanvas(self):
         if self.canvas is None:

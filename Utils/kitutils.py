@@ -204,7 +204,7 @@ def extractList(arg, output="int"):
             output (str): determines the output type of the list elements
     """
 
-    if output not in ["int", "float"]:
+    if output not in ["int", "float", "mixed"]:
         raise ValueError("Unexpected argument.")
 
     # for ints/floats disguised as str
@@ -227,8 +227,15 @@ def extractList(arg, output="int"):
         try:
             if output == "int":
                 new_list = [int(string) for string in str_list]
-            elif output == "float":
+            if output == "float":
                 new_list = [float(string) for string in str_list]
+            if output == "mixed":
+                new_list = []
+                for string in str_list:
+                    try:
+                        new_list.append(int(string))
+                    except ValueError:
+                        new_list.append(float(string))
             return new_list
         except:
             return str_list

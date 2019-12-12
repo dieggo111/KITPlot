@@ -70,8 +70,8 @@ class KITMatplotlib():
         self.fontStyleY = cfg['YAxis', 'FontStyle']
         self.absX = cfg['XAxis', 'Abs']
         self.absY = cfg['YAxis', 'Abs']
-        self.logX = kitutils.extractList(cfg['XAxis', 'Log'])
-        self.logY = cfg['YAxis', 'Log']
+        self.logX = kitutils.extractList(cfg['XAxis', 'Log'], "mixed")
+        self.logY = kitutils.extractList(cfg['YAxis', 'Log'], "mixed")
         self.tickX = cfg['XAxis', 'SciTick']
         self.tickY = cfg['YAxis', 'SciTick']
 
@@ -344,9 +344,11 @@ class KITMatplotlib():
                      fontweight=self.titleFontStyle)
         ax.set_xlabel(self.labelX,
                       fontsize=self.fontSizeX,
+                    #   color=(191./255, 35./255, 41./255),
                       fontweight=self.fontStyleX)
         ax.set_ylabel(self.labelY,
                       fontsize=self.fontSizeY,
+                    #   color=(191./255, 35./255, 41./255),
                       fontweight=self.fontStyleY)
 
         # set log styles
@@ -358,9 +360,12 @@ class KITMatplotlib():
                 ax.get_xaxis().set_tick_params(which='minor', width=0) 
                 ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         if self.logY:
+            print(self.logY)
             ax.semilogy()
             if isinstance(self.logY, list):
                 ax.set_yticks(self.logY)
+                ax.get_yaxis().set_tick_params(which='minor', size=0)
+                ax.get_yaxis().set_tick_params(which='minor', width=0) 
                 ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
         # set grid
@@ -377,7 +382,7 @@ class KITMatplotlib():
 
         self.setLegend(ax)
         # ax.xaxis.set_major_formatter(FixedOrderFormatter(1e3))
-        return fig
+        return fig, ax
 
 
 
