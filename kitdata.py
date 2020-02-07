@@ -5,8 +5,10 @@ import datetime
 import logging
 import numpy as np
 import yaml
+import pandas as pd
 from .KITConfig import KITConfig
 from .KITSearch import KITSearch
+from .KITSearch import KITNewSearch
 from collections import OrderedDict
 
 class KITData(object):
@@ -19,7 +21,7 @@ class KITData(object):
     dbSession = None
 
     def __init__(self, dataInput=None, measurement="probe",
-                 credentials='db.cfg', show_input=None):
+                 credentials='db.cfg', show_input=None, new_db=False):
         """ Initialize KITData object based on the input that is passed.
 
         Args:
@@ -87,21 +89,23 @@ class KITData(object):
             self.__id = dataInput
             # Establish database connection if its no already established
             if KITData.dbSession is None:
-                self.__init_db_connection(credentials)
+                self.__init_db_connection(credentials, new_db)
 
-            # Distinguish between probe station and ALiBaVa ID
-            if measurement == "alibava":
-                if show_input is not False:
-                    self.log.info("Input: ALiBaVa run")
-                else:
-                    pass
-                self.__allo_db_alibava(dataInput)
-            elif measurement == "probe" and show_input is not False:
-                if show_input is not False:
-                    self.log.info("Input: Probe station PID")
-                else:
-                    pass
-                self.__allo_db(dataInput)
+                # Distinguish between probe station and ALiBaVa ID
+                if measurement == "alibava":
+                    if show_input is not False:
+                        self.log.info("Input: ALiBaVa run")
+                    else:
+                        pass
+                    self.__allo_db_alibava(dataInput, new_db)
+                elif measurement == "probe" and show_input is not False:
+                    if show_input is not False:
+                        self.log.info("Input: Probe station PID")
+                    else:
+                        pass
+                    self.__allo_db(dataInput, new_db)
+
+
 
         # Check if dataInput is a file
         elif isinstance(dataInput, str) and os.path.isfile(dataInput):
@@ -110,8 +114,10 @@ class KITData(object):
 
             with open(dataInput, 'r') as inputFile:
                 for line in inputFile:
-                    splited = line.split()
-
+                    if "," in line:
+                        splited = line.split(",")
+                    else:    
+                        splited = line.split()
                     try:
                         # First two columns are always interpreted as x and y
                         self.__x.append(float(splited[0]))
@@ -229,7 +235,8 @@ class KITData(object):
             else:
                 return False
 
-    def __init_db_connection(self, credentials='db.cfg', section='database'):
+    def __init_db_connection(self, credentials='db.cfg', section='database', 
+                             new_db=False):
         """Initialize db_connection and set static connection and curser
 
         Args:
@@ -243,11 +250,17 @@ class KITData(object):
         except:
             raise ValueError("No credentials file found. Please add correct"+
                              "database parameters to 'db.cfg'")
-        try:
-            KITData.dbSession = KITSearch(cred)
-            self.log.info("Database connection established")
-        except:
-            raise ValueError("Database connection failed.")
+        if not new_db:
+            try:
+                KITData.dbSession = KITSearch(cred["old DB"])
+                self.log.info("Database connection established")
+            except:
+                raise ValueError("Database connection failed (old DB).")
+        if new_db:
+            KITData.dbSession = KITNewSearch(cred["new DB"])
+            if KITData.dbSession.check_connection() is False:
+                raise ValueError("Database connection failed (new DB).")
+
 
 
     def __createCfg(self):
@@ -283,7 +296,7 @@ class KITData(object):
                 return False
 
 
-    def __allo_db(self, pid):
+    def __allo_db(self, pid, new_db=None):
         """Allocate measurement information.
            This works only if database connection is already established.
 
@@ -291,8 +304,11 @@ class KITData(object):
             pid: probe id in the IEKP database
 
         """
-        data = KITData.dbSession.probe_search_data(pid)
-
+        if new_db is False:
+            data = KITData.dbSession.probe_search_data(pid)
+        if new_db is True:
+            data = KITData.dbSession.extract_data(KITData.dbSession.search_pid(pid))
+            
         self.__x = data["dataX"]
         self.__y = data["dataY"]
         self.__z = data["dataZ"]
@@ -311,7 +327,8 @@ class KITData(object):
         self.__project = data["project"]
 
 
-    def __allo_db_alibava(self, run):
+
+    def __allo_db_alibava(self, run, new_db=False):
 
         self.__px = "Voltage"
         self.__py = "Signal"

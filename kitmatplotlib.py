@@ -100,6 +100,7 @@ class KITMatplotlib():
         self.legPosition = cfg['Legend', 'Position']
         self.show_pid = cfg['Legend', 'ShowPID']
         self.leg_col = cfg['Legend', 'Columns']
+        self.font_size_leg = cfg.get('Legend', 10).get('FontSize', 10)
 
         # sets
         self.markers = {'o': 'circle', 'v': 'triangle_down', '^': 'triangle_up',
@@ -274,13 +275,14 @@ class KITMatplotlib():
                 markerface = self.getColor(i)
 
             if hist is True:
-                bins = 200
+                bins = 50
                 _, bins, _ = ax.hist(table[1], 
                                      bins,
                                      color=self.getColor(i),   # bin color
                                      label=self.getLabel(i))
                 mu, std = norm.fit(table[1])
-                print(table[1][:10])
+                # print(table[1])
+                # print(len(table[1]))
                 print(mu, std)
 
                 # Calculate the distribution for plotting in a histogram
@@ -300,6 +302,8 @@ class KITMatplotlib():
                         linewidth=self.lineWidth,
                         linestyle=self.getLineStyle(i),
                         label=self.getLabel(i))
+                print(np.mean(table[1]))
+                print(np.std(table[1]))
                 # if i == 0:
                 #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
                 # else:
@@ -400,24 +404,31 @@ class KITMatplotlib():
         labels = kitutils.adjustOrder(labels, self.__entryDict, total_len)
 
         if self.legPosition == "auto":
-            obj.legend(handles, labels)
+            obj.legend(handles, labels, fontsize=self.font_size_leg)
         elif self.legPosition == "TL":
-            obj.legend(handles, labels, loc='upper left')
+            obj.legend(handles, labels, loc='upper left', 
+                       fontsize=self.font_size_leg)
         elif self.legPosition == "BL":
-            obj.legend(handles, labels, loc='lower left')
+            obj.legend(handles, labels, loc='lower left',
+                       fontsize=self.font_size_leg)
         elif self.legPosition == "TR":
-            obj.legend(handles, labels, loc='upper right')
+            obj.legend(handles, labels, loc='upper right',
+                       fontsize=self.font_size_leg)
         elif self.legPosition == "BR":
-            obj.legend(handles, labels, loc='lower right')
+            obj.legend(handles, labels, loc='lower right', 
+                       fontsize=self.font_size_leg)
         elif self.legPosition == "test2":
             obj.legend(handles, labels, bbox_to_anchor=(0., 1.17, 1., .102),
-                       loc='upper right', ncol=self.leg_col, mode="expand", borderaxespad=0.)
+                       loc='upper right', ncol=self.leg_col, mode="expand", 
+                       borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "test":
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
-                       loc='lower left', ncol=self.leg_col, mode="expand", borderaxespad=0.)
+                       loc='lower left', ncol=self.leg_col, mode="expand", 
+                       borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "below":
             obj.legend(handles, labels, bbox_to_anchor=(0., -0.24, 1., .102),
-                       loc='lower center', ncol=self.leg_col, mode="expand", borderaxespad=0.)
+                       loc='lower center', ncol=self.leg_col, mode="expand", 
+                       borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "outside":
             obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
                        loc='upper left', ncol=self.leg_col)

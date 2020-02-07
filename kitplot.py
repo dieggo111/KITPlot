@@ -48,7 +48,8 @@ class KITPlot():
         self.opt_reset = kwargs.get('reset_legend', None)
         self.opt_split = kwargs.get('split_graph', None)
         self.base_name = kwargs.get('name', None)
-        self.hist = kwargs.get('histogramm', None)
+        self.hist = kwargs.get('histogram', None)
+        self.new_db = kwargs.get('new_db', False)
 
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
@@ -114,7 +115,7 @@ class KITPlot():
                 else:
                     self.log.info("Input interpreted as raw data")
                 for i, tup in enumerate(dataInput):
-                    self.__files.append(KITData(tup))
+                    self.__files.append(KITData(tup, self.new_db))
                     try:
                         self.__files[-1].setName(self.name_lst[i])
                     except:
@@ -531,7 +532,8 @@ def checkPID(dataInput):
     """Checks if PIDs are listed in the file"""
     if os.path.isfile(dataInput):
         with open(dataInput) as inputFile:
-            if len(inputFile.readline().split()) == 1:
+            if len(inputFile.readline().split()) == 1 \
+                    and inputFile.readline().isdigit():
                 return True
             return False
     else:

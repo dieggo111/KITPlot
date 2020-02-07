@@ -82,6 +82,9 @@ class KITLodger(object):
         elif self.__text is not None:
             self.log.info("Lodger:::Draw text at (x,y)")
             self.lodger_type = "text"
+            if "\\n" in self.__text:
+                a, b = self.__text.split("\\n")
+                self.__text = a + "\n" + b
             ax.text(self.__x, self.__y, 
                     self.__text, fontsize=self.__fontsize, 
                     color=self.get_lodger_color(self.__color), 

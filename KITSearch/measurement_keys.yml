@@ -1,0 +1,24 @@
+iv: 
+    - voltage
+    - current
+cv:
+    - voltage
+    - capacitance
+cc: 
+    - strip 
+    - capacitance 
+c_int: 
+    - strip 
+    - capacitance 
+r_poly:
+    - strip
+    - r_poly 
+r_int:
+    - strip
+    - r_int
+pinhole:
+    - strip
+    - current
+i_leak:
+    - strip
+    - current
