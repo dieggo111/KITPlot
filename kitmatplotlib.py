@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 #pylint: disable=C0103,R0902,R0912,R0915,R0914,W0201
-import numpy as np
-from scipy.stats import norm
-import matplotlib
-import matplotlib.pyplot as plt
-from .kitdata import KITData
-from .kitlodger import KITLodger
 from collections import OrderedDict
-from .Utils import kitutils
 import itertools
 import logging
 import matplotlib.ticker
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from .kitdata import KITData
+from .kitlodger import KITLodger
+from .Utils import kitutils
 
 class KITMatplotlib():
     """Matplotlib based automated plotting class for KITPlot"""
@@ -74,6 +73,8 @@ class KITMatplotlib():
         self.logY = kitutils.extractList(cfg['YAxis', 'Log'], "mixed")
         self.tickX = cfg['XAxis', 'SciTick']
         self.tickY = cfg['YAxis', 'SciTick']
+        self.colorX = cfg['XAxis', 'Color']
+        self.colorY = cfg['YAxis', 'Color']
 
         # Marker Options
         self.markerSize = cfg['Marker', 'Size']
@@ -92,8 +93,6 @@ class KITMatplotlib():
         self.cv_norm = cfg['Misc', 'CVMeasurement']
         self.norm = kitutils.extractList(cfg['Misc', 'Normalization'])
         self.splitGraph = cfg['Misc', 'SplitGraph']
-        # try:
-        #     self.
 
         # legend options
         self.__entryDict = cfg['Legend', 'EntryList']
@@ -248,25 +247,9 @@ class KITMatplotlib():
 
 
         # adjust axis tick
-        if isinstance(self.tickX, bool):
-            if self.tickX:
-                plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-            # else:
-            #     plt.ticklabel_format(axis='x', useOffset=False)
-        if isinstance(self.tickY, bool):
-            if self.tickY:
-                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            # else:
-            #     plt.ticklabel_format(axis='y', useOffset=False)
-        if not isinstance(self.tickX, bool):
-            if isinstance(self.tickX, int) or isinstance(self.tickX, float):
-                plt.ticklabel_format(
-                    style='sci', axis='x', scilimits=(self.tickX, self.tickX))
-        if not isinstance(self.tickY, bool):
-            if isinstance(self.tickY, int) or isinstance(self.tickY, float):
-                plt.ticklabel_format(
-                    style='sci', axis='y', scilimits=(self.tickY, self.tickY))
+        self.adjust_axis_tick()
 
+        # draw graphs
         for i, table in enumerate(self.__graphs):
             if isinstance(self.hollowMarker, list) and i in self.hollowMarker\
                     or self.hollowMarker is True:
@@ -275,8 +258,11 @@ class KITMatplotlib():
                 markerface = self.getColor(i)
 
             if hist is True:
-                bins = 50
-                _, bins, _ = ax.hist(table[1], 
+                binwidth = 2e-15
+                bins = np.arange(
+                    np.min(table[1]), np.max(table[1]) + binwidth, binwidth)
+                # bins = 50
+                _, bins, _ = ax.hist(table[1],
                                      bins,
                                      color=self.getColor(i),   # bin color
                                      label=self.getLabel(i))
@@ -302,78 +288,25 @@ class KITMatplotlib():
                         linewidth=self.lineWidth,
                         linestyle=self.getLineStyle(i),
                         label=self.getLabel(i))
-                print(np.mean(table[1]))
-                print(np.std(table[1]))
+                # print(np.mean(table[1]))
+                # print(np.std(table[1]))
                 # if i == 0:
                 #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
                 # else:
                 #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=2)
 
 
-        # set error bars
-        for i, table in enumerate(self.__graphs):
-            if len(table) == 4 and self.err is True:
-                ax.errorbar(table[0], table[1], xerr=table[2], yerr=table[3],
-                            color=self.getColor(i),
-                            elinewidth=1)
-            elif len(table) == 4 and self.err == "filled":
-                y1 = []
-                y2 = []
-                if all(table[2]) == 0:
-                    for y, err in zip(table[1], table[3]):
-                        y1.append(y - err)
-                        y2.append(y + err)
-                else:
-                    for y, min, max in zip(table[1], table[2], table[3]):
-                        y1.append(y - min)
-                        y2.append(y + max)
-
-                ax.fill_between(table[0], y1, y2, alpha=0.3, lineWidth=0, color=self.getColor(i))
-            elif len(table) != 4 and self.err in [True, "filled"]:
-                self.log.warning("Can't find x- and y-errors in file. Request "
-                                 "rejected.")
+            # set error bars
+            self.set_error_bars(ax, table)
 
         # set titles
-        # weights = ['light', 'normal', 'medium', 'semibold', 'bold', 'heavy', 'black']
-        if self.__new_cfg is True:
-            self.title, self.labelX, self.labelY = \
-                auto_axis_labeling(fileList)
-            self.cfg['XAxis', 'Title'] = self.labelX
-            self.cfg['YAxis', 'Title'] = self.labelY
-            self.cfg['Title', 'Title'] = self.title
-
-        ax.set_title(self.title,
-                     fontsize=self.titleFontSize,
-                     y=self.titleOffset,
-                     fontweight=self.titleFontStyle)
-        ax.set_xlabel(self.labelX,
-                      fontsize=self.fontSizeX,
-                    #   color=(191./255, 35./255, 41./255),
-                      fontweight=self.fontStyleX)
-        ax.set_ylabel(self.labelY,
-                      fontsize=self.fontSizeY,
-                    #   color=(191./255, 35./255, 41./255),
-                      fontweight=self.fontStyleY)
+        self.set_titles(ax, fileList)
 
         # set log styles
-        if self.logX:
-            ax.semilogx()
-            if isinstance(self.logX, list):
-                ax.set_xticks(self.logX)
-                ax.get_xaxis().set_tick_params(which='minor', size=0)
-                ax.get_xaxis().set_tick_params(which='minor', width=0) 
-                ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-        if self.logY:
-            print(self.logY)
-            ax.semilogy()
-            if isinstance(self.logY, list):
-                ax.set_yticks(self.logY)
-                ax.get_yaxis().set_tick_params(which='minor', size=0)
-                ax.get_yaxis().set_tick_params(which='minor', width=0) 
-                ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        self.set_log_styles(ax)
 
         # set grid
-        if self.grid == True:
+        if self.grid is True:
             # *args = [color,linstyle,linewidth]
             ax.grid()
 
@@ -388,7 +321,94 @@ class KITMatplotlib():
         # ax.xaxis.set_major_formatter(FixedOrderFormatter(1e3))
         return fig, ax
 
+    def set_titles(self, ax_obj, fileList):
+        """Set plot titles"""
+        if self.__new_cfg is True:
+            self.title, self.labelX, self.labelY = \
+                auto_axis_labeling(fileList)
+            self.cfg['XAxis', 'Title'] = self.labelX
+            self.cfg['YAxis', 'Title'] = self.labelY
+            self.cfg['Title', 'Title'] = self.title
 
+        ax_obj.set_title(self.title,
+                         fontsize=self.titleFontSize,
+                         y=self.titleOffset,
+                         fontweight=self.titleFontStyle)
+        ax_obj.set_xlabel(self.labelX,
+                          fontsize=self.fontSizeX,
+                          color=self.getColor(self.colorX),
+                          fontweight=self.fontStyleX)
+        ax_obj.set_ylabel(self.labelY,
+                          fontsize=self.fontSizeY,
+                          color=self.getColor(self.colorY),
+                          fontweight=self.fontStyleY)
+
+
+    def set_log_styles(self, ax_obj):
+        """Set up log styles if logX and/or logY are True"""
+        if self.logX:
+            ax_obj.semilogx()
+            if isinstance(self.logX, list):
+                ax_obj.set_xticks(self.logX)
+                ax_obj.get_xaxis().set_tick_params(which='minor', size=0)
+                ax_obj.get_xaxis().set_tick_params(which='minor', width=0) 
+                ax_obj.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        if self.logY:
+            print(self.logY)
+            ax_obj.semilogy()
+            if isinstance(self.logY, list):
+                ax_obj.set_yticks(self.logY)
+                ax_obj.get_yaxis().set_tick_params(which='minor', size=0)
+                ax_obj.get_yaxis().set_tick_params(which='minor', width=0) 
+                ax_obj.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+
+    def set_error_bars(self, ax_obj, table):
+        """Sets up error bars"""
+        for i, table in enumerate(self.__graphs):
+            if len(table) == 4 and self.err is True:
+                ax_obj.errorbar(
+                    table[0], table[1], xerr=table[2], yerr=table[3],
+                    color=self.getColor(i), elinewidth=1)
+            elif len(table) == 4 and self.err == "filled":
+                y1 = []
+                y2 = []
+                if all(table[2]) == 0:
+                    for y, err in zip(table[1], table[3]):
+                        y1.append(y - err)
+                        y2.append(y + err)
+                else:
+                    for y, _min, _max in zip(table[1], table[2], table[3]):
+                        y1.append(y - _min)
+                        y2.append(y + _max)
+
+                ax_obj.fill_between(
+                    table[0], y1, y2, alpha=0.3, lineWidth=0, 
+                    color=self.getColor(i))
+            elif len(table) != 4 and self.err in [True, "filled"]:
+                self.log.warning("Can't find x- and y-errors in file. Request "
+                                 "rejected.")
+
+    def adjust_axis_tick(self):
+        """Adjusts the axis ticks"""
+        if isinstance(self.tickX, bool):
+            if self.tickX:
+                plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+            # else:
+            #     plt.ticklabel_format(axis='x', useOffset=False)
+        if isinstance(self.tickY, bool):
+            if self.tickY:
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            # else:
+            #     plt.ticklabel_format(axis='y', useOffset=False)
+        if not isinstance(self.tickX, bool):
+            if isinstance(self.tickX, int) or isinstance(self.tickX, float):
+                plt.ticklabel_format(
+                    style='sci', axis='x', scilimits=(self.tickX, self.tickX))
+        if not isinstance(self.tickY, bool):
+            if isinstance(self.tickY, int) or isinstance(self.tickY, float):
+                plt.ticklabel_format(
+                    style='sci', axis='y', scilimits=(self.tickY, self.tickY))
 
 
     def setLegend(self, obj):
@@ -471,6 +491,14 @@ class KITMatplotlib():
 
 
     def getColor(self, index):
+
+        # if color is string and corresponds with KITcolor dict
+        if isinstance(index, str):
+            for colorDict in self.KITcolor.values():
+                if index in colorDict.keys():
+                    return colorDict[index]                
+            self.log.warning("Invalid input in 'Color'. Using default instead.")
+            return self.KITcolor["KITblack"]["bl0"]
 
         try:
             # self.colors represents color_keys in KITcolor
@@ -604,7 +632,7 @@ def auto_axis_labeling(file_lst):
         autotitleX = "X Value"
     else:
         MT = file_lst[0].getParaY()
-        if MT == "I_tot":
+        if MT in ["I_tot", "iv"]:
             autotitle = "Current Voltage Characteristics"
             autotitleY = "Current (A)"
             autotitleX = "Voltage (V)"
@@ -659,15 +687,3 @@ def auto_axis_labeling(file_lst):
 
     return autotitle, autotitleX, autotitleY
 
-
-class FixedOrderFormatter(matplotlib.ticker.ScalarFormatter):
-    """Formats axis ticks using scientific notation with a constant order of
-    magnitude"""
-    def __init__(self, order_of_mag=0, useOffset=True, useMathText=False):
-        self._order_of_mag = order_of_mag
-        matplotlib.ticker.ScalarFormatter.__init__(
-            self, useOffset=useOffset, useMathText=useMathText)
-
-    def _set_orderOfMagnitude(self, range):
-        """Over-riding this to avoid having orderOfMagnitude reset elsewhere"""
-        self.orderOfMagnitude = self._order_of_mag

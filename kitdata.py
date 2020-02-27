@@ -89,21 +89,21 @@ class KITData(object):
             self.__id = dataInput
             # Establish database connection if its no already established
             if KITData.dbSession is None:
-                self.__init_db_connection(credentials, new_db)
+                self.__init_db_connection(credentials, new_db=new_db)
 
-                # Distinguish between probe station and ALiBaVa ID
-                if measurement == "alibava":
-                    if show_input is not False:
-                        self.log.info("Input: ALiBaVa run")
-                    else:
-                        pass
-                    self.__allo_db_alibava(dataInput, new_db)
-                elif measurement == "probe" and show_input is not False:
-                    if show_input is not False:
-                        self.log.info("Input: Probe station PID")
-                    else:
-                        pass
-                    self.__allo_db(dataInput, new_db)
+            # Distinguish between probe station and ALiBaVa ID
+            if measurement == "alibava":
+                if show_input is not False:
+                    self.log.info("Input: ALiBaVa run")
+                else:
+                    pass
+                self.__allo_db_alibava(dataInput, new_db)
+            elif measurement == "probe" and show_input is not False:
+                if show_input is not False:
+                    self.log.info("Input: Probe station PID")
+                else:
+                    pass
+                self.__allo_db(dataInput, new_db)
 
 
 
@@ -135,34 +135,8 @@ class KITData(object):
                             self.__dx.append(float(splited[3]))
                             self.__dy.append(float(splited[4]))
                             self.__dz.append(float(splited[5]))
-                        # Rpunch measurement from file
-                        elif len(splited) > 6 and "REdge" in dataInput:
-                            self.__z.append(float(splited[2]))
                     except:
                         pass
-
-                # Reorder variables if file contains a RPunch measurement
-                if self.checkRpunch(self.__x):
-                    dic = OrderedDict()
-                    bias = self.__x[0]
-                    ix = []
-                    iy = []
-
-                    # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
-                    for (valX, valY, valZ) in zip(self.__x, self.__y, self.__z):
-                        # create the IV keys for one bias voltage
-                        if bias == valX:
-                            ix.append(valY)
-                            iy.append(valZ)
-                        else:
-                            dic[bias] = zip(ix,iy)
-                            bias = valX
-                            ix = [valY]
-                            iy = [valZ]
-
-                    dic[bias] = zip(ix,iy)
-
-                    self.__RPunchDict = dic
 
                 else:
                     self.__name = os.path.basename(dataInput).split(".")[0]
@@ -257,7 +231,9 @@ class KITData(object):
             except:
                 raise ValueError("Database connection failed (old DB).")
         if new_db:
-            KITData.dbSession = KITNewSearch(cred["new DB"])
+            KITData.dbSession = KITNewSearch(
+                    cred=cred["new DB"], 
+                    meas_key="KITPlot/KITSearch/measurement_keys.yml")
             if KITData.dbSession.check_connection() is False:
                 raise ValueError("Database connection failed (new DB).")
 

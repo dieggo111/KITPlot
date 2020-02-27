@@ -60,8 +60,13 @@ class KITNewSearch(object):
         m_type = data["header"]["measurementtype"]
 
         new_dic = {
+            "name": data["header"]["sensorname"],
             "dataX": [dic[self.meas_key[m_type][0]]["value"] for dic in data["data"]], 
             "dataY": [dic[self.meas_key[m_type][1]]["value"] for dic in data["data"]],
+            "dataZ": [],
+            "err": [],
+            "bias_cur": [],
+            "time": [],
             "temp": [dic["temperature"]["value"] for dic in data["data"]],
             "rh": [dic["humidity"]["value"] for dic in data["data"]],
             "paraX": self.meas_key[m_type][0],
@@ -69,6 +74,7 @@ class KITNewSearch(object):
             "name": data["header"]["sensorname"],
             "project": data["header"]["sensorgroup"],
             "fluence": data["header"]["fluence"],
+            "particletype": [],
             "t0": data["header"]["header"]["temperature"],
             "h0": data["header"]["header"]["humidity"]}
         return new_dic

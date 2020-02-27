@@ -40,7 +40,6 @@ class KITPlot():
         # init lists
         self.__files = []
         self.__graphs = []
-
         # Load parameters from cfg file or load default cfg
         cfg = kwargs.get('cfg', None)
         defaultCfg = kwargs.get('defaultCfg', None)
@@ -62,7 +61,7 @@ class KITPlot():
             self.__cfg.Default(defaultCfg)
         self.__inputName = None
         self.name_lst = None
-        self.cavas = None
+        self.canvas = None
 
     #####################
     ### Graph methods ###
@@ -84,6 +83,7 @@ class KITPlot():
             name (str): specified name of the measured item for plot legend
             name_lst (list): if there are multiple items that need to be named
         """
+        print(dataInput, type(dataInput))
         if self.base_name is True:
             self.__inputName = dataInput
             self.base_name = None
@@ -115,7 +115,7 @@ class KITPlot():
                 else:
                     self.log.info("Input interpreted as raw data")
                 for i, tup in enumerate(dataInput):
-                    self.__files.append(KITData(tup, self.new_db))
+                    self.__files.append(KITData(tup, new_db=self.new_db))
                     try:
                         self.__files[-1].setName(self.name_lst[i])
                     except:
@@ -126,18 +126,9 @@ class KITPlot():
             elif isinstance(dataInput, str):
                 # Load single string PID
                 if dataInput.isdigit():
-                    kdata = KITData(dataInput)
-                    # PID represents a Rpunch measurement
-                    if "Ramp" in kdata.getParaY():
-                        self.log.info("Input interpreted as ramp measurement")
-                # split data so that each ramp step becomes a KITData object
-                        kdict = self.get_r_dict(kdata)
-                        kdata_lst = self.handle_ramp(kdict)
-                        self.__files = kdata_lst
-
-                    else:
-                        self.log.info("Input interpreted as single PID")
-                        self.__files.append(kdata)
+                    kdata = KITData(dataInput, new_db=self.new_db)
+                    self.log.info("Input interpreted as single PID")
+                    self.__files.append(kdata)
 
                 # Load multiple data files in a folder
                 elif os.path.isdir(dataInput):
@@ -162,9 +153,12 @@ class KITPlot():
                             fileList = []
                             for i, line in enumerate(inputFile):
                                 entry = line.split()
+                                print(entry)
                                 if entry[0].isdigit():
                                     fileList.append(\
-                    KITData(entry[0], self.__cfg['General', 'Measurement']))
+                    KITData(dataInput=entry[0], 
+                            measurement=self.__cfg['General', 'Measurement'],
+                            new_db=self.new_db))
                                     try:
                                         fileList[-1].setName(self.name_lst[i])
                                     except:
@@ -189,75 +183,6 @@ class KITPlot():
                     if all([n.isdigit() for n in entry]):
                         self.log.info("Input interpreted as argument with"
                                       "multiple PIDs ")
-
-
-
-        if "Rpunch" in self.__cfg['General', 'Measurement'] and os.path.isfile(dataInput):
-            self.log.info("Input interpreted as multiple PIDs of Ramp measurements")
-            with open(dataInput) as inputFile:
-                val_lst = []
-                res_lst = []
-                fileList = []
-                # loop through file and create KITData object for every PID
-                for i, line in enumerate(inputFile):
-                    entry = line.split()
-                    if entry[0].isdigit():
-                        self.__files.append(KITData(entry[0]))
-                    else:
-                        raise ValueError
-                    kdict = self.get_r_dict(self.__files[-1])
-                    # plot graph for every single PID
-                    if "@" not in self.__cfg['General', 'Measurement']:
-                        x_lst = []
-                        y_lst = []
-                        kdata_lst = self.handle_ramp(kdict)
-                        for kdata in kdata_lst:
-                            x = [abs(x) for x in kdata.getX()]
-                            y = [abs(y) for y in kdata.getY()]
-                            m = self.get_fit([x, y], data_opt="listwise",
-                                             name=kdata.getName(),
-                                             returns="result")[0]
-                            y_lst.append(1/m)
-                            # y_lst.append(1/m*0.46/0.02)
-                            x_lst.append(kdata.getZ())
-
-                        kdata_new = KITData()
-                        kdata_new.setX(x_lst)
-                        kdata_new.setY(y_lst)
-                        try:
-                            kdata_new.setName(self.name_lst[i])
-                        except:
-                            kdata_new.setName(str(i))
-                        kdata_new.setPX("Voltage")
-                        kdata_new.setPY("Resistance")
-                        self.__files[-1] = kdata_new
-                    # plot only values at given bias voltage of all PIDs
-                    else:
-                        bias_aim = self.__cfg['General', 'Measurement'].split("@")[1] #pylint: disable=E1101
-                        x, y = self.handle_ramp(kdict, bias_aim=int(bias_aim))
-                        x = [abs(xi) for xi in x]
-                        y = [abs(yi) for yi in y]
-                        m, _, res = self.get_fit([x, y], data_opt="listwise",
-                                                 name=entry[0],
-                                                 returns="result",
-                                                 residual=True)
-                        # val_lst.append(1/m)
-                        val_lst.append(1/m*0.46/0.02)
-                        res_lst.append(res/((m + res)*(m + res)))
-                if "@" in self.__cfg['General', 'Measurement']:
-                    kdata_new = KITData()
-                    kdata_new.setX(range(0, len(val_lst)))
-                    # kdata_new.setX([2, 3.8, 5.5, 7, 8.6, 10.25, 11.9, 13.5,
-                    #                 16.8, 20.3, 28, 37, 48])
-                    kdata_new.setX([10, 20, 30, 40, 50, 60, 70, 80,
-                                    100, 120, 160, 200, 240])
-                    # kdata_new.setX([0.3, 0.5, 0.8, 1.0, 1.2, 1.5, 1.7, 1.9,
-                    #                 2.4, 2.9, 4.0, 5.3, 6.9])
-
-                    kdata_new.setY(val_lst)
-                    self.__files = []
-                    self.__files.append(kdata_new)
-
 
         return True
 
