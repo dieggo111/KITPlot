@@ -110,7 +110,7 @@ class KITData(object):
         # Check if dataInput is a file
         elif isinstance(dataInput, str) and os.path.isfile(dataInput):
 
-            self.log.info("Input: File: " + dataInput)
+            self.log.info("Input: File: %s", dataInput)
 
             with open(dataInput, 'r') as inputFile:
                 for line in inputFile:

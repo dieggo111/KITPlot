@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #pylint: disable=C0103,W0201,W0702,R1710,R1702
 """A matplotlib based python plot framework"""
+from __future__ import absolute_import
 import os
 import warnings
 import logging
@@ -47,7 +48,6 @@ class KITPlot():
         self.opt_reset = kwargs.get('reset_legend', None)
         self.opt_split = kwargs.get('split_graph', None)
         self.base_name = kwargs.get('name', None)
-        self.hist = kwargs.get('histogram', None)
         self.new_db = kwargs.get('new_db', False)
 
         if cfg is not None:
@@ -83,7 +83,6 @@ class KITPlot():
             name (str): specified name of the measured item for plot legend
             name_lst (list): if there are multiple items that need to be named
         """
-        print(dataInput, type(dataInput))
         if self.base_name is True:
             self.__inputName = dataInput
             self.base_name = None
@@ -202,7 +201,7 @@ class KITPlot():
                 self.__cfg,
                 self.check_if_new_cfg(self.__cfg.getDir(), 
                                       self.__inputName))\
-                    .draw(self.__files, reset=self.opt_reset, hist=self.hist)
+                    .draw(self.__files, reset=self.opt_reset)
         else:
             self.canvas, self.ax = KITMatplotlib(
                 self.__cfg,
@@ -321,55 +320,11 @@ class KITPlot():
                 return (m, b)
 
 
-    def handle_ramp(self, kdict, bias_aim=None):
-        x = []
-        y = []
-        kdata_lst = []
-        for bias in kdict.keys():
-            # create an empty KITData object
-            kdata = KITData()
-            # extract each single bias value from the dictionary
-            # and create KITData files for every value
-            if bias_aim is None:
-                x, y = zip(*kdict[bias])
-                kdata.setX(list(x))
-                kdata.setY(list(y))
-                kdata.setZ(bias)
-                kdata.setName(str(bias) + " V")
-                kdata.setPX("Voltage")
-                kdata.setPY("Rpunch")
-                kdata_lst.append(kdata)
-            else:
-                if int(bias) == bias_aim:
-                    return zip(*kdict[bias])
-        return kdata_lst
 
 ###################
 ### Get methods ###
 ###################
 
-
-    def get_r_dict(self, kdata):
-        """Get the values from the KITData file and convert it into
-        a dictionary: {V_bias_0 = (V_edge, I_edge),
-                       V_bias_0 = (V_edge, I_edge), ...,
-                       V_bias_1 = (V_edge, I_edge), ...}
-        """
-        ramp = []
-        dic = {}
-        for x in kdata.getX():
-            if x not in ramp:
-                ramp.append(int(round(x)))
-        for bias in ramp:
-            ix = []
-            iy = []
-            # Rpunch Ramps: x = V_bias, y = V_edge, z = I_edge
-            for (valX, valY, valZ) in zip(kdata.getX(), kdata.getY(), kdata.getZ()):
-                if bias == valX:
-                    ix.append(valY)
-                    iy.append(valZ)
-                    dic[bias] = zip(ix, iy)
-        return dic
 
     def getGraph(self, graph=None):
 

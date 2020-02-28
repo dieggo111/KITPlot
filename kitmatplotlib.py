@@ -93,6 +93,7 @@ class KITMatplotlib():
         self.cv_norm = cfg['Misc', 'CVMeasurement']
         self.norm = kitutils.extractList(cfg['Misc', 'Normalization'])
         self.splitGraph = cfg['Misc', 'SplitGraph']
+        self.show_stats = cfg['Misc', 'ShowStats']
 
         # legend options
         self.__entryDict = cfg['Legend', 'EntryList']
@@ -100,6 +101,11 @@ class KITMatplotlib():
         self.show_pid = cfg['Legend', 'ShowPID']
         self.leg_col = cfg['Legend', 'Columns']
         self.font_size_leg = cfg.get('Legend', 10).get('FontSize', 10)
+
+        # Histogram options
+        self.hist = cfg['Histogram', 'ShowHistogram']
+        self.bins = cfg['Histogram', 'Bins']
+        self.bin_width = cfg['Histogram', 'BinWidth']
 
         # sets
         self.markers = {'o': 'circle', 'v': 'triangle_down', '^': 'triangle_up',
@@ -201,7 +207,7 @@ class KITMatplotlib():
         return True
 
 
-    def draw(self, fileList, reset=False, hist=False):
+    def draw(self, fileList, reset=False):
         """Extracts data sets from fileList, extracts plot parameters from cfg
         (plot options, legend information, plot dimensions, axis labeling,
         marker and graph options, ...) and applies them"""
@@ -234,7 +240,8 @@ class KITMatplotlib():
             self.log.warning("Can only split single graph. Request rejected")
 
         # apply user defined normalization or manipulation of y values of each graph
-        self.__graphs, msg = kitutils.manipulate(self.__graphs, self.norm, self.cv_norm)
+        self.__graphs, msg = kitutils.manipulate(
+                self.__graphs, self.norm, self.cv_norm)
         if msg != "":
             self.log.info(msg)
 
@@ -257,19 +264,21 @@ class KITMatplotlib():
             else:
                 markerface = self.getColor(i)
 
-            if hist is True:
-                binwidth = 2e-15
-                bins = np.arange(
-                    np.min(table[1]), np.max(table[1]) + binwidth, binwidth)
-                # bins = 50
+            if self.hist is True:
+                if self.bin_width == "auto":
+                    bins = self.bins
+                else:
+                    bins = np.arange(
+                        np.min(table[1]),
+                        np.max(table[1]) + self.bin_width,
+                        self.bin_width)
                 _, bins, _ = ax.hist(table[1],
                                      bins,
                                      color=self.getColor(i),   # bin color
                                      label=self.getLabel(i))
-                mu, std = norm.fit(table[1])
-                # print(table[1])
-                # print(len(table[1]))
-                print(mu, std)
+                if self.show_stats is True:
+                    mu, std = norm.fit(table[1])
+                    self.log.info("Histogram stats: mu = %s, std = %s", mu, std)
 
                 # Calculate the distribution for plotting in a histogram
                 # x = np.linspace(xmin, xmax, 1e-12)
@@ -288,8 +297,10 @@ class KITMatplotlib():
                         linewidth=self.lineWidth,
                         linestyle=self.getLineStyle(i),
                         label=self.getLabel(i))
-                # print(np.mean(table[1]))
-                # print(np.std(table[1]))
+                if self.show_stats is True:
+                    mu = np.mean(table[1])
+                    std = np.std(table[1])
+                    self.log.info("Plot stats: mu = %s, std = %s", mu, std)
                 # if i == 0:
                 #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
                 # else:
@@ -351,7 +362,7 @@ class KITMatplotlib():
             if isinstance(self.logX, list):
                 ax_obj.set_xticks(self.logX)
                 ax_obj.get_xaxis().set_tick_params(which='minor', size=0)
-                ax_obj.get_xaxis().set_tick_params(which='minor', width=0) 
+                ax_obj.get_xaxis().set_tick_params(which='minor', width=0)
                 ax_obj.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         if self.logY:
             print(self.logY)
@@ -359,7 +370,7 @@ class KITMatplotlib():
             if isinstance(self.logY, list):
                 ax_obj.set_yticks(self.logY)
                 ax_obj.get_yaxis().set_tick_params(which='minor', size=0)
-                ax_obj.get_yaxis().set_tick_params(which='minor', width=0) 
+                ax_obj.get_yaxis().set_tick_params(which='minor', width=0)
                 ax_obj.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 
@@ -383,7 +394,7 @@ class KITMatplotlib():
                         y2.append(y + _max)
 
                 ax_obj.fill_between(
-                    table[0], y1, y2, alpha=0.3, lineWidth=0, 
+                    table[0], y1, y2, alpha=0.3, lineWidth=0,
                     color=self.getColor(i))
             elif len(table) != 4 and self.err in [True, "filled"]:
                 self.log.warning("Can't find x- and y-errors in file. Request "
@@ -426,7 +437,7 @@ class KITMatplotlib():
         if self.legPosition == "auto":
             obj.legend(handles, labels, fontsize=self.font_size_leg)
         elif self.legPosition == "TL":
-            obj.legend(handles, labels, loc='upper left', 
+            obj.legend(handles, labels, loc='upper left',
                        fontsize=self.font_size_leg)
         elif self.legPosition == "BL":
             obj.legend(handles, labels, loc='lower left',
@@ -435,19 +446,19 @@ class KITMatplotlib():
             obj.legend(handles, labels, loc='upper right',
                        fontsize=self.font_size_leg)
         elif self.legPosition == "BR":
-            obj.legend(handles, labels, loc='lower right', 
+            obj.legend(handles, labels, loc='lower right',
                        fontsize=self.font_size_leg)
         elif self.legPosition == "test2":
             obj.legend(handles, labels, bbox_to_anchor=(0., 1.17, 1., .102),
-                       loc='upper right', ncol=self.leg_col, mode="expand", 
+                       loc='upper right', ncol=self.leg_col, mode="expand",
                        borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "test":
             obj.legend(handles, labels, bbox_to_anchor=(0., 0.,1.,1.),
-                       loc='lower left', ncol=self.leg_col, mode="expand", 
+                       loc='lower left', ncol=self.leg_col, mode="expand",
                        borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "below":
             obj.legend(handles, labels, bbox_to_anchor=(0., -0.24, 1., .102),
-                       loc='lower center', ncol=self.leg_col, mode="expand", 
+                       loc='lower center', ncol=self.leg_col, mode="expand",
                        borderaxespad=0., fontsize=self.font_size_leg)
         elif self.legPosition == "outside":
             obj.legend(handles, labels, bbox_to_anchor=(1, 1.01),
@@ -484,7 +495,7 @@ class KITMatplotlib():
                                 return item
                         if isinstance(item, int):
                             return list(self.markers.keys())[item]
-                        raise Exception                        
+                        raise Exception
         except:
             self.log.warning("Invalid value in 'MarkerSet'. Using default instead.")
             return list(self.markers.keys())[index]
@@ -496,7 +507,7 @@ class KITMatplotlib():
         if isinstance(index, str):
             for colorDict in self.KITcolor.values():
                 if index in colorDict.keys():
-                    return colorDict[index]                
+                    return colorDict[index]
             self.log.warning("Invalid input in 'Color'. Using default instead.")
             return self.KITcolor["KITblack"]["bl0"]
 
@@ -686,4 +697,3 @@ def auto_axis_labeling(file_lst):
             autotitleX = "X Value"
 
     return autotitle, autotitleX, autotitleY
-
