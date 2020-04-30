@@ -202,7 +202,7 @@ class KITConfig(object):
 
             return dataDict
         except Exception:
-            raise KeyError("Couln't find {0}".format(mapList))
+            raise KeyError("Couldn't find {0}".format(mapList))
 
     # Set data in a dictionary with position provided as a list
     def __setInDict(self, dataDict, mapList, value):

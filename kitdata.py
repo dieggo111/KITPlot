@@ -116,7 +116,7 @@ class KITData(object):
                 for line in inputFile:
                     if "," in line:
                         splited = line.split(",")
-                    else:    
+                    else:
                         splited = line.split()
                     try:
                         # First two columns are always interpreted as x and y
@@ -209,7 +209,7 @@ class KITData(object):
             else:
                 return False
 
-    def __init_db_connection(self, credentials='db.cfg', section='database', 
+    def __init_db_connection(self, credentials='db.cfg', section='database',
                              new_db=False):
         """Initialize db_connection and set static connection and curser
 
@@ -232,7 +232,7 @@ class KITData(object):
                 raise ValueError("Database connection failed (old DB).")
         if new_db:
             KITData.dbSession = KITNewSearch(
-                    cred=cred["new DB"], 
+                    cred=cred["new DB"],
                     meas_key="KITPlot/KITSearch/measurement_keys.yml")
             if KITData.dbSession.check_connection() is False:
                 raise ValueError("Database connection failed (new DB).")
@@ -284,7 +284,6 @@ class KITData(object):
             data = KITData.dbSession.probe_search_data(pid)
         if new_db is True:
             data = KITData.dbSession.extract_data(KITData.dbSession.search_pid(pid))
-            
         self.__x = data["dataX"]
         self.__y = data["dataY"]
         self.__z = data["dataZ"]

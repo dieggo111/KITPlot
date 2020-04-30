@@ -4,12 +4,13 @@ from collections import OrderedDict
 import itertools
 import logging
 import matplotlib.ticker
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
-import matplotlib.pyplot as plt
 from .kitdata import KITData
 from .kitlodger import KITLodger
 from .Utils import kitutils
+from .Utils.find_dep import FindDep
 
 class KITMatplotlib():
     """Matplotlib based automated plotting class for KITPlot"""
@@ -61,8 +62,6 @@ class KITMatplotlib():
         self.labelY = cfg['YAxis', 'Title']
         self.rangeX = kitutils.extractList(cfg['XAxis', 'Range'], "float")
         self.rangeY = kitutils.extractList(cfg['YAxis', 'Range'], "float")
-        self.fontX = cfg['XAxis', 'Font']
-        self.fontY = cfg['YAxis', 'Font']
         self.fontSizeX = cfg['XAxis', 'FontSize']
         self.fontSizeY = cfg['YAxis', 'FontSize']
         self.fontStyleX = cfg['XAxis', 'FontStyle']
@@ -241,7 +240,7 @@ class KITMatplotlib():
 
         # apply user defined normalization or manipulation of y values of each graph
         self.__graphs, msg = kitutils.manipulate(
-                self.__graphs, self.norm, self.cv_norm)
+            self.__graphs, self.norm, self.cv_norm)
         if msg != "":
             self.log.info(msg)
 
@@ -274,18 +273,15 @@ class KITMatplotlib():
                         self.bin_width)
                 _, bins, _ = ax.hist(table[1],
                                      bins,
-                                     color=self.getColor(i),   # bin color
+                                     color=self.getColor(i),
                                      label=self.getLabel(i))
                 if self.show_stats is True:
                     mu, std = norm.fit(table[1])
                     self.log.info("Histogram stats: mu = %s, std = %s", mu, std)
-
-                # Calculate the distribution for plotting in a histogram
-                # x = np.linspace(xmin, xmax, 1e-12)
-                # print(x[:10])
-                # p = norm.pdf(x, loc=mu, scale=std)
-                # print(p[:10])
-                # ax.plot(x, p, "r--", color="g")
+                    # Calculate the distribution for plotting in a histogram
+                    # x = np.linspace(mu - std*3, mu + 3*std, 100)
+                    # p = norm.pdf(x, loc=mu, scale=std)
+                    # ax.plot(x, p, "r--", color="g")
             else:
                 ax.plot(table[0],                           # x-axis
                         table[1],                           # y-axis
@@ -298,9 +294,16 @@ class KITMatplotlib():
                         linestyle=self.getLineStyle(i),
                         label=self.getLabel(i))
                 if self.show_stats is True:
-                    mu = np.mean(table[1])
-                    std = np.std(table[1])
+                    mu = np.mean(table[1][:-2])
+                    std = np.std(table[1][:-2])
                     self.log.info("Plot stats: mu = %s, std = %s", mu, std)
+                if self.cv_norm is True:
+                    find_dep_obj = FindDep()
+                    vdep = find_dep_obj.find_knee(table[0], table[1])
+                    self.log.info("V_dep = %s", vdep)
+                # print(table[1][60])
+                # print(table[1][80])
+
                 # if i == 0:
                 #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
                 # else:
