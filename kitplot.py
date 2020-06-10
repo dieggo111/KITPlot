@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#pylint: disable=C0103,W0201,W0702,R1710,R1702
+#pylint: disable=C0103,W0201,W0702,R1710,R1702,too-many-instance-attributes
 """A matplotlib based python plot framework"""
 from __future__ import absolute_import
 import os
@@ -155,7 +155,7 @@ class KITPlot():
                                 print(entry)
                                 if entry[0].isdigit():
                                     fileList.append(\
-                    KITData(dataInput=entry[0], 
+                    KITData(dataInput=entry[0],
                             measurement=self.__cfg['General', 'Measurement'],
                             new_db=self.new_db))
                                     try:
@@ -199,7 +199,7 @@ class KITPlot():
         if dataInput is None:
             self.canvas, self.ax = KITMatplotlib(
                 self.__cfg,
-                self.check_if_new_cfg(self.__cfg.getDir(), 
+                self.check_if_new_cfg(self.__cfg.getDir(),
                                       self.__inputName))\
                     .draw(self.__files, reset=self.opt_reset)
         else:
