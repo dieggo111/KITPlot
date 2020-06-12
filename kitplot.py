@@ -48,7 +48,10 @@ class KITPlot():
         self.opt_reset = kwargs.get('reset_legend', None)
         self.opt_split = kwargs.get('split_graph', None)
         self.base_name = kwargs.get('name', None)
-        self.new_db = kwargs.get('new_db', False)
+        if kwargs.get('old_db', False):
+            self.new_db = False
+        else:
+            self.new_db = True
 
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
@@ -147,12 +150,11 @@ class KITPlot():
                 elif os.path.isfile(dataInput):
                     # multiple PIDs
                     if checkPID(dataInput) is True:
-                        self.log.info("Input interpreted as multiple PIDs")
+                        self.log.info("Input interpreted as file with PID(s)")
                         with open(dataInput) as inputFile:
                             fileList = []
                             for i, line in enumerate(inputFile):
                                 entry = line.split()
-                                print(entry)
                                 if entry[0].isdigit():
                                     fileList.append(\
                     KITData(dataInput=entry[0],
@@ -412,8 +414,9 @@ def checkPID(dataInput):
     """Checks if PIDs are listed in the file"""
     if os.path.isfile(dataInput):
         with open(dataInput) as inputFile:
-            if len(inputFile.readline().split()) == 1 \
-                    and inputFile.readline().isdigit():
+            first_line = inputFile.readline()
+            if len(first_line.split()) == 1 \
+                    and first_line[0].isdigit():
                 return True
             return False
     else:
