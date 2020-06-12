@@ -2,7 +2,8 @@
 # Mathtext doc: https://matplotlib.org/users/mathtext.html
 from argparse import ArgumentParser
 from KITPlot import KITPlot
-import numpy
+import numpy as np
+import numpy.polynomial.polynomial as poly
 
 PARSER = ArgumentParser()
 PARSER.add_argument("filename")
@@ -26,6 +27,16 @@ PARSER.add_argument("-al", "--auto_labeling",
                     help="Enabels automatical labeling of axes when data "
                          "comes from DB",
                     default=True)
+PARSER.add_argument("-hist", "--histogram",
+                    help="Plot data points in histogramm",
+                    action="store_true")
+PARSER.add_argument("-new", "--new_db",
+                    help="Search in new DB",
+                    action="store_true")
+# PARSER.add_argument("-old", "--old_db",
+#                     help="Search in new DB",
+#                     action="store_false")
+
 
 KWARGS = vars(PARSER.parse_args())
 INPUT = KWARGS.pop("filename")
@@ -35,31 +46,24 @@ KPLOT1.addFiles(INPUT)
 
 KPLOT1.draw()
 
-###### FIT #######
-# x = []
-# y = []
-# for x_lst, y_lst in zip(KPLOT1.getX(), KPLOT1.getY()):
-#      x.append(x_lst[0])
-#      y.append(y_lst[0])
-# print(x)
-# print(y)
-# f, t = KPLOT1.get_fit(
-#      [x, y], data_opt="listwise", fit_opt="linear",
-#      residual=True, returns="fit")
-# print(f, t)
+FIG = KPLOT1.getCanvas()
 
+###### FIT #######
+# ...
+
+# x_new = list(x_new)
 ##### LODGERS #####
-fig = KPLOT1.getCanvas()
 # draw horizontal line
-# KPLOT1.addLodger(fig,y=12000, style="-", color="r0",name="test", width=6, alpha=0.3)
+# KPLOT1.addLodger(FIG, y=1000, style="--", color="r0",name="test", width=6, alpha=0.3)
 # draw vertical line
-# KPLOT1.addLodger(fig, x=20, style="-", color="r0", name="test", width=6, alpha=0.3)
+# KPLOT1.addLodger(FIG, x=669, style="--", color="r0", name="test", width=2, alpha=0.3)
 # draw xy-graph
-# KPLOT1.addLodger(fig, x=t, y=f, style="-", color="r0", name="fit", width=2)
+# KPLOT1.addLodger(FIG, x=t, y=f, style="-", color="r0", name="fit", width=2)
 # draw text
-# KPLOT1.addLodger(fig, x=1, y=10, text="Test", fontsize=20)
-# KPLOT1.addLodger(fig, x=10e14, y=0.0146, text="$\\alpha = x \\pm x \\cdot 10^{-17}$ Acm$^{-1}$",
+# KPLOT1.addLodger(FIG, x=46.48e-12, y=60, text="awd",
 #                  fontsize=12, opt_dict={"bbox" : dict(facecolor='gray', alpha=0.5)})
+# draw rectangel
+# KPLOT1.addLodger(FIG, x=0, y=0.6, color="bl3", alpha=0.3, opt_dict=dict(width=110.5, height=0.2))
 ####################################################
 KPLOT1.showCanvas(save=True)
 ####################################################
