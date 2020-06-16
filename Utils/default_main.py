@@ -30,12 +30,14 @@ PARSER.add_argument("-al", "--auto_labeling",
 PARSER.add_argument("-hist", "--histogram",
                     help="Plot data points in histogramm",
                     action="store_true")
-PARSER.add_argument("-new", "--new_db",
+PARSER.add_argument("-old", "--old_db",
                     help="Search in new DB",
-                    action="store_true")
-# PARSER.add_argument("-old", "--old_db",
-#                     help="Search in new DB",
-#                     action="store_false")
+                    action="store_true",
+                    default=False)
+#PARSER.add_argument("-old", "--old_db",
+#                    help="Search in old DB",
+#                    action="store_true",
+#                    default=False)
 
 
 KWARGS = vars(PARSER.parse_args())
