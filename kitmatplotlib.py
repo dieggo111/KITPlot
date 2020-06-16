@@ -367,7 +367,6 @@ class KITMatplotlib():
                 ax_obj.get_xaxis().set_tick_params(which='minor', width=0)
                 ax_obj.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         if self.logY:
-            print(self.logY)
             ax_obj.semilogy()
             if isinstance(self.logY, list):
                 ax_obj.set_yticks(self.logY)

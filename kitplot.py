@@ -53,7 +53,6 @@ class KITPlot():
             self.new_db = False
         else:
             self.new_db = True
-
         if cfg is not None:
             self.__cfg = KITConfig(cfg)
         else:
@@ -160,7 +159,10 @@ class KITPlot():
                     for i, inputFile in enumerate(os.listdir(dataInput)):
                         if os.path.splitext(inputFile)[1] == ".txt" \
                                 or os.path.splitext(inputFile)[1] == ".yml":
-                            self.__files.append(KITData(dataInput + inputFile))
+                            self.__files.append(
+                                KITData(dataInput + inputFile,
+                                        self.new_db)
+                                )
                             try:
                                 self.__files[-1].setName(self.name_lst[i])
                             except:
@@ -206,6 +208,10 @@ class KITPlot():
                     if all([n.isdigit() for n in entry]):
                         self.log.info("Input interpreted as argument with"
                                       "multiple PIDs ")
+                        for pid in entry:
+                            kdata = KITData(pid, new_db=self.new_db)
+                            self.__files.append(kdata)
+
 
         return True
 
@@ -214,11 +220,6 @@ class KITPlot():
         """Searches for cfg file, load plot parameters, creates canvas, graphs
         and lodgers.
         """
-        # if data is downloaded then apply axis titles according to measurement type
-        # if self.new_cfg is True:
-        #     self.MeasurementType()
-        #     print(self.new_cfg, self.autotitle)
-
         # create graphs and canvas
         if dataInput is None:
             self.canvas, self.ax = KITMatplotlib(
@@ -461,7 +462,10 @@ def split_data(data_input):
     return name_lst, line_data
 
 def check_json(dataInput):
-    if os.path.isfile(dataInput):
-        if os.path.splitext(dataInput)[1] == ".json":
-            return True
+    try:
+        if os.path.isfile(dataInput):
+            if os.path.splitext(dataInput)[1] == ".json":
+                return True
+    except TypeError:
+        pass
     return False

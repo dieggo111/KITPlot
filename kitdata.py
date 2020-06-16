@@ -21,7 +21,7 @@ class KITData(object):
     dbSession = None
 
     def __init__(self, dataInput=None, measurement="probe",
-                 credentials='db.cfg', show_input=None, new_db=False):
+                 credentials='db.cfg', show_input=None, new_db=True):
         """ Initialize KITData object based on the input that is passed.
 
         Args:
@@ -209,8 +209,8 @@ class KITData(object):
             else:
                 return False
 
-    def __init_db_connection(self, credentials='db.cfg', section='database',
-                             new_db=False):
+    def __init_db_connection(self, credentials='db.cfg',
+                             new_db=True):
         """Initialize db_connection and set static connection and curser
 
         Args:
