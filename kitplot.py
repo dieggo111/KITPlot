@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 import os
 import warnings
+import json
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -109,6 +110,27 @@ class KITPlot():
                 self.log.info("Input interpreted as KITData object")
                 self.__files.append(dataInput)
                 # self.addGraph(dataInput.getX(),dataInput.getY())
+
+            # Load json file
+            elif check_json(dataInput):
+                self.log.info("Input interpreted as json file")
+                with open(dataInput, "r") as stream:
+                    data = json.load(stream)
+                    if isinstance(data, dict):
+                        data = [data]
+                    stream.close()
+                for i, dic in enumerate(data):
+                    self.__files.append(
+                        KITData(
+                            (dic["x"], dic["y"]),
+                            new_db=self.new_db
+                            )
+                        )
+                    try:
+                        self.__files[-1].setName(self.name_lst[i])
+                    except:
+                        pass
+
 
             # Load list/tuple with raw data or list with PIDs
             elif isinstance(dataInput, (list, tuple)):
@@ -437,3 +459,9 @@ def split_data(data_input):
                                   [0], [0]))
 
     return name_lst, line_data
+
+def check_json(dataInput):
+    if os.path.isfile(dataInput):
+        if os.path.splitext(dataInput)[1] == ".json":
+            return True
+    return False

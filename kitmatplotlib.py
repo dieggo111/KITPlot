@@ -52,7 +52,6 @@ class KITMatplotlib():
 
         # Title options
         self.title = cfg['Title', 'Title']
-        self.titleFont = cfg['Title', 'Font']
         self.titleFontSize = cfg['Title', 'FontSize']
         self.titleFontStyle = cfg['Title', 'FontStyle']
         self.titleOffset = 1 + cfg['Title', 'Offset']/100.

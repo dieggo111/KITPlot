@@ -2,8 +2,6 @@
 # Mathtext doc: https://matplotlib.org/users/mathtext.html
 from argparse import ArgumentParser
 from KITPlot import KITPlot
-import numpy as np
-import numpy.polynomial.polynomial as poly
 
 PARSER = ArgumentParser()
 PARSER.add_argument("filename")
@@ -34,10 +32,6 @@ PARSER.add_argument("-old", "--old_db",
                     help="Search in new DB",
                     action="store_true",
                     default=False)
-#PARSER.add_argument("-old", "--old_db",
-#                    help="Search in old DB",
-#                    action="store_true",
-#                    default=False)
 
 
 KWARGS = vars(PARSER.parse_args())
