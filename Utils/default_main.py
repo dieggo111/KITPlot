@@ -51,7 +51,6 @@ FIG = KPLOT1.getCanvas()
 ###### FIT #######
 # ...
 
-# x_new = list(x_new)
 ##### LODGERS #####
 # draw horizontal line
 # KPLOT1.addLodger(FIG, y=1000, style="--", color="r0",name="test", width=6, alpha=0.3)
