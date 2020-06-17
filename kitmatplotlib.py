@@ -297,17 +297,12 @@ class KITMatplotlib():
                     std = np.std(table[1][:-2])
                     self.log.info("Plot stats: mu = %s, std = %s", mu, std)
                 if self.cv_norm is True:
-                    find_dep_obj = FindDep()
-                    vdep = find_dep_obj.find_knee(table[0], table[1])
-                    self.log.info("V_dep = %s", vdep)
-                # print(table[1][60])
-                # print(table[1][80])
-
-                # if i == 0:
-                #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=3)
-                # else:
-                #     ax.fill_between(table[0], table[1], color=self.getColor(i), alpha=0.5, zorder=2)
-
+                    try:
+                        find_dep_obj = FindDep()
+                        vdep = find_dep_obj.find_knee(table[0], table[1])
+                        self.log.info("V_dep = %s", vdep)
+                    except: #pylint: disable=bare-except
+                        self.log.warning("Error during V_dep calculation...")
 
             # set error bars
             self.set_error_bars(ax, table)
@@ -430,8 +425,6 @@ class KITMatplotlib():
 
         # reorder legend items according to 'EntryList'
         handles, labels = obj.get_legend_handles_labels()
-        # handles = self.adjustOrder(handles)
-        # labels = self.adjustOrder(labels)
         handles = kitutils.adjustOrder(handles, self.__entryDict, total_len)
         labels = kitutils.adjustOrder(labels, self.__entryDict, total_len)
 

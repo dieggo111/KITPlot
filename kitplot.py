@@ -98,7 +98,7 @@ class KITPlot():
         if name_lst is not None:
             self.name_lst = name_lst
         if self.opt_split:
-            self.name_lst, dataInput = split_data(dataInput)
+            self.name_lst, dataInput = self.split_data(dataInput)
 
         # load dict with plot parameters or create one if not present
         self.__cfg.load(self.__inputName)
@@ -113,12 +113,8 @@ class KITPlot():
             # Load json file
             elif check_json(dataInput):
                 self.log.info("Input interpreted as json file")
-                with open(dataInput, "r") as stream:
-                    data = json.load(stream)
-                    if isinstance(data, dict):
-                        data = [data]
-                    stream.close()
-                for i, dic in enumerate(data):
+                data_lst = convert_json(dataInput)
+                for i, dic in enumerate(data_lst):
                     self.__files.append(
                         KITData(
                             (dic["x"], dic["y"]),
@@ -433,6 +429,37 @@ class KITPlot():
             return False
         return True
 
+    def __split_data(data_input):
+        name_lst = []
+        line_data = []
+        try:
+            with open(data_input, "r") as data:
+                for line in data:
+                    splitted = line.split()
+                    name_lst.append(splitted[0])
+                    try:
+                        line_data.append(
+                            (
+                                [float(splitted[1])],
+                                [float(splitted[2])],
+                                [float(splitted[3])],
+                                [float(splitted[4])]
+                            )
+                        )
+                    except IndexError:
+                        line_data.append(
+                            (
+                                [float(splitted[1])],
+                                [float(splitted[2])],
+                                [0],
+                                [0]
+                            )
+                        )
+            return name_lst, line_data
+        except: #pylint:disable=bare-except
+            self.log.error("Error while trying to split up the data...")
+            return data_input
+
 def checkPID(dataInput):
     """Checks if PIDs are listed in the file"""
     if os.path.isfile(dataInput):
@@ -445,21 +472,6 @@ def checkPID(dataInput):
     else:
         raise ValueError("Input is not a file.")
 
-def split_data(data_input):
-    name_lst = []
-    line_data = []
-    with open(data_input, "r") as data:
-        for line in data:
-            splitted = line.split()
-            name_lst.append(splitted[0])
-            try:
-                line_data.append(([float(splitted[1])], [float(splitted[2])],
-                                  [float(splitted[3])], [float(splitted[4])]))
-            except IndexError:
-                line_data.append(([float(splitted[1])], [float(splitted[2])],
-                                  [0], [0]))
-
-    return name_lst, line_data
 
 def check_json(dataInput):
     try:
@@ -469,3 +481,11 @@ def check_json(dataInput):
     except TypeError:
         pass
     return False
+
+def convert_json(dataInput):
+    with open(dataInput, "r") as stream:
+        data = json.load(stream)
+        if isinstance(data, dict):
+            data = [data]
+        stream.close()
+    return data
