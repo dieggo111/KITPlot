@@ -1,7 +1,6 @@
 #pylint: disable=C0103
 """KITNewSearch module"""
-# import sys
-# import os
+import sys
 import logging
 import yaml
 import requests
@@ -21,7 +20,7 @@ class KITNewSearch(object):
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
             self.log.addHandler(console_handler)
-        
+
         self.url = None
         self.token = None
         self.connection = False
@@ -43,7 +42,7 @@ class KITNewSearch(object):
             raise Exception("Couldn't load credentials from credentials file.")
 
     def check_connection(self):
-        data = requests.get("http://{!s}/measurements/".format(self.url), 
+        data = requests.get("http://{!s}/measurements/".format(self.url),
                  headers=self.token)
         if data.status_code == 200:
             return True
@@ -52,32 +51,38 @@ class KITNewSearch(object):
 
 
     def search_pid(self, pid):
-        data = requests.get("http://{!s}/measurement/{!s}/json".format(self.url, pid), 
+        data = requests.get("http://{!s}/measurement/{!s}/json".format(self.url, pid),
                  headers=self.token).json()
         return data
 
     def extract_data(self, data):
         m_type = data["header"]["measurementtype"]
+        try:
+            new_dic = {
+                "name": data["header"]["sensorname"],
+                "dataX": [dic[self.meas_key[m_type][0]]["value"] for dic in data["data"]],
+                "dataY": [dic[self.meas_key[m_type][1]]["value"] for dic in data["data"]],
+                "dataZ": [],
+                "err": [],
+                "bias_cur": [],
+                "time": [],
+                "temp": [dic["temperature"]["value"] for dic in data["data"]],
+                "rh": [dic["humidity"]["value"] for dic in data["data"]],
+                "paraX": self.meas_key[m_type][0],
+                "paraY": self.meas_key[m_type][1],
+                "name": data["header"]["sensorname"],
+                "project": data["header"]["sensorgroup"],
+                "fluence": data["header"]["fluence"],
+                "particletype": [],
+                "t0": data["header"]["header"]["temperature"],
+                "h0": data["header"]["header"]["humidity"]}
+            return new_dic
+        except (KeyError, TypeError):
+            self.log.error(
+                "The requested measurement is of type '%s' which "\
+                "cannot be digested by KITData", m_type)
+            sys.exit()
 
-        new_dic = {
-            "name": data["header"]["sensorname"],
-            "dataX": [dic[self.meas_key[m_type][0]]["value"] for dic in data["data"]], 
-            "dataY": [dic[self.meas_key[m_type][1]]["value"] for dic in data["data"]],
-            "dataZ": [],
-            "err": [],
-            "bias_cur": [],
-            "time": [],
-            "temp": [dic["temperature"]["value"] for dic in data["data"]],
-            "rh": [dic["humidity"]["value"] for dic in data["data"]],
-            "paraX": self.meas_key[m_type][0],
-            "paraY": self.meas_key[m_type][1],
-            "name": data["header"]["sensorname"],
-            "project": data["header"]["sensorgroup"],
-            "fluence": data["header"]["fluence"],
-            "particletype": [],
-            "t0": data["header"]["header"]["temperature"],
-            "h0": data["header"]["header"]["humidity"]}
-        return new_dic
 
 if __name__ == '__main__':
     from functools import partial

@@ -145,7 +145,6 @@ class KITMatplotlib():
         dy = []
         if isinstance(arg, KITData):
             if KITData().getRPunchDict() is None:
-                # toggle absolute mode
                 if self.absX:
                     x = list(np.absolute(arg.getX()))
                 else:
@@ -154,7 +153,6 @@ class KITMatplotlib():
                     y = list(np.absolute(arg.getY()))
                 else:
                     y = arg.getY()
-                # get error bars if present
                 if arg.getdX() != [] and arg.getdY() != []:
                     dx = arg.getdX()
                     dy = arg.getdY()
@@ -275,8 +273,13 @@ class KITMatplotlib():
                                      color=self.getColor(i),
                                      label=self.getLabel(i))
                 if self.show_stats is True:
-                    mu, std = norm.fit(table[1])
-                    self.log.info("Histogram stats: mu = %s, std = %s", mu, std)
+                    try:
+                        mu, std = norm.fit(table[1])
+                        self.log.info("Histogram stats: mu = %s, std = %s", mu, std)
+                    except (TypeError, IndexError) as error:
+                        self.log.warning("An error occured while trying to "\
+                            "calculate mean and std...")
+                        self.log.warning(error)
                     # Calculate the distribution for plotting in a histogram
                     # x = np.linspace(mu - std*3, mu + 3*std, 100)
                     # p = norm.pdf(x, loc=mu, scale=std)
@@ -293,9 +296,14 @@ class KITMatplotlib():
                         linestyle=self.getLineStyle(i),
                         label=self.getLabel(i))
                 if self.show_stats is True:
-                    mu = np.mean(table[1][:-2])
-                    std = np.std(table[1][:-2])
-                    self.log.info("Plot stats: mu = %s, std = %s", mu, std)
+                    try:
+                        mu = np.mean(table[1][:-2])
+                        std = np.std(table[1][:-2])
+                        self.log.info("Plot stats: mu = %s, std = %s", mu, std)
+                    except (TypeError, IndexError) as error:
+                        self.log.warning("An error occured while trying to "\
+                            "calculate mean and std...")
+                        self.log.warning(error)
                 if self.cv_norm is True:
                     try:
                         find_dep_obj = FindDep()

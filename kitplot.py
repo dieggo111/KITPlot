@@ -98,7 +98,7 @@ class KITPlot():
         if name_lst is not None:
             self.name_lst = name_lst
         if self.opt_split:
-            self.name_lst, dataInput = self.split_data(dataInput)
+            self.name_lst, dataInput = self.__split_data(dataInput)
 
         # load dict with plot parameters or create one if not present
         self.__cfg.load(self.__inputName)
@@ -113,18 +113,20 @@ class KITPlot():
             # Load json file
             elif check_json(dataInput):
                 self.log.info("Input interpreted as json file")
-                data_lst = convert_json(dataInput)
-                for i, dic in enumerate(data_lst):
+                for graph_data in convert_json(dataInput):
                     self.__files.append(
                         KITData(
-                            (dic["x"], dic["y"]),
+                            (
+                                graph_data["x"],
+                                graph_data["y"],
+                                graph_data["z"],
+                                graph_data["ex"],
+                                graph_data["ey"],
+                                graph_data["ez"]
+                                ),
                             new_db=self.new_db
                             )
                         )
-                    try:
-                        self.__files[-1].setName(self.name_lst[i])
-                    except:
-                        pass
 
 
             # Load list/tuple with raw data or list with PIDs
@@ -139,9 +141,11 @@ class KITPlot():
                         self.__files[-1].setName(self.name_lst[i])
                     except:
                         pass
+
             # Load single integer PID
             elif isinstance(dataInput, int):
                 self.__files.append(KITData(dataInput))
+
             elif isinstance(dataInput, str):
                 # Load single string PID
                 if dataInput.isdigit():
@@ -197,9 +201,10 @@ class KITPlot():
                             self.__files[-1].setName(self.name_lst[0])
                         except:
                             pass
+
                 # new feature: multiple PIDs in argument
-                elif any(n in inputFile for n in ["[", "]", "(", ")"]):
-                    entry = inputFile.replace("[", "").replace("]", "")\
+                elif any(n in dataInput for n in ["[", "]", "(", ")"]):
+                    entry = dataInput.replace("[", "").replace("]", "")\
                             .replace("(", "").replace(")", "").split(",")
                     if all([n.isdigit() for n in entry]):
                         self.log.info("Input interpreted as argument with"
@@ -429,7 +434,7 @@ class KITPlot():
             return False
         return True
 
-    def __split_data(data_input):
+    def __split_data(self, data_input):
         name_lst = []
         line_data = []
         try:
@@ -483,9 +488,17 @@ def check_json(dataInput):
     return False
 
 def convert_json(dataInput):
+    valid_keys = ["x", "y", "z", "ex", "ey", "ez"]
     with open(dataInput, "r") as stream:
         data = json.load(stream)
         if isinstance(data, dict):
             data = [data]
         stream.close()
-    return data
+
+    for dic in data:
+        graph_data = {"x": [], "y": [], "z": [], "ex": [], "ey": [],
+                      "ez": [], "name": None}
+        for key in dic:
+            if key in valid_keys:
+                graph_data[key] = dic[key]
+        yield graph_data

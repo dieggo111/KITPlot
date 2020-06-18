@@ -5,9 +5,12 @@ from KITPlot import KITPlot
 
 PARSER = ArgumentParser()
 PARSER.add_argument("filename")
-PARSER.add_argument("-s", "--split_graph",
-                    help="Internally split the data so that every line in "
-                         "file is interpreted as a graph",
+PARSER.add_argument("-s", "--split_data",
+                    help="Plot a specially prepared data file by interpreting"\
+                    "each line as a single graph. The first column must "\
+                    "contain the name of the graph, the following columns "\
+                    "must contain x and y data. Every line in "\
+                    "the file will be interpreted as a single graph.",
                     action="store_true")
 PARSER.add_argument("-r", "--reset_legend",
                     help="Automatically resets the entries of the legend",
